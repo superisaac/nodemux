@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonrpc"
 	"io/ioutil"
 	"net/http"
@@ -64,4 +65,12 @@ func (self *Endpoint) CallHTTP(rootCtx context.Context, reqmsg *jsonrpc.RequestM
 	}
 	respMsg.SetTraceId(resp.Header.Get("X-Trace-Id"))
 	return respMsg, nil
+}
+
+func (self Endpoint) Log() *log.Entry {
+	return log.WithFields(log.Fields{
+		"chain":   self.Chain.Name,
+		"network": self.Chain.Network,
+		"name":    self.Name,
+	})
 }

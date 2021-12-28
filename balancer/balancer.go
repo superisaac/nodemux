@@ -3,6 +3,7 @@ package balancer
 import (
 	"sync"
 	//yaml "gopkg.in/yaml.v2"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -19,6 +20,7 @@ func GetBalancer() *Balancer {
 
 func NewBalancer() *Balancer {
 	b := new(Balancer)
+	b.adaptors = make(map[string]ChainAdaptor)
 	b.Reset()
 	return b
 }
@@ -49,6 +51,11 @@ func (self *Balancer) Add(endpoint *Endpoint) bool {
 func (self *Balancer) Select(chain ChainRef, height int, method string) (*Endpoint, bool) {
 
 	if eps, ok := self.chainIndex[chain]; ok {
+		if height < 0 && eps.maxTipHeight > 6 {
+			// chains who lags more than 6 blocks are
+			// considered unhealthy
+			height = eps.maxTipHeight - 6
+		}
 		for i := 0; i < len(eps.items); i++ {
 			idx := eps.cursor % len(eps.items)
 			eps.cursor += 1
@@ -58,8 +65,8 @@ func (self *Balancer) Select(chain ChainRef, height int, method string) (*Endpoi
 				continue
 			}
 
-			if height > 0 {
-				if ep.LatestBlock.Hash == "" || ep.LatestBlock.Height < height {
+			if height >= 0 {
+				if ep.Tip == nil || ep.Tip.Height < height {
 					continue
 				}
 			}
@@ -92,4 +99,19 @@ func (self *Balancer) LoadFromConfig(config *Config) {
 		}
 		self.Add(ep)
 	}
+}
+
+// ChainAdaptors
+func (self *Balancer) Register(adaptor ChainAdaptor, chains ...string) {
+	for _, chain := range chains {
+		self.adaptors[chain] = adaptor
+	}
+}
+
+func (self Balancer) GetAdaptor(chain string) ChainAdaptor {
+	if adaptor, ok := self.adaptors[chain]; ok {
+		return adaptor
+	}
+	log.Panicf("chain %s not supported", chain)
+	return nil
 }

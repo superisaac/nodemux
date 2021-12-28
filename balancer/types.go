@@ -1,6 +1,7 @@
 package balancer
 
 import (
+	"context"
 	"net/http"
 )
 
@@ -23,15 +24,20 @@ type Endpoint struct {
 	SkipMethods map[string]bool
 
 	//
-	Healthy     bool
-	LatestBlock Block
+	Healthy bool
+	Tip     *Block
 
 	client *http.Client
 }
 
 type EPSet struct {
-	items  []*Endpoint
-	cursor int
+	items        []*Endpoint
+	cursor       int
+	maxTipHeight int
+}
+
+type ChainAdaptor interface {
+	GetTip(context context.Context, ep *Endpoint) (*Block, error)
 }
 
 type Balancer struct {
@@ -40,4 +46,6 @@ type Balancer struct {
 	nameIndex map[string]*Endpoint
 	// the chain -> name map, the secondary index
 	chainIndex map[ChainRef]*EPSet
+
+	adaptors map[string]ChainAdaptor
 }
