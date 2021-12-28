@@ -1,7 +1,7 @@
 package balancer
 
 import (
-//"github.com/superisaac/jsonrpc"
+	"net/http"
 )
 
 type Block struct {
@@ -25,6 +25,8 @@ type Endpoint struct {
 	//
 	Healthy     bool
 	LatestBlock Block
+
+	client *http.Client
 }
 
 type EPSet struct {

@@ -19,7 +19,10 @@ func TestBalancer(t *testing.T) {
 	b := NewBalancer()
 
 	chain := ChainRef{Name: "binance-chain", Network: "mainnet"}
-	ep := &Endpoint{Name: "binance-chain", Chain: chain, ServerUrl: "http://127.0.0.1:5432", Healthy: true}
+	ep := NewEndpoint()
+	ep.Name = "bsc01"
+	ep.Chain = chain
+	ep.ServerUrl = "http://127.0.0.1:8899"
 
 	b.Add(ep)
 
@@ -29,4 +32,5 @@ func TestBalancer(t *testing.T) {
 	ep1, ok := b.Select(chain, -1, "")
 	assert.True(ok)
 	assert.Equal(ep.ServerUrl, ep1.ServerUrl)
+
 }
