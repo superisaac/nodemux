@@ -1,7 +1,7 @@
 package chains
 
 import (
- 	"github.com/superisaac/nodeb/balancer"
+	"github.com/superisaac/nodeb/balancer"
 )
 
 func InstallAdaptors(balancer *balancer.Balancer) {

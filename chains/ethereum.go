@@ -3,6 +3,7 @@ package chains
 import (
 	"context"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/superisaac/jsonrpc"
@@ -36,8 +37,12 @@ func (self *EthereumChain) GetTip(context context.Context, ep *balancer.Endpoint
 		if err != nil {
 			return nil, errors.Wrap(err, "decode rpcblock")
 		}
+		height, err := hexutil.DecodeUint64(bt.Number)
+		if err != nil {
+			return nil, errors.Wrapf(err, "hexutil.decode %s", bt.Number)
+		}
 		block := &balancer.Block{
-			Height:   1, // TODO: web3 convert hex to int
+			Height:   int(height),
 			Hash:     bt.Hash,
 			PrevHash: bt.PrevHash,
 		}
