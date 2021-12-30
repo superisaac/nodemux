@@ -11,7 +11,7 @@ func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
 	adaptor := self.GetAdaptor(ep.Chain.Name)
 	block, err := adaptor.GetTip(rootCtx, ep)
 	if err != nil {
-		logger.Warnf("tip height error %+v", err)
+		logger.Warnf("mark unhealthy due to tip height error %+v", err)
 		ep.Healthy = false
 		return err
 	}

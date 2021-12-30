@@ -18,10 +18,11 @@ type ChainRef struct {
 
 type Endpoint struct {
 	// configured items
-	Name        string
-	Chain       ChainRef
-	ServerUrl   string
-	SkipMethods map[string]bool
+	Name          string
+	Chain         ChainRef
+	ServerUrl     string
+	HeightPadding int
+	SkipMethods   map[string]bool
 
 	//
 	Healthy bool

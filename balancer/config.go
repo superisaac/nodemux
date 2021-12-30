@@ -7,11 +7,13 @@ import (
 )
 
 type EndpointConfig struct {
-	Chain       string   `yaml:"chain"`
-	Network     string   `yaml:"network"`
-	Url         string   `yaml:"url"`
-	SkipMethods []string `yaml:"skip_methods,omitempty"`
+	Chain         string   `yaml:"chain"`
+	Network       string   `yaml:"network"`
+	Url           string   `yaml:"url"`
+	SkipMethods   []string `yaml:"skip_methods,omitempty"`
+	HeightPadding int      `yaml:"height_padding,omitempty"`
 }
+
 type Config struct {
 	Version   string                    `yaml:"version,omitempty"`
 	Endpoints map[string]EndpointConfig `yaml:"endpoints"`
@@ -35,6 +37,12 @@ func ConfigFromFile(yamlPath string) *Config {
 func (self *Config) validateValues() error {
 	if self.Version == "" {
 		self.Version = "1.0"
+	}
+	for _, ep := range self.Endpoints {
+		if ep.HeightPadding <= 0 {
+			// The default height padding considered safe
+			ep.HeightPadding = 2
+		}
 	}
 	return nil
 }

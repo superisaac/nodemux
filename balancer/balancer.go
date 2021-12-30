@@ -49,19 +49,19 @@ func (self *Balancer) Add(endpoint *Endpoint) bool {
 	return true
 }
 
-func (self *Balancer) Select(chain ChainRef, height int, method string) (*Endpoint, bool) {
+func (self *Balancer) Select(chain ChainRef, minHeight int, method string) (*Endpoint, bool) {
 
 	if eps, ok := self.chainIndex[chain]; ok {
-		if height < 0 && eps.maxTipHeight > 6 {
-			// chains who lags more than 6 blocks are
-			// considered unhealthy
-			height = eps.maxTipHeight - 6
-		}
 		for i := 0; i < len(eps.items); i++ {
 			idx := eps.cursor % len(eps.items)
 			eps.cursor += 1
 
 			ep := eps.items[idx]
+
+			height := minHeight
+			if height < 0 {
+				height = eps.maxTipHeight - ep.HeightPadding
+			}
 			if !ep.Healthy {
 				continue
 			}
@@ -92,6 +92,7 @@ func (self *Balancer) LoadFromConfig(config *Config) {
 		ep.Name = name
 		ep.Chain = chain
 		ep.ServerUrl = epcfg.Url
+		ep.HeightPadding = epcfg.HeightPadding
 		if epcfg.SkipMethods != nil {
 			ep.SkipMethods = make(map[string]bool)
 			for _, meth := range epcfg.SkipMethods {

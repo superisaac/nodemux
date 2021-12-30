@@ -14,7 +14,7 @@ import (
 
 /// Create an empty endpoint
 func NewEndpoint() *Endpoint {
-	ep := &Endpoint{Healthy: true}
+	ep := &Endpoint{Healthy: true, HeightPadding: 2}
 	return ep
 }
 
@@ -25,7 +25,10 @@ func (self *Endpoint) Connect() {
 			MaxIdleConnsPerHost: 10,
 			IdleConnTimeout:     30 * time.Second,
 		}
-		self.client = &http.Client{Transport: tr}
+		self.client = &http.Client{
+			Transport: tr,
+			Timeout:   5 * time.Second,
+		}
 	}
 }
 

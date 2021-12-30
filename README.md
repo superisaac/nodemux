@@ -1,2 +1,3 @@
 # nodeb
-blockchain node balancer
+reverse proxy and load balancer of blockchain nodes
+
