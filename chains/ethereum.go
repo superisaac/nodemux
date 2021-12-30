@@ -31,7 +31,7 @@ func (self *EthereumChain) GetTip(context context.Context, ep *balancer.Endpoint
 	if err != nil {
 		return nil, err
 	}
-	if resMsg.IsRequest() {
+	if resMsg.IsResult() {
 		bt := RPCBlock{}
 		err := mapstructure.Decode(resMsg.MustResult(), &bt)
 		if err != nil {

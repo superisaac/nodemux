@@ -8,15 +8,15 @@ import (
 )
 
 var (
-	_balancer *Balancer
+	_instance *Balancer
 	once      sync.Once
 )
 
 func GetBalancer() *Balancer {
 	once.Do(func() {
-		_balancer = NewBalancer()
+		_instance = NewBalancer()
 	})
-	return _balancer
+	return _instance
 }
 
 func NewBalancer() *Balancer {
@@ -24,20 +24,6 @@ func NewBalancer() *Balancer {
 	b.adaptors = make(map[string]ChainAdaptor)
 	b.Reset()
 	return b
-}
-
-func BalancerFromContext(ctx context.Context) *Balancer {
-	if v := ctx.Value("node-balancer"); v != nil {
-		if factory, ok := v.(*Balancer); ok {
-			return factory
-		}
-		panic("context value router is not a balancer instance")
-	}
-	panic("context does not have balancer instance")
-}
-
-func (self *Balancer) BindToContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, "node-balancer", self)
 }
 
 func (self *Balancer) Reset() {

@@ -2,13 +2,16 @@ package balancer
 
 import (
 	"context"
+	"time"
 	//log "github.com/sirupsen/logrus"
 )
 
-func (self *Balancer) SyncTip(rootCtx context.Context, ep *Endpoint) error {
+func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
+	logger := ep.Log()
 	adaptor := self.GetAdaptor(ep.Chain.Name)
 	block, err := adaptor.GetTip(rootCtx, ep)
 	if err != nil {
+		logger.Warnf("tip height error %+v", err)
 		ep.Healthy = false
 		return err
 	}
@@ -16,22 +19,41 @@ func (self *Balancer) SyncTip(rootCtx context.Context, ep *Endpoint) error {
 		ep.Healthy = true
 		if ep.Tip != nil {
 			if ep.Tip.Height > block.Height {
-				ep.Log().Warnf("new tip height %d < old tip height %d", block.Height, ep.Tip.Height)
+				logger.Warnf("new tip height %d < old tip height %d", block.Height, ep.Tip.Height)
 			} else if ep.Tip.Height == block.Height &&
 				ep.Tip.Hash != block.Hash {
-				ep.Log().Warnf("tip hash changed from %s to %s", ep.Tip.Hash, block.Hash)
+				logger.Warnf("tip hash changed from %s to %s", ep.Tip.Hash, block.Hash)
 			}
 		}
 		ep.Tip = block
 		if epset, ok := self.chainIndex[ep.Chain]; ok {
 			if epset.maxTipHeight < block.Height {
 				epset.maxTipHeight = block.Height
+				ep.Chain.Log().Infof("max tip height set to %d", epset.maxTipHeight)
 			}
 		} else {
-			ep.Log().Panicf("cnnot get epset by chain %+v", ep.Chain)
+			logger.Panicf("cnnot get epset by chain %+v", ep.Chain)
 		}
 	} else {
-		ep.Log().Warnf("got nil tip block when accessing %s %s", ep.Name, ep.ServerUrl)
+		logger.Warnf("got nil tip block when accessing %s %s", ep.Name, ep.ServerUrl)
 	}
 	return nil
+}
+
+func (self *Balancer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
+	for {
+		err := self.syncTip(rootCtx, ep)
+		if err != nil {
+			// unhealthy
+			time.Sleep(15 * time.Second)
+		} else {
+			time.Sleep(1 * time.Second)
+		}
+	}
+}
+
+func (self *Balancer) StartSync(rootCtx context.Context) {
+	for _, ep := range self.nameIndex {
+		go self.syncEndpoint(rootCtx, ep)
+	}
 }

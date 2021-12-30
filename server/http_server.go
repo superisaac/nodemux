@@ -118,7 +118,7 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	reqmsg, _ := msg.(*jsonrpc.RequestMessage)
-	blcer := balancer.BalancerFromContext(self.rootCtx)
+	blcer := balancer.GetBalancer()
 
 	resmsg, err := blcer.RelayMessage(self.rootCtx, chain, reqmsg)
 	if err != nil {
