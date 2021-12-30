@@ -1,9 +1,10 @@
 package balancer
 
 import (
-	"sync"
-	//yaml "gopkg.in/yaml.v2"
+	"context"
 	log "github.com/sirupsen/logrus"
+	"github.com/superisaac/jsonrpc"
+	"sync"
 )
 
 var (
@@ -114,4 +115,13 @@ func (self Balancer) GetAdaptor(chain string) ChainAdaptor {
 	}
 	log.Panicf("chain %s not supported", chain)
 	return nil
+}
+
+func (self *Balancer) RelayMessage(rootCtx context.Context, chain ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+	ep, found := self.Select(chain, -1, reqmsg.Method)
+	if !found {
+		return jsonrpc.ErrMethodNotFound.ToMessage(reqmsg), nil
+	}
+	resmsg, err := ep.CallHTTP(rootCtx, reqmsg)
+	return resmsg, err
 }
