@@ -26,6 +26,20 @@ func NewBalancer() *Balancer {
 	return b
 }
 
+func BalancerFromContext(ctx context.Context) *Balancer {
+	if v := ctx.Value("node-balancer"); v != nil {
+		if factory, ok := v.(*Balancer); ok {
+			return factory
+		}
+		panic("context value router is not a balancer instance")
+	}
+	panic("context does not have balancer instance")
+}
+
+func (self *Balancer) BindToContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, "node-balancer", self)
+}
+
 func (self *Balancer) Reset() {
 	self.nameIndex = make(map[string]*Endpoint)
 	self.chainIndex = make(map[ChainRef]*EPSet)

@@ -23,6 +23,15 @@ func NewConfig() *Config {
 	return cfg
 }
 
+func ConfigFromFile(yamlPath string) *Config {
+	cfg := NewConfig()
+	err := cfg.Load(yamlPath)
+	if err != nil {
+		panic(err)
+	}
+	return cfg
+}
+
 func (self *Config) validateValues() error {
 	if self.Version == "" {
 		self.Version = "1.0"
