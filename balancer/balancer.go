@@ -4,19 +4,29 @@ import (
 	"context"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonrpc"
-	"sync"
+	//"sync"
 )
 
 var (
 	_instance *Balancer
-	once      sync.Once
+	//once      sync.Once
 )
 
 func GetBalancer() *Balancer {
-	once.Do(func() {
-		_instance = NewBalancer()
-	})
+	//once.Do(func() {
+	//	_instance = NewBalancer()
+	//})
+	if _instance == nil {
+		log.Panicf("Balancer instance is nil")
+	}
 	return _instance
+}
+
+func SetBalancer(b *Balancer) {
+	if _instance != nil {
+		_instance.StopSync()
+	}
+	_instance = b
 }
 
 func NewBalancer() *Balancer {
@@ -34,6 +44,7 @@ func (self *Balancer) Reset() {
 func (self *Balancer) Add(endpoint *Endpoint) bool {
 	if _, exist := self.nameIndex[endpoint.Name]; exist {
 		// already exist
+		log.Warnf("endpoint %s already exist", endpoint.Name)
 		return false
 	}
 	self.nameIndex[endpoint.Name] = endpoint

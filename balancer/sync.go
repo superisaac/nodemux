@@ -42,6 +42,9 @@ func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
 
 func (self *Balancer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
 	for {
+		if !self.syncing {
+			break
+		}
 		err := self.syncTip(rootCtx, ep)
 		if err != nil {
 			// unhealthy
@@ -53,7 +56,12 @@ func (self *Balancer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
 }
 
 func (self *Balancer) StartSync(rootCtx context.Context) {
+	self.syncing = true
 	for _, ep := range self.nameIndex {
 		go self.syncEndpoint(rootCtx, ep)
 	}
+}
+
+func (self *Balancer) StopSync() {
+	self.syncing = false
 }

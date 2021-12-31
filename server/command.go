@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func SetupLogger() {
+func setupLogger() {
 	log.SetFormatter(&log.JSONFormatter{
 		TimestampFormat: time.RFC3339Nano,
 	})
@@ -52,14 +52,15 @@ func CommandStartServer() {
 	// parse config
 	serverFlags.Parse(os.Args[1:])
 
-	SetupLogger()
+	setupLogger()
 
 	cfg := balancer.ConfigFromFile(*pYamlPath)
 
-	b := balancer.GetBalancer()
+	b := balancer.NewBalancer()
 	chains.InstallAdaptors(b)
-
 	b.LoadFromConfig(cfg)
+
+	balancer.SetBalancer(b)
 
 	rootCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()

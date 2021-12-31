@@ -5,6 +5,21 @@ import (
 	"net/http"
 )
 
+// configs
+type EndpointConfig struct {
+	Chain         string   `yaml:"chain"`
+	Network       string   `yaml:"network"`
+	Url           string   `yaml:"url"`
+	SkipMethods   []string `yaml:"skip_methods,omitempty"`
+	HeightPadding int      `yaml:"height_padding,omitempty"`
+}
+
+type Config struct {
+	Version   string                    `yaml:"version,omitempty"`
+	Endpoints map[string]EndpointConfig `yaml:"endpoints"`
+}
+
+// data structures
 type Block struct {
 	Height   int
 	Hash     string
@@ -24,7 +39,7 @@ type Endpoint struct {
 	HeightPadding int
 	SkipMethods   map[string]bool
 
-	//
+	// dynamic items
 	Healthy bool
 	Tip     *Block
 
@@ -32,7 +47,7 @@ type Endpoint struct {
 }
 
 type EPSet struct {
-	items        []*Endpoint
+	items        []*Endpoint // endpoints of the same chain
 	cursor       int
 	maxTipHeight int
 }
@@ -49,4 +64,6 @@ type Balancer struct {
 	chainIndex map[ChainRef]*EPSet
 
 	adaptors map[string]ChainAdaptor
+
+	syncing bool
 }
