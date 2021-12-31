@@ -12,13 +12,13 @@ func NewConfig() *Config {
 	return cfg
 }
 
-func ConfigFromFile(yamlPath string) *Config {
+func ConfigFromFile(yamlPath string) (*Config, error) {
 	cfg := NewConfig()
 	err := cfg.Load(yamlPath)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return cfg
+	return cfg, nil
 }
 
 func (self *Config) validateValues() error {

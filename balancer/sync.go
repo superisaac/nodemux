@@ -41,6 +41,7 @@ func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
 }
 
 func (self *Balancer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
+	ep.Log().Info("sysnc job started")
 	for {
 		if !self.syncing {
 			break
@@ -53,6 +54,7 @@ func (self *Balancer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
 			time.Sleep(1 * time.Second)
 		}
 	}
+	ep.Log().Info("sync job stopped")
 }
 
 func (self *Balancer) StartSync(rootCtx context.Context) {
