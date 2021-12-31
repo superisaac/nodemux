@@ -2,8 +2,8 @@ package balancer
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 	"time"
-	//log "github.com/sirupsen/logrus"
 )
 
 func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
@@ -42,28 +42,50 @@ func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
 
 func (self *Balancer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
 	ep.Log().Info("sysnc job started")
+	ctx, cancel := context.WithCancel(rootCtx)
+	defer cancel()
 	for {
-		if !self.syncing {
+		if !self.Syncing() {
 			break
 		}
-		err := self.syncTip(rootCtx, ep)
+		sleepTime := 1 * time.Second
+		err := self.syncTip(ctx, ep)
 		if err != nil {
 			// unhealthy
-			time.Sleep(15 * time.Second)
-		} else {
-			time.Sleep(1 * time.Second)
+			sleepTime = 15 * time.Second
+		}
+		select {
+		case <-ctx.Done():
+			break
+		case <-time.After(sleepTime):
+			break
 		}
 	}
 	ep.Log().Info("sync job stopped")
 }
 
+func (self Balancer) Syncing() bool {
+	return self.cancelSync != nil
+}
+
 func (self *Balancer) StartSync(rootCtx context.Context) {
-	self.syncing = true
+	//self.syncing = true
+	if self.Syncing() {
+		log.Warn("sync alredy started")
+		return
+	}
+	ctx, cancel := context.WithCancel(rootCtx)
+	self.cancelSync = cancel
 	for _, ep := range self.nameIndex {
-		go self.syncEndpoint(rootCtx, ep)
+		go self.syncEndpoint(ctx, ep)
 	}
 }
 
 func (self *Balancer) StopSync() {
-	self.syncing = false
+	//self.syncing = false
+	if self.Syncing() {
+		cancel := self.cancelSync
+		self.cancelSync = nil
+		cancel()
+	}
 }

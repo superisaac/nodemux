@@ -65,5 +65,5 @@ type Balancer struct {
 
 	adaptors map[string]ChainAdaptor
 
-	syncing bool
+	cancelSync func()
 }
