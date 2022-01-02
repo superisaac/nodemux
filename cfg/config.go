@@ -1,4 +1,4 @@
-package balancer
+package cfg
 
 import (
 	yaml "gopkg.in/yaml.v2"

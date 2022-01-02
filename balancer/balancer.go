@@ -4,6 +4,7 @@ import (
 	"context"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonrpc"
+	"github.com/superisaac/nodeb/cfg"
 	//"sync"
 )
 
@@ -96,8 +97,8 @@ func (self *Balancer) Select(chain ChainRef, minHeight int, method string) (*End
 	return nil, false
 }
 
-func (self *Balancer) LoadFromConfig(config *Config) {
-	for name, epcfg := range config.Endpoints {
+func (self *Balancer) LoadFromConfig(epcfgs map[string]cfg.EndpointConfig) {
+	for name, epcfg := range epcfgs {
 		ep := NewEndpoint()
 		chain := ChainRef{Name: epcfg.Chain, Network: epcfg.Network}
 		ep.Name = name

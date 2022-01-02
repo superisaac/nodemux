@@ -6,6 +6,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/nodeb/balancer"
+	"github.com/superisaac/nodeb/cfg"
 	"github.com/superisaac/nodeb/chains"
 	"os"
 	"time"
@@ -74,15 +75,17 @@ func watchConfig(rootCtx context.Context, yamlPath string) {
 
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				log.Infof("watch config, file %s changed, event %#v", yamlPath, event)
-				cfg, err := balancer.ConfigFromFile(event.Name)
+				cfg, err := cfg.ConfigFromFile(event.Name)
 				if err != nil {
 					log.Warnf("error config %s", err)
 				} else {
 					b := balancer.NewBalancer()
 					chains.InstallAdaptors(b)
-					b.LoadFromConfig(cfg)
-					balancer.SetBalancer(b)
+					b.LoadFromConfig(cfg.Endpoints)
 					b.StartSync(rootCtx)
+					time.Sleep(1 * time.Second)
+					balancer.SetBalancer(b)
+
 				}
 			}
 		case err, ok := <-watcher.Errors:
@@ -97,7 +100,7 @@ func watchConfig(rootCtx context.Context, yamlPath string) {
 
 func CommandStartServer() {
 	serverFlags := flag.NewFlagSet("jointrpc-server", flag.ExitOnError)
-	pYamlPath := serverFlags.String("f", "chains.yml", "path to chains.yml")
+	pYamlPath := serverFlags.String("f", "nodeb.yml", "path to nodeb.yml")
 	pWatchConfig := serverFlags.Bool("w", false, "watch config changes using fsnotify")
 
 	pBind := serverFlags.String("b", "127.0.0.1:9000", "The http server address and port")
@@ -111,13 +114,13 @@ func CommandStartServer() {
 
 	setupLogger(*pLogfile)
 
-	cfg, err := balancer.ConfigFromFile(*pYamlPath)
+	cfg, err := cfg.ConfigFromFile(*pYamlPath)
 	if err != nil {
 		panic(err)
 	}
 	b := balancer.NewBalancer()
 	chains.InstallAdaptors(b)
-	b.LoadFromConfig(cfg)
+	b.LoadFromConfig(cfg.Endpoints)
 
 	balancer.SetBalancer(b)
 
