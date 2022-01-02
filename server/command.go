@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"flag"
+	"fmt"
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/nodeb/balancer"
@@ -113,6 +114,13 @@ func CommandStartServer() {
 	serverFlags.Parse(os.Args[1:])
 
 	setupLogger(*pLogfile)
+
+	yamlPath := *pYamlPath
+
+	if _, err := os.Stat(yamlPath); err != nil && os.IsNotExist(err) {
+		fmt.Fprintf(os.Stderr, "config yaml not exist\n")
+		os.Exit(1)
+	}
 
 	cfg, err := cfg.ConfigFromFile(*pYamlPath)
 	if err != nil {
