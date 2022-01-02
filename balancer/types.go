@@ -31,6 +31,12 @@ type ChainRef struct {
 	Network string
 }
 
+type AbnormalResponse struct {
+	Code        int
+	ContentType string
+	Body        []byte
+}
+
 type Endpoint struct {
 	// configured items
 	Name          string
@@ -52,7 +58,7 @@ type EPSet struct {
 	maxTipHeight int
 }
 
-type ChainAdaptor interface {
+type ChainDelegator interface {
 	GetTip(context context.Context, ep *Endpoint) (*Block, error)
 }
 
@@ -63,7 +69,7 @@ type Balancer struct {
 	// the chain -> name map, the secondary index
 	chainIndex map[ChainRef]*EPSet
 
-	adaptors map[string]ChainAdaptor
+	delegators map[string]ChainDelegator
 
 	cancelSync func()
 }

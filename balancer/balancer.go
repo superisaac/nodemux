@@ -31,7 +31,7 @@ func SetBalancer(b *Balancer) {
 
 func NewBalancer() *Balancer {
 	b := new(Balancer)
-	b.adaptors = make(map[string]ChainAdaptor)
+	b.delegators = make(map[string]ChainDelegator)
 	b.Reset()
 	return b
 }
@@ -114,16 +114,16 @@ func (self *Balancer) LoadFromConfig(config *Config) {
 	}
 }
 
-// ChainAdaptors
-func (self *Balancer) Register(adaptor ChainAdaptor, chains ...string) {
+// ChainDelegators
+func (self *Balancer) Register(delegator ChainDelegator, chains ...string) {
 	for _, chain := range chains {
-		self.adaptors[chain] = adaptor
+		self.delegators[chain] = delegator
 	}
 }
 
-func (self Balancer) GetAdaptor(chain string) ChainAdaptor {
-	if adaptor, ok := self.adaptors[chain]; ok {
-		return adaptor
+func (self Balancer) GetDelegator(chain string) ChainDelegator {
+	if delegator, ok := self.delegators[chain]; ok {
+		return delegator
 	}
 	log.Panicf("chain %s not supported", chain)
 	return nil

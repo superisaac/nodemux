@@ -8,10 +8,10 @@ import (
 
 func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
 	logger := ep.Log()
-	adaptor := self.GetAdaptor(ep.Chain.Name)
-	block, err := adaptor.GetTip(rootCtx, ep)
+	delegator := self.GetDelegator(ep.Chain.Name)
+	block, err := delegator.GetTip(rootCtx, ep)
 	if err != nil {
-		logger.Warnf("mark unhealthy due to tip height error %+v", err)
+		logger.Warnf("mark unhealthy due to tip height error %s", err)
 		ep.Healthy = false
 		return err
 	}
@@ -32,7 +32,7 @@ func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
 				ep.Chain.Log().Infof("max tip height set to %d", epset.maxTipHeight)
 			}
 		} else {
-			logger.Panicf("cnnot get epset by chain %+v", ep.Chain)
+			logger.Panicf("cnnot get epset by chain %s", ep.Chain)
 		}
 	} else {
 		logger.Warnf("got nil tip block when accessing %s %s", ep.Name, ep.ServerUrl)

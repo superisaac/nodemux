@@ -11,12 +11,14 @@ import (
 	"time"
 )
 
-func setupLogger() {
+func setupLogger(logOutput string) {
 	log.SetFormatter(&log.JSONFormatter{
 		TimestampFormat: time.RFC3339Nano,
 	})
 
-	logOutput := os.Getenv("LOG_OUTPUT")
+	if logOutput == "" {
+		logOutput = os.Getenv("LOG_OUTPUT")
+	}
 	if logOutput == "" || logOutput == "console" || logOutput == "stdout" {
 		log.SetOutput(os.Stdout)
 	} else if logOutput == "stderr" {
@@ -45,6 +47,7 @@ func setupLogger() {
 }
 
 func watchConfig(rootCtx context.Context, yamlPath string) {
+	log.Infof("watch the config %s", yamlPath)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		panic(err)
@@ -95,13 +98,18 @@ func watchConfig(rootCtx context.Context, yamlPath string) {
 func CommandStartServer() {
 	serverFlags := flag.NewFlagSet("jointrpc-server", flag.ExitOnError)
 	pYamlPath := serverFlags.String("f", "chains.yml", "path to chains.yml")
+	pWatchConfig := serverFlags.Bool("w", false, "watch config changes using fsnotify")
+
 	pBind := serverFlags.String("b", "127.0.0.1:9000", "The http server address and port")
 	pCertfile := serverFlags.String("cert", "", "tls cert file")
 	pKeyfile := serverFlags.String("key", "", "tls key file")
+
+	pLogfile := serverFlags.String("log", "", "path to log output, default is stdout")
+
 	// parse config
 	serverFlags.Parse(os.Args[1:])
 
-	setupLogger()
+	setupLogger(*pLogfile)
 
 	cfg, err := balancer.ConfigFromFile(*pYamlPath)
 	if err != nil {
@@ -118,7 +126,9 @@ func CommandStartServer() {
 
 	b.StartSync(rootCtx)
 
-	go watchConfig(rootCtx, *pYamlPath)
+	if *pWatchConfig {
+		go watchConfig(rootCtx, *pYamlPath)
+	}
 
 	var httpOpts []HTTPOptionFunc
 	if *pCertfile != "" && *pKeyfile != "" {
