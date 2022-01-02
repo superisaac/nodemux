@@ -29,7 +29,7 @@ func TestBalancer(t *testing.T) {
 	assert.Equal(1, len(b.nameIndex))
 	assert.Equal(1, len(b.chainIndex))
 
-	ep1, ok := b.Select(chain, -1, "")
+	ep1, ok := b.SelectOverHeight(chain, "", -1)
 	assert.True(ok)
 	assert.Equal(ep.ServerUrl, ep1.ServerUrl)
 

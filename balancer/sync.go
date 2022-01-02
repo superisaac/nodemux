@@ -9,7 +9,7 @@ import (
 func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
 	logger := ep.Log()
 	delegator := self.GetDelegator(ep.Chain.Name)
-	block, err := delegator.GetTip(rootCtx, ep)
+	block, err := delegator.GetTip(rootCtx, self, ep)
 	if err != nil {
 		logger.Warnf("mark unhealthy due to tip height error %s", err)
 		ep.Healthy = false

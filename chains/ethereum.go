@@ -23,7 +23,7 @@ func NewEthereumChain() *EthereumChain {
 	return &EthereumChain{}
 }
 
-func (self *EthereumChain) GetTip(context context.Context, ep *balancer.Endpoint) (*balancer.Block, error) {
+func (self *EthereumChain) GetTip(context context.Context, b *balancer.Balancer, ep *balancer.Endpoint) (*balancer.Block, error) {
 	reqMsg := jsonrpc.NewRequestMessage(
 		1, "eth_getBlockByNumber",
 		[]interface{}{"latest", false})
@@ -52,4 +52,9 @@ func (self *EthereumChain) GetTip(context context.Context, ep *balancer.Endpoint
 		return nil, errors.New(fmt.Sprintf("Get tip error %d %s", errBody.Code, errBody.Message))
 	}
 
+}
+
+func (self *EthereumChain) RelayMessage(rootCtx context.Context, b *balancer.Balancer, chain balancer.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+	// Custom relay methods can be defined here
+	return b.DefaultRelayMessage(rootCtx, chain, reqmsg)
 }

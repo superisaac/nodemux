@@ -13,13 +13,21 @@ import (
 )
 
 func (self AbnormalResponse) Error() string {
-	return fmt.Sprintf("Abnormal response %d %s %s", self.Code, self.ContentType, self.Body[0:30])
+	//return fmt.Sprintf("Abnormal response %d %s", self.Code, self.Body[0:30])
+	return fmt.Sprintf("Abnormal response %d", self.Response.StatusCode)
 }
 
 /// Create an empty endpoint
 func NewEndpoint() *Endpoint {
-	ep := &Endpoint{Healthy: true, HeightPadding: 2}
-	return ep
+	return &Endpoint{Healthy: true, HeightPadding: 2}
+}
+
+func (self Endpoint) Log() *log.Entry {
+	return log.WithFields(log.Fields{
+		"chain":   self.Chain.Name,
+		"network": self.Chain.Network,
+		"name":    self.Name,
+	})
 }
 
 func (self *Endpoint) Connect() {
@@ -64,16 +72,14 @@ func (self *Endpoint) CallHTTP(rootCtx context.Context, reqmsg *jsonrpc.RequestM
 	}
 	if resp.StatusCode != 200 {
 		self.Log().Warnf("invalid response status %d", resp.StatusCode)
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, errors.Wrap(err, "ioutil.ReadAll")
+		abnResp := &AbnormalResponse{
+			//Code: resp.StatusCode,
+			// TODO: filter scam headers
+			//Header: resp.Header,
+			//Body:   body,
+			Response: resp,
 		}
-		errResp := &AbnormalResponse{
-			Code:        resp.StatusCode,
-			ContentType: resp.Header.Get("Content-Type"),
-			Body:        body,
-		}
-		return nil, errors.Wrap(errResp, "abnormal response")
+		return nil, errors.Wrap(abnResp, "abnormal response")
 		//return nil, errors.New(fmt.Sprintf("bad resp %d", resp.StatusCode))
 	}
 	defer resp.Body.Close()
@@ -88,12 +94,4 @@ func (self *Endpoint) CallHTTP(rootCtx context.Context, reqmsg *jsonrpc.RequestM
 	}
 	respMsg.SetTraceId(traceId)
 	return respMsg, nil
-}
-
-func (self Endpoint) Log() *log.Entry {
-	return log.WithFields(log.Fields{
-		"chain":   self.Chain.Name,
-		"network": self.Chain.Network,
-		"name":    self.Name,
-	})
 }

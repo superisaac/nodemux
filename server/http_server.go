@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonrpc"
 	"github.com/superisaac/nodeb/balancer"
+	"io"
 	"net"
 	"net/http"
 	"regexp"
@@ -120,8 +121,27 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	reqmsg, _ := msg.(*jsonrpc.RequestMessage)
 	blcer := balancer.GetBalancer()
 
-	resmsg, err := blcer.RelayMessage(self.rootCtx, chain, reqmsg)
+	delegator := blcer.GetDelegator(chain.Name)
+	if delegator == nil {
+		jsonrpc.ErrorResponse(w, r, err, 404, "backend not found")
+		return
+	}
+
+	resmsg, err := delegator.RelayMessage(self.rootCtx, blcer, chain, reqmsg)
 	if err != nil {
+		// put the original http response
+		var abnErr *balancer.AbnormalResponse
+		if errors.As(err, &abnErr) {
+			for hn, hvs := range abnErr.Response.Header {
+				// TODO: filter scan headers
+				for _, hv := range hvs {
+					w.Header().Add(hn, hv)
+				}
+			}
+			w.WriteHeader(abnErr.Response.StatusCode)
+			io.Copy(w, abnErr.Response.Body)
+			return
+		}
 		jsonrpc.ErrorResponse(w, r, err, 500, "Server error")
 		return
 	}

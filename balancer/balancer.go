@@ -61,7 +61,31 @@ func (self *Balancer) Add(endpoint *Endpoint) bool {
 	return true
 }
 
-func (self *Balancer) Select(chain ChainRef, minHeight int, method string) (*Endpoint, bool) {
+func (self *Balancer) Select(chain ChainRef, method string) (*Endpoint, bool) {
+	if eps, ok := self.chainIndex[chain]; ok {
+		for i := 0; i < len(eps.items); i++ {
+			idx := eps.cursor % len(eps.items)
+			eps.cursor += 1
+
+			ep := eps.items[idx]
+			if !ep.Healthy {
+				continue
+			}
+
+			if method != "" && ep.SkipMethods != nil {
+				if _, ok := ep.SkipMethods[method]; ok {
+					// the method is not provided by the endpoint, so skip it
+					continue
+				}
+			}
+
+			return ep, true
+		}
+	}
+	return nil, false
+}
+
+func (self *Balancer) SelectOverHeight(chain ChainRef, method string, heightSpec int) (*Endpoint, bool) {
 
 	if eps, ok := self.chainIndex[chain]; ok {
 		for i := 0; i < len(eps.items); i++ {
@@ -70,9 +94,9 @@ func (self *Balancer) Select(chain ChainRef, minHeight int, method string) (*End
 
 			ep := eps.items[idx]
 
-			height := minHeight
-			if height < 0 {
-				height = eps.maxTipHeight - ep.HeightPadding
+			height := heightSpec
+			if heightSpec < 0 {
+				height = eps.maxTipHeight + heightSpec
 			}
 			if !ep.Healthy {
 				continue
@@ -104,7 +128,6 @@ func (self *Balancer) LoadFromConfig(epcfgs map[string]cfg.EndpointConfig) {
 		ep.Name = name
 		ep.Chain = chain
 		ep.ServerUrl = epcfg.Url
-		ep.HeightPadding = epcfg.HeightPadding
 		if epcfg.SkipMethods != nil {
 			ep.SkipMethods = make(map[string]bool)
 			for _, meth := range epcfg.SkipMethods {
@@ -130,8 +153,8 @@ func (self Balancer) GetDelegator(chain string) ChainDelegator {
 	return nil
 }
 
-func (self *Balancer) RelayMessage(rootCtx context.Context, chain ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
-	ep, found := self.Select(chain, -1, reqmsg.Method)
+func (self *Balancer) DefaultRelayMessage(rootCtx context.Context, chain ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+	ep, found := self.Select(chain, reqmsg.Method)
 	if !found {
 		return jsonrpc.ErrMethodNotFound.ToMessage(reqmsg), nil
 	}

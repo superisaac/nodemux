@@ -2,6 +2,7 @@ package balancer
 
 import (
 	"context"
+	"github.com/superisaac/jsonrpc"
 	"net/http"
 )
 
@@ -18,9 +19,10 @@ type ChainRef struct {
 }
 
 type AbnormalResponse struct {
-	Code        int
-	ContentType string
-	Body        []byte
+	//Code int
+	//Header map[string][]string
+	//Body   []byte
+	Response *http.Response
 }
 
 type Endpoint struct {
@@ -45,7 +47,8 @@ type EPSet struct {
 }
 
 type ChainDelegator interface {
-	GetTip(context context.Context, ep *Endpoint) (*Block, error)
+	GetTip(ctx context.Context, b *Balancer, ep *Endpoint) (*Block, error)
+	RelayMessage(ctx context.Context, b *Balancer, chain ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error)
 }
 
 type Balancer struct {
