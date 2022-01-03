@@ -2,7 +2,7 @@ package chains
 
 import (
 	"context"
-	"fmt"
+	//"fmt"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -11,8 +11,8 @@ import (
 )
 
 type EthereumBlock struct {
-	Number   string `mapstructure,"number"`
-	Hash     string `mapstructure,"hash"`
+	Number     string `mapstructure,"number"`
+	Hash       string `mapstructure,"hash"`
 	ParentHash string `mapstructure,"parentHash"`
 }
 
@@ -49,7 +49,7 @@ func (self *EthereumChain) GetTip(context context.Context, b *balancer.Balancer,
 		return block, nil
 	} else {
 		errBody := resMsg.MustError()
-		return nil, errors.New(fmt.Sprintf("Get tip error %d %s", errBody.Code, errBody.Message))
+		return nil, errBody
 	}
 
 }
