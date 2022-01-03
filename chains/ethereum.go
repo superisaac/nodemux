@@ -10,10 +10,10 @@ import (
 	"github.com/superisaac/nodeb/balancer"
 )
 
-type RPCBlock struct {
+type EthereumBlock struct {
 	Number   string `mapstructure,"number"`
 	Hash     string `mapstructure,"hash"`
-	PrevHash string `mapstructure,"prevhash"`
+	ParentHash string `mapstructure,"parentHash"`
 }
 
 type EthereumChain struct {
@@ -32,7 +32,7 @@ func (self *EthereumChain) GetTip(context context.Context, b *balancer.Balancer,
 		return nil, err
 	}
 	if resMsg.IsResult() {
-		bt := RPCBlock{}
+		bt := EthereumBlock{}
 		err := mapstructure.Decode(resMsg.MustResult(), &bt)
 		if err != nil {
 			return nil, errors.Wrap(err, "decode rpcblock")
@@ -44,7 +44,7 @@ func (self *EthereumChain) GetTip(context context.Context, b *balancer.Balancer,
 		block := &balancer.Block{
 			Height:   int(height),
 			Hash:     bt.Hash,
-			PrevHash: bt.PrevHash,
+			PrevHash: bt.ParentHash,
 		}
 		return block, nil
 	} else {
@@ -54,7 +54,7 @@ func (self *EthereumChain) GetTip(context context.Context, b *balancer.Balancer,
 
 }
 
-func (self *EthereumChain) RelayMessage(rootCtx context.Context, b *balancer.Balancer, chain balancer.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+func (self *EthereumChain) RequestReceived(rootCtx context.Context, b *balancer.Balancer, chain balancer.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayMessage(rootCtx, chain, reqmsg)
 }

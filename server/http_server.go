@@ -127,19 +127,20 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resmsg, err := delegator.RelayMessage(self.rootCtx, blcer, chain, reqmsg)
+	resmsg, err := delegator.RequestReceived(self.rootCtx, blcer, chain, reqmsg)
 	if err != nil {
 		// put the original http response
 		var abnErr *balancer.AbnormalResponse
 		if errors.As(err, &abnErr) {
-			for hn, hvs := range abnErr.Response.Header {
+			origResp := abnErr.Response
+			for hn, hvs := range origResp.Header {
 				// TODO: filter scan headers
 				for _, hv := range hvs {
 					w.Header().Add(hn, hv)
 				}
 			}
-			w.WriteHeader(abnErr.Response.StatusCode)
-			io.Copy(w, abnErr.Response.Body)
+			w.WriteHeader(origResp.StatusCode)
+			io.Copy(w, origResp.Body)
 			return
 		}
 		jsonrpc.ErrorResponse(w, r, err, 500, "Server error")

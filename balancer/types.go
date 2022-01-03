@@ -48,7 +48,7 @@ type EPSet struct {
 
 type ChainDelegator interface {
 	GetTip(ctx context.Context, b *Balancer, ep *Endpoint) (*Block, error)
-	RelayMessage(ctx context.Context, b *Balancer, chain ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error)
+	RequestReceived(ctx context.Context, b *Balancer, chain ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error)
 }
 
 type Balancer struct {
