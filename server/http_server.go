@@ -38,7 +38,7 @@ func StartHTTPServer(rootCtx context.Context, bind string, opts ...HTTPOptionFun
 	mux := http.NewServeMux()
 	//mux.Handle("/metrics", NewMetricsCollector(rootCtx))
 	//mux.Handle("/ws", NewWSServer(rootCtx))
-	mux.Handle("/", NewRPCRelayer(rootCtx))
+	mux.Handle("/jsonrpc", NewRPCRelayer(rootCtx))
 
 	server := &http.Server{Addr: bind, Handler: mux}
 	listener, err := net.Listen("tcp", bind)
@@ -69,7 +69,7 @@ func StartHTTPServer(rootCtx context.Context, bind string, opts ...HTTPOptionFun
 	}
 }
 
-// JSONRPC HTTP Server
+// JSONRPC Handler
 type RPCRelayer struct {
 	rootCtx context.Context
 	regex   *regexp.Regexp
@@ -78,7 +78,7 @@ type RPCRelayer struct {
 func NewRPCRelayer(rootCtx context.Context) *RPCRelayer {
 	return &RPCRelayer{
 		rootCtx: rootCtx,
-		regex:   regexp.MustCompile(`^([^/]+)/([^/]+)$`),
+		regex:   regexp.MustCompile(`^/jsonrpc/([^/]+)/([^/]+)$`),
 	}
 }
 

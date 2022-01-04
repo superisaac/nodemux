@@ -27,7 +27,7 @@ func (self *EthereumChain) GetTip(context context.Context, b *balancer.Balancer,
 	reqMsg := jsonrpc.NewRequestMessage(
 		1, "eth_getBlockByNumber",
 		[]interface{}{"latest", false})
-	resMsg, err := ep.CallHTTP(context, reqMsg)
+	resMsg, err := ep.CallRPC(context, reqMsg)
 	if err != nil {
 		return nil, err
 	}

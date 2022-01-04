@@ -25,7 +25,7 @@ func NewBitcoinChain() *BitcoinChain {
 func (self *BitcoinChain) GetTip(context context.Context, b *balancer.Balancer, ep *balancer.Endpoint) (*balancer.Block, error) {
 	reqMsg := jsonrpc.NewRequestMessage(
 		1, "getchaintips", []interface{}{})
-	resMsg, err := ep.CallHTTP(context, reqMsg)
+	resMsg, err := ep.CallRPC(context, reqMsg)
 	if err != nil {
 		return nil, err
 	}

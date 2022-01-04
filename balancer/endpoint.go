@@ -44,7 +44,7 @@ func (self *Endpoint) Connect() {
 	}
 }
 
-func (self *Endpoint) CallHTTP(rootCtx context.Context, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
 	self.Connect()
 
 	traceId := reqmsg.TraceId()

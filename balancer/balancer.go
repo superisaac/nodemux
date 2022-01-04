@@ -32,7 +32,7 @@ func SetBalancer(b *Balancer) {
 
 func NewBalancer() *Balancer {
 	b := new(Balancer)
-	b.delegators = make(map[string]ChainDelegator)
+	b.rpcDelegators = make(map[string]RPCDelegator)
 	b.Reset()
 	return b
 }
@@ -138,15 +138,15 @@ func (self *Balancer) LoadFromConfig(epcfgs map[string]cfg.EndpointConfig) {
 	}
 }
 
-// ChainDelegators
-func (self *Balancer) Register(delegator ChainDelegator, chains ...string) {
+// RPC delegators
+func (self *Balancer) Register(delegator RPCDelegator, chains ...string) {
 	for _, chain := range chains {
-		self.delegators[chain] = delegator
+		self.rpcDelegators[chain] = delegator
 	}
 }
 
-func (self Balancer) GetDelegator(chain string) ChainDelegator {
-	if delegator, ok := self.delegators[chain]; ok {
+func (self Balancer) GetDelegator(chain string) RPCDelegator {
+	if delegator, ok := self.rpcDelegators[chain]; ok {
 		return delegator
 	}
 	log.Panicf("chain %s not supported", chain)
@@ -158,6 +158,6 @@ func (self *Balancer) DefaultRelayMessage(rootCtx context.Context, chain ChainRe
 	if !found {
 		return jsonrpc.ErrMethodNotFound.ToMessage(reqmsg), nil
 	}
-	resmsg, err := ep.CallHTTP(rootCtx, reqmsg)
+	resmsg, err := ep.CallRPC(rootCtx, reqmsg)
 	return resmsg, err
 }

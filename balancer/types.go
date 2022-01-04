@@ -46,7 +46,7 @@ type EPSet struct {
 	maxTipHeight int
 }
 
-type ChainDelegator interface {
+type RPCDelegator interface {
 	GetTip(ctx context.Context, b *Balancer, ep *Endpoint) (*Block, error)
 	RequestReceived(ctx context.Context, b *Balancer, chain ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error)
 }
@@ -58,7 +58,7 @@ type Balancer struct {
 	// the chain -> name map, the secondary index
 	chainIndex map[ChainRef]*EPSet
 
-	delegators map[string]ChainDelegator
+	rpcDelegators map[string]RPCDelegator
 
 	cancelSync func()
 }
