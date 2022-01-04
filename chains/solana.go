@@ -41,7 +41,6 @@ func (self *SolanaChain) GetTip(context context.Context, b *balancer.Balancer, e
 		if err != nil {
 			return nil, errors.Wrap(err, "decode rpcblock")
 		}
-		// TODO: get block hash, currently tip.hash is not necessary
 		block := &balancer.Block{
 			Height: bt.Value.Height,
 			Hash:   bt.Value.Blockhash,

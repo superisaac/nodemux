@@ -140,7 +140,7 @@ func (self *Balancer) LoadFromConfig(epcfgs map[string]cfg.EndpointConfig) {
 }
 
 // RPC delegators
-func (self *Balancer) Register(delegator RPCDelegator, chains ...string) {
+func (self *Balancer) RegisterRPC(delegator RPCDelegator, chains ...string) {
 	for _, chain := range chains {
 		self.rpcDelegators[chain] = delegator
 	}

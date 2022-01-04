@@ -5,12 +5,14 @@ import (
 )
 
 func InstallAdaptors(balancer *balancer.Balancer) {
-	balancer.Register(NewEthereumChain(),
+	balancer.RegisterRPC(NewEthereumChain(),
 		"ethereum", "binance-chain", "polygon", "okex-token", "huobi-token", "ethereum-classic")
 
-	balancer.Register(NewFilecoinChain(), "filecoin")
-	balancer.Register(NewSolanaChain(), "solana")
+	balancer.RegisterRPC(NewFilecoinChain(), "filecoin")
+	balancer.RegisterRPC(NewSolanaChain(), "solana")
+	balancer.RegisterRPC(NewStarcoinChain(), "starcoin")
+	balancer.RegisterRPC(NewPolkadotChain(), "polkadot", "kusama")
 
-	balancer.Register(NewBitcoinChain(),
+	balancer.RegisterRPC(NewBitcoinChain(),
 		"bitcoin", "litecoin", "dogecoin", "dashcoin", "zcash")
 }

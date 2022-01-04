@@ -65,6 +65,7 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsonrpc.RequestMe
 		return nil, errors.Wrap(err, "http.NewRequestWithContext")
 	}
 	//req.Header.Add("X-Trace-Id", traceId)
+	req.Header.Set("Content-Type", "application/json")
 	if self.Headers != nil {
 		for k, v := range self.Headers {
 			req.Header.Set(k, v)
