@@ -30,6 +30,7 @@ type Endpoint struct {
 	Name          string
 	Chain         ChainRef
 	ServerUrl     string
+	Headers       map[string]string
 	HeightPadding int
 	SkipMethods   map[string]bool
 

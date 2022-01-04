@@ -6,6 +6,8 @@ endpoints:
     chain: "binance-chain"
     network: mainnet
     url: https://bsc-dataseed1.defibit.io
+    headers:
+      Authorization: Bearer token119
 
   bsc02:
     chain: "binance-chain"

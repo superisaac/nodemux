@@ -128,6 +128,7 @@ func (self *Balancer) LoadFromConfig(epcfgs map[string]cfg.EndpointConfig) {
 		ep.Name = name
 		ep.Chain = chain
 		ep.ServerUrl = epcfg.Url
+		ep.Headers = epcfg.Headers
 		if epcfg.SkipMethods != nil {
 			ep.SkipMethods = make(map[string]bool)
 			for _, meth := range epcfg.SkipMethods {
