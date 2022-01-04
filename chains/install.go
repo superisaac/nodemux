@@ -11,6 +11,8 @@ func InstallAdaptors(balancer *balancer.Balancer) {
 	balancer.RegisterRPC(NewFilecoinChain(), "filecoin")
 	balancer.RegisterRPC(NewSolanaChain(), "solana")
 	balancer.RegisterRPC(NewStarcoinChain(), "starcoin")
+	balancer.RegisterRPC(NewConfluxChain(), "conflux")
+	balancer.RegisterRPC(NewTronChain(), "tron-full")
 	balancer.RegisterRPC(NewPolkadotChain(), "polkadot", "kusama")
 
 	balancer.RegisterRPC(NewBitcoinChain(),

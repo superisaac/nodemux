@@ -41,7 +41,7 @@ func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
 }
 
 func (self *Balancer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
-	ep.Log().Info("sysnc job started")
+	ep.Log().Info("sync job started")
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 	for {

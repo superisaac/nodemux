@@ -27,7 +27,7 @@ func NewStarcoinChain() *StarcoinChain {
 
 func (self *StarcoinChain) GetTip(context context.Context, b *balancer.Balancer, ep *balancer.Endpoint) (*balancer.Block, error) {
 	reqMsg := jsonrpc.NewRequestMessage(
-		1, "chain.info", []interface{}{})
+		1, "chain.info", nil)
 	resMsg, err := ep.CallRPC(context, reqMsg)
 	if err != nil {
 		return nil, err
