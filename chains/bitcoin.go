@@ -12,6 +12,7 @@ import (
 type BitcoinChaintip struct {
 	Status string `mapstructure,"status"`
 	Height int    `mapstructure,"height"`
+	Hash   string `mapstructure,"hash"`
 }
 
 type BitcoinChain struct {
@@ -41,6 +42,7 @@ func (self *BitcoinChain) GetTip(context context.Context, b *balancer.Balancer, 
 			}
 			block := &balancer.Block{
 				Height: ct.Height,
+				Hash:   ct.Hash,
 			}
 			return block, nil
 		}

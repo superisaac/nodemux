@@ -11,9 +11,9 @@ import (
 )
 
 type EthereumBlock struct {
-	Number     string `mapstructure,"number"`
-	Hash       string `mapstructure,"hash"`
-	ParentHash string `mapstructure,"parentHash"`
+	Number string `mapstructure,"number"`
+	Hash   string `mapstructure,"hash"`
+	//ParentHash string `mapstructure,"parentHash"`
 }
 
 type EthereumChain struct {
@@ -42,9 +42,9 @@ func (self *EthereumChain) GetTip(context context.Context, b *balancer.Balancer,
 			return nil, errors.Wrapf(err, "hexutil.decode %s", bt.Number)
 		}
 		block := &balancer.Block{
-			Height:   int(height),
-			Hash:     bt.Hash,
-			PrevHash: bt.ParentHash,
+			Height: int(height),
+			Hash:   bt.Hash,
+			//PrevHash: bt.ParentHash,
 		}
 		return block, nil
 	} else {

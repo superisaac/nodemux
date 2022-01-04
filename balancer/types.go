@@ -8,9 +8,9 @@ import (
 
 // data structures
 type Block struct {
-	Height   int
-	Hash     string
-	PrevHash string
+	Height int
+	Hash   string
+	//PrevHash string
 }
 
 type ChainRef struct {
