@@ -68,6 +68,7 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsonrpc.RequestMe
 	}
 	//req.Header.Add("X-Trace-Id", traceId)
 	req.Header.Set("Content-Type", "application/json")
+	//req.Header.Set("Accept", "application/json")
 	if self.Headers != nil {
 		for k, v := range self.Headers {
 			req.Header.Set(k, v)
@@ -156,7 +157,6 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 	// prepare request
 	// TODO: join the server url and path
 	url := self.ServerUrl + path
-	log.Infof("url %s", url)
 	var reader io.Reader = nil
 	if data != nil {
 		reader = bytes.NewReader(data)
@@ -166,7 +166,7 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 		return nil, errors.Wrap(err, "http.NewRequestWithContext")
 	}
 	//req.Header.Set("X-Forward-For", r.RemoteAddr)
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
 
 	resp, err := self.client.Do(req)
 	if err != nil {
@@ -191,6 +191,5 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 	if err != nil {
 		return nil, errors.Wrap(err, "NewJson")
 	}
-
 	return decoded.Interface(), nil
 }

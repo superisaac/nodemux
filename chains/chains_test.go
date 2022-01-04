@@ -21,3 +21,18 @@ func TestEthereum(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(uint64(1929), d)
 }
+
+func TestResolveMap(t *testing.T) {
+	assert := assert.New(t)
+	v := map[string]interface{}{
+		"a": map[string]interface{}{
+			"b": map[string]interface{}{
+				"d": 5,
+			},
+		},
+	}
+
+	r, ok := resolveMap(v, "a", "b", "d")
+	assert.True(ok)
+	assert.Equal(5, r)
+}

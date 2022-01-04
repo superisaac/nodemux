@@ -1,19 +1,52 @@
 package chains
 
 import (
+	//"fmt"
 	"context"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/superisaac/nodeb/balancer"
 	"net/http"
+	"strconv"
 )
 
-type tronBlock struct {
-	Height int    `mapstructure,"height"`
-	Hash   string `mapstructure,"hash"`
-}
+// type tronBlockRawData struct {
+// 	Number string `mapstructure,"number"`
+// 	ParentHash string `mapstructure,"parentHash"`
+// }
+
+// type tronBlockHeader struct {
+// 	RawData tronBlockRawData `mapstructure,"raw_data"`
+// }
+
+// type tronBlock struct {
+// 	BlockHeader tronBlockHeader `mapstructure,"block_header"`
+// 	BlockID string  `mapstructure,"blockID"`
+// }
 
 type TronChain struct {
+}
+
+func resolveMap(root interface{}, path ...string) (interface{}, bool) {
+	v := root
+	for {
+		m, ok := v.(map[string]interface{})
+		if !ok {
+			return nil, false
+		}
+		hop := path[0]
+		path = path[1:]
+
+		k, ok := m[hop]
+		if len(path) <= 0 {
+			return k, ok
+		} else {
+			if !ok {
+				return nil, false
+			}
+			v = k
+		}
+	}
 }
 
 func NewTronChain() *TronChain {
@@ -29,15 +62,35 @@ func (self *TronChain) GetTip(context context.Context, b *balancer.Balancer, ep 
 		return nil, err
 	}
 
-	bt := tronBlock{}
-	err = mapstructure.Decode(res, &bt)
+	// parsing height
+	n1, ok := resolveMap(res, "block_header", "raw_data", "number")
+	if !ok {
+		return nil, errors.New("fail to get height")
+	}
+	var number string
+	err = mapstructure.Decode(n1, &number)
 	if err != nil {
-		return nil, errors.Wrap(err, "decode rpcblock")
+		return nil, errors.Wrap(err, "decode mapstruct block")
+	}
+
+	height, err := strconv.Atoi(number)
+	if err != nil {
+		return nil, errors.Wrap(err, "strconv.Atoi")
+	}
+
+	h1, ok := resolveMap(res, "blockID")
+	if !ok {
+		return nil, errors.New("failt to get block hash")
+	}
+	var blockHash string
+	err = mapstructure.Decode(h1, &blockHash)
+	if err != nil {
+		return nil, errors.Wrap(err, "decode mapstructure. hash")
 	}
 
 	block := &balancer.Block{
-		Height: bt.Height,
-		Hash:   bt.Hash,
+		Height: height,
+		Hash:   blockHash,
 	}
 	return block, nil
 }

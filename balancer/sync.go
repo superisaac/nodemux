@@ -29,7 +29,7 @@ func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
 		if epset, ok := self.chainIndex[ep.Chain]; ok {
 			if epset.maxTipHeight < block.Height {
 				epset.maxTipHeight = block.Height
-				ep.Chain.Log().Infof("max tip height set to %d", epset.maxTipHeight)
+				ep.Chain.Log().Infof("max tip height set to %d %s", epset.maxTipHeight, block.Hash)
 			}
 		} else {
 			logger.Panicf("cnnot get epset by chain %s", ep.Chain)
