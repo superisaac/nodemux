@@ -9,6 +9,7 @@ func InstallAdaptors(balancer *balancer.Balancer) {
 		"ethereum", "binance-chain", "polygon", "okex-token", "huobi-token", "ethereum-classic")
 
 	balancer.Register(NewFilecoinChain(), "filecoin")
+	balancer.Register(NewSolanaChain(), "solana")
 
 	balancer.Register(NewBitcoinChain(),
 		"bitcoin", "litecoin", "dogecoin", "dashcoin", "zcash")

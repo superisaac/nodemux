@@ -9,7 +9,7 @@ import (
 	"github.com/superisaac/nodeb/balancer"
 )
 
-type FilecoinBlock struct {
+type filecoinBlock struct {
 	Height int `mapstructure,"Height"`
 	//Hash   string `mapstructure,"hash"`
 }
@@ -29,7 +29,7 @@ func (self *FilecoinChain) GetTip(context context.Context, b *balancer.Balancer,
 		return nil, err
 	}
 	if resMsg.IsResult() {
-		bt := FilecoinBlock{}
+		bt := filecoinBlock{}
 		err := mapstructure.Decode(resMsg.MustResult(), &bt)
 		if err != nil {
 			return nil, errors.Wrap(err, "decode rpcblock")
