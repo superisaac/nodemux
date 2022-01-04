@@ -5,6 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonrpc"
 	"github.com/superisaac/nodeb/cfg"
+	"net/http"
 	//"sync"
 )
 
@@ -33,6 +34,7 @@ func SetBalancer(b *Balancer) {
 func NewBalancer() *Balancer {
 	b := new(Balancer)
 	b.rpcDelegators = make(map[string]RPCDelegator)
+	b.restDelegators = make(map[string]RESTDelegator)
 	b.Reset()
 	return b
 }
@@ -52,7 +54,7 @@ func (self *Balancer) Add(endpoint *Endpoint) bool {
 
 	if eps, ok := self.chainIndex[endpoint.Chain]; ok {
 		eps.items = append(eps.items, endpoint)
-	} else {
+	} else { //if _, ok := self.rpcDelegators[endpoint.Chain.Name]; !ok {
 		eps := new(EPSet)
 		eps.items = make([]*Endpoint, 1)
 		eps.items[0] = endpoint
@@ -139,6 +141,16 @@ func (self *Balancer) LoadFromConfig(epcfgs map[string]cfg.EndpointConfig) {
 	}
 }
 
+func (self Balancer) GetTipDelegator(chain string) TipDelegator {
+	if delg, ok := self.rpcDelegators[chain]; ok {
+		return delg
+	} else if delg, ok := self.restDelegators[chain]; ok {
+		return delg
+	}
+	log.Panicf("chain %s not supported", chain)
+	return nil
+}
+
 // RPC delegators
 func (self *Balancer) RegisterRPC(delegator RPCDelegator, chains ...string) {
 	for _, chain := range chains {
@@ -146,7 +158,7 @@ func (self *Balancer) RegisterRPC(delegator RPCDelegator, chains ...string) {
 	}
 }
 
-func (self Balancer) GetDelegator(chain string) RPCDelegator {
+func (self Balancer) GetRPCDelegator(chain string) RPCDelegator {
 	if delegator, ok := self.rpcDelegators[chain]; ok {
 		return delegator
 	}
@@ -161,4 +173,31 @@ func (self *Balancer) DefaultRelayMessage(rootCtx context.Context, chain ChainRe
 	}
 	resmsg, err := ep.CallRPC(rootCtx, reqmsg)
 	return resmsg, err
+}
+
+// REST delegators
+func (self *Balancer) RegisterREST(delegator RESTDelegator, chains ...string) {
+	for _, chain := range chains {
+		self.restDelegators[chain] = delegator
+	}
+}
+
+func (self Balancer) GetRESTDelegator(chain string) RESTDelegator {
+	if delegator, ok := self.restDelegators[chain]; ok {
+		return delegator
+	}
+	log.Panicf("chain %s not supported", chain)
+	return nil
+}
+
+func (self *Balancer) DefaultPipeREST(rootCtx context.Context, chain ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+	ep, found := self.Select(chain, path)
+	if !found {
+		//return jsonrpc.ErrMethodNotFound.ToMessage(reqmsg), nil
+		w.WriteHeader(404)
+		w.Write([]byte("not found"))
+		return nil
+	}
+	err := ep.PipeREST(rootCtx, path, w, r)
+	return err
 }

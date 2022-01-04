@@ -39,6 +39,7 @@ func StartHTTPServer(rootCtx context.Context, bind string, opts ...HTTPOptionFun
 	//mux.Handle("/metrics", NewMetricsCollector(rootCtx))
 	//mux.Handle("/ws", NewWSServer(rootCtx))
 	mux.Handle("/jsonrpc", NewRPCRelayer(rootCtx))
+	mux.Handle("/rest", NewRESTRelayer(rootCtx))
 
 	server := &http.Server{Addr: bind, Handler: mux}
 	listener, err := net.Listen("tcp", bind)
@@ -121,7 +122,7 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	reqmsg, _ := msg.(*jsonrpc.RequestMessage)
 	blcer := balancer.GetBalancer()
 
-	delegator := blcer.GetDelegator(chain.Name)
+	delegator := blcer.GetRPCDelegator(chain.Name)
 	if delegator == nil {
 		jsonrpc.ErrorResponse(w, r, err, 404, "backend not found")
 		return
@@ -153,4 +154,42 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write(data)
-} // ServeHTTP
+} // RPCRelayer.ServeHTTP
+
+// REST Handler
+type RESTRelayer struct {
+	rootCtx context.Context
+	regex   *regexp.Regexp
+}
+
+func NewRESTRelayer(rootCtx context.Context) *RESTRelayer {
+	return &RESTRelayer{
+		rootCtx: rootCtx,
+		regex:   regexp.MustCompile(`^/rest/([^/]+)/([^/]+)/(.*)$`),
+	}
+}
+
+func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	matches := self.regex.FindStringSubmatch(r.URL.Path)
+	if len(matches) < 4 {
+		log.Warnf("http url pattern failed")
+		w.WriteHeader(404)
+		w.Write([]byte("not found"))
+		return
+	}
+	chainName := matches[1]
+	network := matches[2]
+	method := "/" + matches[3]
+	chain := balancer.ChainRef{Name: chainName, Network: network}
+
+	blcer := balancer.GetBalancer()
+
+	delegator := blcer.GetRESTDelegator(chain.Name)
+	if delegator == nil {
+		w.WriteHeader(404)
+		w.Write([]byte("backend not found"))
+		return
+	}
+
+	delegator.RequestREST(self.rootCtx, blcer, chain, method, w, r)
+} // RESTRelayer.ServeHTTP
