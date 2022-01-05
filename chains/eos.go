@@ -9,7 +9,8 @@ import (
 )
 
 type eosBlock struct {
-	Last_irreversible_block_num int `mapstructure,"last_irreversible_block_num"`
+	Last_irreversible_block_num int    `mapstructure,"last_irreversible_block_num"`
+	Last_irreversible_block_id  string `mapstructure,"last_irreversible_block_id"`
 }
 
 type EosChain struct {
@@ -36,7 +37,7 @@ func (self *EosChain) GetTip(context context.Context, b *balancer.Balancer, ep *
 
 	block := &balancer.Block{
 		Height: tBlock.Last_irreversible_block_num,
-		//Hash:   tBlock.BlockID,
+		Hash:   tBlock.Last_irreversible_block_id,
 	}
 	return block, nil
 }

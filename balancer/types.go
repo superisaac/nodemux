@@ -19,9 +19,6 @@ type ChainRef struct {
 }
 
 type AbnormalResponse struct {
-	//Code int
-	//Header map[string][]string
-	//Body   []byte
 	Response *http.Response
 }
 
