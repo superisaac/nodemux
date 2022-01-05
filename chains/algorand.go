@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-type algorandBlock struct {
+type algorandChainStatus struct {
 	LastRound int `mapstructure,"lastRound"`
 }
 
@@ -25,10 +25,10 @@ func (self *AlgorandChain) GetTip(context context.Context, b *balancer.Balancer,
 		return nil, err
 	}
 
-	var tBlock algorandBlock
+	var tBlock algorandChainStatus
 	err = mapstructure.Decode(res, &tBlock)
 	if err != nil {
-		return nil, errors.Wrap(err, "mapst decode algorandBlock")
+		return nil, errors.Wrap(err, "mapst decode algorandChainStatus")
 	}
 
 	block := &balancer.Block{

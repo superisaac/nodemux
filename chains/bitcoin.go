@@ -9,7 +9,7 @@ import (
 	"github.com/superisaac/nodeb/balancer"
 )
 
-type BitcoinChaintip struct {
+type bitcoinChaintip struct {
 	Status string `mapstructure,"status"`
 	Height int    `mapstructure,"height"`
 	Hash   string `mapstructure,"hash"`
@@ -30,7 +30,7 @@ func (self *BitcoinChain) GetTip(context context.Context, b *balancer.Balancer, 
 		return nil, err
 	}
 	if resMsg.IsResult() {
-		var chaintips []BitcoinChaintip
+		var chaintips []bitcoinChaintip
 		err := mapstructure.Decode(resMsg.MustResult(), &chaintips)
 		if err != nil {
 			return nil, errors.Wrap(err, "decode rpcblock")

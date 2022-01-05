@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-type eosBlock struct {
+type eosChainInfo struct {
 	Last_irreversible_block_num int    `mapstructure,"last_irreversible_block_num"`
 	Last_irreversible_block_id  string `mapstructure,"last_irreversible_block_id"`
 }
@@ -29,10 +29,10 @@ func (self *EosChain) GetTip(context context.Context, b *balancer.Balancer, ep *
 		return nil, err
 	}
 
-	var tBlock eosBlock
+	var tBlock eosChainInfo
 	err = mapstructure.Decode(res, &tBlock)
 	if err != nil {
-		return nil, errors.Wrap(err, "mapst decode eosBlock")
+		return nil, errors.Wrap(err, "mapst decode eosChainInfo")
 	}
 
 	block := &balancer.Block{
