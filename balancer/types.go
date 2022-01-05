@@ -24,12 +24,12 @@ type AbnormalResponse struct {
 
 type Endpoint struct {
 	// configured items
-	Name          string
-	Chain         ChainRef
-	ServerUrl     string
-	Headers       map[string]string
-	HeightPadding int
-	SkipMethods   map[string]bool
+	Name      string
+	Chain     ChainRef
+	ServerUrl string
+	Headers   map[string]string
+	//HeightPadding int
+	SkipMethods map[string]bool
 
 	// dynamic items
 	Healthy bool

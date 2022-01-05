@@ -44,5 +44,5 @@ func (self *ConfluxChain) GetTip(context context.Context, b *balancer.Balancer, 
 
 func (self *ConfluxChain) DelegateRPC(rootCtx context.Context, b *balancer.Balancer, chain balancer.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
 	// Custom relay methods can be defined here
-	return b.DefaultRelayMessage(rootCtx, chain, reqmsg)
+	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -5)
 }

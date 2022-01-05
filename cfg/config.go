@@ -25,12 +25,6 @@ func (self *Config) validateValues() error {
 	if self.Version == "" {
 		self.Version = "1.0"
 	}
-	for _, ep := range self.Endpoints {
-		if ep.HeightPadding <= 0 {
-			// The default height padding considered safe
-			ep.HeightPadding = 2
-		}
-	}
 	return nil
 }
 

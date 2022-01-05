@@ -40,5 +40,5 @@ func (self *AlgorandChain) GetTip(context context.Context, b *balancer.Balancer,
 
 func (self *AlgorandChain) DelegateREST(rootCtx context.Context, b *balancer.Balancer, chain balancer.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
-	return b.DefaultPipeREST(rootCtx, chain, path, w, r)
+	return b.DefaultPipeREST(rootCtx, chain, path, w, r, -5)
 }

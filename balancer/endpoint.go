@@ -21,7 +21,7 @@ func (self AbnormalResponse) Error() string {
 
 /// Create an empty endpoint
 func NewEndpoint() *Endpoint {
-	return &Endpoint{Healthy: true, HeightPadding: 2}
+	return &Endpoint{Healthy: true}
 }
 
 func (self Endpoint) Log() *log.Entry {

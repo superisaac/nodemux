@@ -166,8 +166,8 @@ func (self Balancer) GetRPCDelegator(chain string) RPCDelegator {
 	return nil
 }
 
-func (self *Balancer) DefaultRelayMessage(rootCtx context.Context, chain ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
-	ep, found := self.Select(chain, reqmsg.Method)
+func (self *Balancer) DefaultRelayMessage(rootCtx context.Context, chain ChainRef, reqmsg *jsonrpc.RequestMessage, overHeight int) (jsonrpc.IMessage, error) {
+	ep, found := self.SelectOverHeight(chain, reqmsg.Method, overHeight)
 	if !found {
 		return jsonrpc.ErrMethodNotFound.ToMessage(reqmsg), nil
 	}
@@ -190,8 +190,8 @@ func (self Balancer) GetRESTDelegator(chain string) RESTDelegator {
 	return nil
 }
 
-func (self *Balancer) DefaultPipeREST(rootCtx context.Context, chain ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
-	ep, found := self.Select(chain, path)
+func (self *Balancer) DefaultPipeREST(rootCtx context.Context, chain ChainRef, path string, w http.ResponseWriter, r *http.Request, overHeight int) error {
+	ep, found := self.SelectOverHeight(chain, path, overHeight)
 	if !found {
 		//return jsonrpc.ErrMethodNotFound.ToMessage(reqmsg), nil
 		w.WriteHeader(404)
