@@ -10,8 +10,8 @@ import (
 )
 
 type polkadotBlock struct {
-	Blockhash string `mapstructure,"hash"`
-	Number    int    `mapstructure,"number"`
+	Hash   string `mapstructure,"hash"`
+	Number int    `mapstructure,"number"`
 }
 
 type PolkadotChain struct {
@@ -42,7 +42,7 @@ func (self *PolkadotChain) GetTip(context context.Context, b *balancer.Balancer,
 
 		block := &balancer.Block{
 			Height: bt.Number,
-			Hash:   bt.Blockhash,
+			Hash:   bt.Hash,
 		}
 		return block, nil
 	} else {

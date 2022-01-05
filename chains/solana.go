@@ -10,8 +10,8 @@ import (
 )
 
 type solanaBlockValue struct {
-	Blockhash string `mapstructure,"blockhash"`
-	Height    int    `mapstructure,"lastValidBlockHeight"`
+	Blockhash            string `mapstructure,"blockhash"`
+	LastValidBlockHeight int    `mapstructure,"lastValidBlockHeight"`
 }
 type solanaBlockContext struct {
 	Slot int `mapstructure,"slot"`
@@ -42,7 +42,7 @@ func (self *SolanaChain) GetTip(context context.Context, b *balancer.Balancer, e
 			return nil, errors.Wrap(err, "decode rpcblock")
 		}
 		block := &balancer.Block{
-			Height: bt.Value.Height,
+			Height: bt.Value.LastValidBlockHeight,
 			Hash:   bt.Value.Blockhash,
 		}
 		return block, nil

@@ -10,43 +10,21 @@ import (
 	"strconv"
 )
 
-// type tronBlockRawData struct {
-// 	Number string `mapstructure,"number"`
-// 	ParentHash string `mapstructure,"parentHash"`
-// }
-
-// type tronBlockHeader struct {
-// 	RawData tronBlockRawData `mapstructure,"raw_data"`
-// }
-
-// type tronBlock struct {
-// 	BlockHeader tronBlockHeader `mapstructure,"block_header"`
-// 	BlockID string  `mapstructure,"blockID"`
-// }
-
-type TronChain struct {
+type tronBlockRawData struct {
+	Number     string `mapstructure,"number"`
+	ParentHash string `mapstructure,"parentHash"`
 }
 
-func resolveMap(root interface{}, path ...string) (interface{}, bool) {
-	v := root
-	for {
-		m, ok := v.(map[string]interface{})
-		if !ok {
-			return nil, false
-		}
-		hop := path[0]
-		path = path[1:]
+type tronBlockHeader struct {
+	Raw_data tronBlockRawData `mapstructure,"raw_data"`
+}
 
-		k, ok := m[hop]
-		if len(path) <= 0 {
-			return k, ok
-		} else {
-			if !ok {
-				return nil, false
-			}
-			v = k
-		}
-	}
+type tronBlock struct {
+	Block_header tronBlockHeader `mapstructure,"block_header"`
+	BlockID      string          `mapstructure,"blockID"`
+}
+
+type TronChain struct {
 }
 
 func NewTronChain() *TronChain {
@@ -62,35 +40,20 @@ func (self *TronChain) GetTip(context context.Context, b *balancer.Balancer, ep 
 		return nil, err
 	}
 
-	// parsing height
-	n1, ok := resolveMap(res, "block_header", "raw_data", "number")
-	if !ok {
-		return nil, errors.New("fail to get height")
-	}
-	var number string
-	err = mapstructure.Decode(n1, &number)
+	var tBlock tronBlock
+	err = mapstructure.Decode(res, &tBlock)
 	if err != nil {
-		return nil, errors.Wrap(err, "decode mapstruct block")
+		return nil, errors.Wrap(err, "mapst decode tronBlock")
 	}
 
-	height, err := strconv.Atoi(number)
+	height, err := strconv.Atoi(tBlock.Block_header.Raw_data.Number)
 	if err != nil {
 		return nil, errors.Wrap(err, "strconv.Atoi")
 	}
 
-	h1, ok := resolveMap(res, "blockID")
-	if !ok {
-		return nil, errors.New("failt to get block hash")
-	}
-	var blockHash string
-	err = mapstructure.Decode(h1, &blockHash)
-	if err != nil {
-		return nil, errors.Wrap(err, "decode mapstructure. hash")
-	}
-
 	block := &balancer.Block{
 		Height: height,
-		Hash:   blockHash,
+		Hash:   tBlock.BlockID,
 	}
 	return block, nil
 }

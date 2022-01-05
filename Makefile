@@ -7,13 +7,13 @@ build: bin/nodeb
 all: test build
 
 bin/nodeb: ${gofiles}
-	go build $(goflag) -o $@ nodeb.go
+	go build ${goflag} -o $@ nodeb.go
 
 test:
-	go test -v github.com/superisaac/nodeb/cfg
-	go test -v github.com/superisaac/nodeb/balancer
-	go test -v github.com/superisaac/nodeb/chains
-	go test -v github.com/superisaac/nodeb/server
+	go test ${goflag} -v github.com/superisaac/nodeb/cfg
+	go test ${goflag} -v github.com/superisaac/nodeb/balancer
+	go test ${goflag} -v github.com/superisaac/nodeb/chains
+	go test ${goflag} -v github.com/superisaac/nodeb/server
 
 clean:
 	rm -rf build dist bin/nodeb

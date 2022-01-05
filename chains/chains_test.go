@@ -1,7 +1,9 @@
 package chains
 
 import (
+	"github.com/bitly/go-simplejson"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
@@ -35,4 +37,30 @@ func TestResolveMap(t *testing.T) {
 	r, ok := resolveMap(v, "a", "b", "d")
 	assert.True(ok)
 	assert.Equal(5, r)
+}
+
+func TestMapTronBlock(t *testing.T) {
+	assert := assert.New(t)
+
+	body := []byte(`{
+"blockID": "abc",
+"block_header": {
+  "raw_data": {
+    "number": "123",
+    "parentHash": "def"}
+  }
+}`)
+
+	decoded, err := simplejson.NewJson(body)
+	assert.Nil(err)
+
+	var v tronBlock
+	//v := new(tronBlock)
+	err = mapstructure.Decode(decoded.Interface(), &v)
+	assert.Nil(err)
+
+	assert.Equal("abc", v.BlockID)
+
+	assert.Equal("def", v.Block_header.Raw_data.ParentHash)
+	assert.Equal("123", v.Block_header.Raw_data.Number)
 }

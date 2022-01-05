@@ -10,8 +10,8 @@ import (
 )
 
 type starcoinBlockHead struct {
-	Blockhash string `mapstructure,"block_hash"`
-	Number    string `mapstructure,"number"`
+	Block_hash string `mapstructure,"block_hash"`
+	Number     string `mapstructure,"number"`
 }
 
 type starcoinBlock struct {
@@ -46,7 +46,7 @@ func (self *StarcoinChain) GetTip(context context.Context, b *balancer.Balancer,
 
 		block := &balancer.Block{
 			Height: height,
-			Hash:   bt.Head.Blockhash,
+			Hash:   bt.Head.Block_hash,
 		}
 		return block, nil
 	} else {
