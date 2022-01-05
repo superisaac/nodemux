@@ -50,15 +50,16 @@ type EPSet struct {
 type TipDelegator interface {
 	GetTip(ctx context.Context, b *Balancer, ep *Endpoint) (*Block, error)
 }
+
 type RPCDelegator interface {
 	TipDelegator
-	RequestReceived(ctx context.Context, b *Balancer, chain ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error)
+	DelegateRPC(ctx context.Context, b *Balancer, chain ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error)
 }
 
 type RESTDelegator interface {
 	//GetTip(ctx context.Context, b *Balancer, ep *Endpoint) (*Block, error)
 	TipDelegator
-	RequestREST(ctx context.Context, b *Balancer, chain ChainRef, path string, w http.ResponseWriter, r *http.Request) error
+	DelegateREST(ctx context.Context, b *Balancer, chain ChainRef, path string, w http.ResponseWriter, r *http.Request) error
 }
 
 type Balancer struct {

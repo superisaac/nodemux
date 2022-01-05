@@ -107,7 +107,7 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsonrpc.RequestMe
 	return respMsg, nil
 } // CallHTTP
 
-func (self *Endpoint) PipeREST(rootCtx context.Context, path string, w http.ResponseWriter, r *http.Request) error {
+func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.ResponseWriter, r *http.Request) error {
 	self.Connect()
 
 	ctx, cancel := context.WithCancel(rootCtx)
@@ -126,7 +126,7 @@ func (self *Endpoint) PipeREST(rootCtx context.Context, path string, w http.Resp
 			req.Header.Set(k, v)
 		}
 	}
-	req.Header.Set("X-Forward-For", r.RemoteAddr)
+	req.Header.Set("X-Forwarded-For", r.RemoteAddr)
 
 	resp, err := self.client.Do(req)
 	if err != nil {

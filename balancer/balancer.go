@@ -198,6 +198,6 @@ func (self *Balancer) DefaultPipeREST(rootCtx context.Context, chain ChainRef, p
 		w.Write([]byte("not found"))
 		return nil
 	}
-	err := ep.PipeREST(rootCtx, path, w, r)
+	err := ep.PipeRequest(rootCtx, path, w, r)
 	return err
 }

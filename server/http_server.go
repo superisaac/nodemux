@@ -128,7 +128,7 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resmsg, err := delegator.RequestReceived(self.rootCtx, blcer, chain, reqmsg)
+	resmsg, err := delegator.DelegateRPC(self.rootCtx, blcer, chain, reqmsg)
 	if err != nil {
 		// put the original http response
 		var abnErr *balancer.AbnormalResponse
@@ -191,5 +191,10 @@ func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	delegator.RequestREST(self.rootCtx, blcer, chain, method, w, r)
+	err := delegator.DelegateREST(self.rootCtx, blcer, chain, method, w, r)
+	if err != nil {
+		log.Warnf("error delegate rest %s", err)
+		w.WriteHeader(500)
+		w.Write([]byte("server error"))
+	}
 } // RESTRelayer.ServeHTTP
