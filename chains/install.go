@@ -20,4 +20,5 @@ func InstallAdaptors(balancer *balancer.Balancer) {
 
 	// REST handlers
 	balancer.RegisterREST(NewTronChain(), "tron-full")
+	balancer.RegisterREST(NewEosChain(), "eosio", "enu")
 }

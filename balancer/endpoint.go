@@ -144,11 +144,11 @@ func (self *Endpoint) PipeREST(rootCtx context.Context, path string, w http.Resp
 	return nil
 }
 
-func (self *Endpoint) GetJson(rootCtx context.Context, path string) (interface{}, error) {
-	return self.RequestJson(rootCtx, "GET", path, nil)
+func (self *Endpoint) GetJson(rootCtx context.Context, path string, headers map[string]string) (interface{}, error) {
+	return self.RequestJson(rootCtx, "GET", path, nil, headers)
 }
 
-func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path string, data []byte) (interface{}, error) {
+func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path string, data []byte, headers map[string]string) (interface{}, error) {
 	self.Connect()
 
 	ctx, cancel := context.WithCancel(rootCtx)
@@ -167,6 +167,11 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 	}
 	//req.Header.Set("X-Forward-For", r.RemoteAddr)
 	req.Header.Set("Accept", "application/json")
+	if headers != nil {
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+	}
 
 	resp, err := self.client.Do(req)
 	if err != nil {

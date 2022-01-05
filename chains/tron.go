@@ -1,7 +1,6 @@
 package chains
 
 import (
-	//"fmt"
 	"context"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -35,7 +34,7 @@ func (self *TronChain) GetTip(context context.Context, b *balancer.Balancer, ep 
 	res, err := ep.RequestJson(context,
 		"POST",
 		"/walletsolidity/getnowblock",
-		nil)
+		nil, nil)
 	if err != nil {
 		return nil, err
 	}
