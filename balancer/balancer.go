@@ -52,11 +52,13 @@ func (self *Balancer) Add(endpoint *Endpoint) bool {
 
 	if eps, ok := self.chainIndex[endpoint.Chain]; ok {
 		eps.items = append(eps.items, endpoint)
-	} else { //if _, ok := self.rpcDelegators[endpoint.Chain.Name]; !ok {
+	} else if GetDelegatorFactory().SupportChain(endpoint.Chain.Name) {
 		eps := new(EPSet)
 		eps.items = make([]*Endpoint, 1)
 		eps.items[0] = endpoint
 		self.chainIndex[endpoint.Chain] = eps
+	} else {
+		endpoint.Log().Panicf("endpoint of supported")
 	}
 	return true
 }

@@ -24,6 +24,16 @@ func newDelegatorFactory() *DelegatorFactory {
 	}
 }
 
+func (self DelegatorFactory) SupportChain(chain string) bool {
+	if _, ok := self.rpcDelegators[chain]; ok {
+		return true
+	}
+	if _, ok := self.restDelegators[chain]; ok {
+		return true
+	}
+	return false
+}
+
 func (self DelegatorFactory) GetTipDelegator(chain string) TipDelegator {
 	if delg, ok := self.rpcDelegators[chain]; ok {
 		return delg
