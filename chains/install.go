@@ -18,7 +18,9 @@ func InstallAdaptors(factory *balancer.DelegatorFactory) {
 	factory.RegisterRPC(NewConfluxChain(), "conflux")
 	factory.RegisterRPC(NewPolkadotChain(), "polkadot", "kusama")
 	factory.RegisterRPC(NewBitcoinChain(),
-		"bitcoin", "litecoin", "dogecoin", "dashcoin", "zcash")
+		"bitcoin", "litecoin", "dogecoin",
+		"bitcoin-cash", "omnicore",
+		"dashcoin", "zcash")
 
 	// REST handlers
 	factory.RegisterREST(NewTronChain(), "tron-full", "tron-grid")

@@ -11,12 +11,23 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
 func (self AbnormalResponse) Error() string {
-	//return fmt.Sprintf("Abnormal response %d %s", self.Code, self.Body[0:30])
 	return fmt.Sprintf("Abnormal response %d", self.Response.StatusCode)
+}
+
+// EndpointSet
+func (self *EndpointSet) ResetMaxTipHeight() {
+	maxHeight := 0
+	for _, epItem := range self.items {
+		if epItem.Tip != nil && epItem.Tip.Height > maxHeight {
+			maxHeight = epItem.Tip.Height
+		}
+	}
+	self.maxTipHeight = maxHeight
 }
 
 /// Create an empty endpoint
@@ -107,6 +118,14 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsonrpc.RequestMe
 	return respMsg, nil
 } // CallHTTP
 
+func (self Endpoint) FullUrl(path string) string {
+	if strings.HasSuffix(self.ServerUrl, "/") {
+		return self.ServerUrl + path[1:]
+	} else {
+		return self.ServerUrl + path
+	}
+}
+
 func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.ResponseWriter, r *http.Request) error {
 	self.Connect()
 
@@ -115,7 +134,7 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 
 	// prepare request
 	// TODO: join the server url and method
-	url := self.ServerUrl + path
+	url := self.FullUrl(path)
 	req, err := http.NewRequestWithContext(ctx, r.Method, url, r.Body)
 	if err != nil {
 		return errors.Wrap(err, "http.NewRequestWithContext")
@@ -156,7 +175,7 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 
 	// prepare request
 	// TODO: join the server url and path
-	url := self.ServerUrl + path
+	url := self.FullUrl(path)
 	var reader io.Reader = nil
 	if data != nil {
 		reader = bytes.NewReader(data)

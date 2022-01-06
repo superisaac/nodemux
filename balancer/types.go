@@ -38,7 +38,7 @@ type Endpoint struct {
 	client *http.Client
 }
 
-type EPSet struct {
+type EndpointSet struct {
 	items        []*Endpoint // endpoints of the same chain
 	cursor       int
 	maxTipHeight int
@@ -49,7 +49,7 @@ type Balancer struct {
 	// the name -> Endpoint map, the primary key
 	nameIndex map[string]*Endpoint
 	// the chain -> name map, the secondary index
-	chainIndex map[ChainRef]*EPSet
+	chainIndex map[ChainRef]*EndpointSet
 
 	// the function to cancel sync functions
 	cancelSync func()

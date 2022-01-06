@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
@@ -24,6 +25,22 @@ func ConfigFromFile(yamlPath string) (*Config, error) {
 func (self *Config) validateValues() error {
 	if self.Version == "" {
 		self.Version = "1.0"
+	}
+	for _, epcfg := range self.Endpoints {
+		if epcfg.Chain == "" {
+			return errors.New("empty chain")
+		}
+		if epcfg.Network == "" {
+			return errors.New("empty network")
+		}
+		if epcfg.Url == "" {
+			return errors.New("empty server url")
+		}
+		for _, skipmtd := range epcfg.SkipMethods {
+			if skipmtd == "" {
+				return errors.New("empty skip method")
+			}
+		}
 	}
 	return nil
 }

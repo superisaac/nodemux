@@ -17,9 +17,12 @@ func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
 	}
 	if block != nil {
 		ep.Healthy = true
+		heightChanged := false
+
 		if ep.Tip != nil {
 			if ep.Tip.Height > block.Height {
 				logger.Warnf("new tip height %d < old tip height %d", block.Height, ep.Tip.Height)
+				heightChanged = true
 			} else if ep.Tip.Height == block.Height &&
 				ep.Tip.Hash != block.Hash {
 				logger.Warnf("tip hash changed from %s to %s", ep.Tip.Hash, block.Hash)
@@ -27,7 +30,10 @@ func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
 		}
 		ep.Tip = block
 		if epset, ok := self.chainIndex[ep.Chain]; ok {
-			if epset.maxTipHeight < block.Height {
+			if heightChanged {
+				epset.ResetMaxTipHeight()
+				ep.Chain.Log().Infof("height changed, max tip height set to %d", epset.maxTipHeight)
+			} else if epset.maxTipHeight < block.Height {
 				epset.maxTipHeight = block.Height
 				ep.Chain.Log().Infof("max tip height set to %d %s", epset.maxTipHeight, block.Hash)
 			}

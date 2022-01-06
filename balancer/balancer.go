@@ -2,6 +2,7 @@ package balancer
 
 import (
 	"context"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonrpc"
 	"github.com/superisaac/nodeb/cfg"
@@ -39,7 +40,7 @@ func NewBalancer() *Balancer {
 
 func (self *Balancer) Reset() {
 	self.nameIndex = make(map[string]*Endpoint)
-	self.chainIndex = make(map[ChainRef]*EPSet)
+	self.chainIndex = make(map[ChainRef]*EndpointSet)
 }
 
 func (self *Balancer) Add(endpoint *Endpoint) bool {
@@ -52,13 +53,11 @@ func (self *Balancer) Add(endpoint *Endpoint) bool {
 
 	if eps, ok := self.chainIndex[endpoint.Chain]; ok {
 		eps.items = append(eps.items, endpoint)
-	} else if GetDelegatorFactory().SupportChain(endpoint.Chain.Name) {
-		eps := new(EPSet)
+	} else {
+		eps := new(EndpointSet)
 		eps.items = make([]*Endpoint, 1)
 		eps.items[0] = endpoint
 		self.chainIndex[endpoint.Chain] = eps
-	} else {
-		endpoint.Log().Panicf("endpoint of supported")
 	}
 	return true
 }
@@ -126,6 +125,9 @@ func (self *Balancer) SelectOverHeight(chain ChainRef, method string, heightSpec
 func (self *Balancer) LoadFromConfig(epcfgs map[string]cfg.EndpointConfig) {
 	for name, epcfg := range epcfgs {
 		ep := NewEndpoint()
+		if !GetDelegatorFactory().SupportChain(epcfg.Chain) {
+			panic(fmt.Sprintf("chain %s not supported", epcfg.Chain))
+		}
 		chain := ChainRef{Name: epcfg.Chain, Network: epcfg.Network}
 		ep.Name = name
 		ep.Chain = chain
