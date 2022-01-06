@@ -2,25 +2,24 @@ package chains
 
 import (
 	"context"
-	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
+	//"github.com/pkg/errors"
 	"github.com/superisaac/nodeb/balancer"
 	"net/http"
-	"strconv"
+	//"strconv"
 )
 
 type tronBlockRawData struct {
-	Number     string `mapstructure,"number"`
-	ParentHash string `mapstructure,"parentHash"`
+	Number     int    `json:"number"`
+	ParentHash string `json:"parentHash"`
 }
 
 type tronBlockHeader struct {
-	Raw_data tronBlockRawData `mapstructure,"raw_data"`
+	RawData tronBlockRawData `json:"raw_data"`
 }
 
 type tronBlock struct {
-	Block_header tronBlockHeader `mapstructure,"block_header"`
-	BlockID      string          `mapstructure,"blockID"`
+	BlockHeader tronBlockHeader `json:"block_header"`
+	BlockID     string          `json:"blockID"`
 }
 
 type TronChain struct {
@@ -31,28 +30,19 @@ func NewTronChain() *TronChain {
 }
 
 func (self *TronChain) GetTip(context context.Context, b *balancer.Balancer, ep *balancer.Endpoint) (*balancer.Block, error) {
-	res, err := ep.RequestJson(context,
+	var res tronBlock
+	err := ep.RequestJson(context,
 		"POST",
 		"/walletsolidity/getnowblock",
-		nil, nil)
+		nil, nil, &res)
 	if err != nil {
 		return nil, err
 	}
 
-	var tBlock tronBlock
-	err = mapstructure.Decode(res, &tBlock)
-	if err != nil {
-		return nil, errors.Wrap(err, "mapst decode tronBlock")
-	}
-
-	height, err := strconv.Atoi(tBlock.Block_header.Raw_data.Number)
-	if err != nil {
-		return nil, errors.Wrap(err, "strconv.Atoi")
-	}
-
+	height := res.BlockHeader.RawData.Number
 	block := &balancer.Block{
 		Height: height,
-		Hash:   tBlock.BlockID,
+		Hash:   res.BlockID,
 	}
 	return block, nil
 }

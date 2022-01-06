@@ -10,9 +10,9 @@ import (
 )
 
 type bitcoinChaintip struct {
-	Status string `mapstructure,"status"`
-	Height int    `mapstructure,"height"`
-	Hash   string `mapstructure,"hash"`
+	Status string `mapstructure:"status"`
+	Height int    `mapstructure:"height"`
+	Hash   string `mapstructure:"hash"`
 }
 
 type BitcoinChain struct {

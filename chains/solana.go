@@ -10,15 +10,15 @@ import (
 )
 
 type solanaBlockValue struct {
-	Blockhash            string `mapstructure,"blockhash"`
-	LastValidBlockHeight int    `mapstructure,"lastValidBlockHeight"`
+	Blockhash            string `mapstructure:"blockhash"`
+	LastValidBlockHeight int    `mapstructure:"lastValidBlockHeight"`
 }
 type solanaBlockContext struct {
-	Slot int `mapstructure,"slot"`
+	Slot int `mapstructure:"slot"`
 }
 type solanaBlock struct {
-	Value   solanaBlockValue   `mapstructure,"value"`
-	Context solanaBlockContext `mapstructure,"context"`
+	Value   solanaBlockValue   `mapstructure:"value"`
+	Context solanaBlockContext `mapstructure:"context"`
 }
 
 type SolanaChain struct {

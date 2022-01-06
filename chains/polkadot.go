@@ -10,8 +10,8 @@ import (
 )
 
 type polkadotBlock struct {
-	Hash   string `mapstructure,"hash"`
-	Number int    `mapstructure,"number"`
+	Hash   string `mapstructure:"hash"`
+	Number int    `mapstructure:"number"`
 }
 
 type PolkadotChain struct {
@@ -34,11 +34,6 @@ func (self *PolkadotChain) GetTip(context context.Context, b *balancer.Balancer,
 		if err != nil {
 			return nil, errors.Wrap(err, "decode rpcblock")
 		}
-
-		// height, err := strconv.Atoi(bt.Head.Number)
-		// if err != nil {
-		// 	return nil, errors.Wrap(err, "strconv.Atoi")
-		// }
 
 		block := &balancer.Block{
 			Height: bt.Number,

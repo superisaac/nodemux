@@ -2,21 +2,18 @@ package chains
 
 import (
 	"context"
-	"fmt"
-	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 	"github.com/superisaac/nodeb/balancer"
 	"net/http"
 )
 
 type kadenaCutBlock struct {
-	Height int    `mapstructure,"height"`
-	Hash   string `mapstructure,"hash"`
+	Height int    `json,"height"`
+	Hash   string `json,"hash"`
 }
 
 type kadenaCut struct {
-	Weight string                    `mapstructure,"weight"`
-	Hashes map[string]kadenaCutBlock `mapstructure,"hashes"`
+	Weight string                    `json,"weight"`
+	Hashes map[string]kadenaCutBlock `json,"hashes"`
 }
 
 type KadenaChain struct {
@@ -27,24 +24,17 @@ func NewKadenaChain() *KadenaChain {
 }
 
 func (self *KadenaChain) GetTip(context context.Context, b *balancer.Balancer, ep *balancer.Endpoint) (*balancer.Block, error) {
-	res, err := ep.GetJson(context,
+	var res kadenaCut
+	err := ep.GetJson(context,
 		"/chainweb/0.0/mainnet01/cut",
-		nil)
+		nil, &res)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Printf("res %#v\n", res)
-
-	var tBlock kadenaCut
-	err = mapstructure.Decode(res, &tBlock)
-	if err != nil {
-		return nil, errors.Wrap(err, "mapst decode kadenaChainInfo")
-	}
-
 	maxHeight := 0
 	//maxHash := ""
-	for _, block := range tBlock.Hashes {
+	for _, block := range res.Hashes {
 		if block.Height > maxHeight {
 			maxHeight = block.Height
 			//maxHash = block.Hash

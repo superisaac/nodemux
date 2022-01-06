@@ -10,8 +10,8 @@ import (
 )
 
 type filecoinBlock struct {
-	Height int `mapstructure,"Height"`
-	//Hash   string `mapstructure,"hash"`
+	Height int `mapstructure:"Height"`
+	//Hash   string `mapstructure:"hash"`
 }
 
 type FilecoinChain struct {

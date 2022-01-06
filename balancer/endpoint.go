@@ -3,8 +3,8 @@ package balancer
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/bitly/go-simplejson"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonrpc"
@@ -144,11 +144,11 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 	return nil
 }
 
-func (self *Endpoint) GetJson(rootCtx context.Context, path string, headers map[string]string) (interface{}, error) {
-	return self.RequestJson(rootCtx, "GET", path, nil, headers)
+func (self *Endpoint) GetJson(rootCtx context.Context, path string, headers map[string]string, target interface{}) error {
+	return self.RequestJson(rootCtx, "GET", path, nil, headers, target)
 }
 
-func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path string, data []byte, headers map[string]string) (interface{}, error) {
+func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path string, data []byte, headers map[string]string, target interface{}) error {
 	self.Connect()
 
 	ctx, cancel := context.WithCancel(rootCtx)
@@ -163,7 +163,7 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 	}
 	req, err := http.NewRequestWithContext(ctx, method, url, reader)
 	if err != nil {
-		return nil, errors.Wrap(err, "http.NewRequestWithContext")
+		return errors.Wrap(err, "http.NewRequestWithContext")
 	}
 	//req.Header.Set("X-Forward-For", r.RemoteAddr)
 	req.Header.Set("Accept", "application/json")
@@ -175,7 +175,7 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 
 	resp, err := self.client.Do(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "get Do")
+		return errors.Wrap(err, "get Do")
 	}
 	defer resp.Body.Close()
 
@@ -184,17 +184,17 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 		abnResp := &AbnormalResponse{
 			Response: resp,
 		}
-		return nil, errors.Wrap(abnResp, "abnormal response")
+		return errors.Wrap(abnResp, "abnormal response")
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "ioutil.ReadAll")
+		return errors.Wrap(err, "ioutil.ReadAll")
 	}
 
-	decoded, err := simplejson.NewJson(respBody)
+	err = json.Unmarshal(respBody, target)
 	if err != nil {
-		return nil, errors.Wrap(err, "NewJson")
+		return errors.Wrap(err, "json.Unmarshal")
 	}
-	return decoded.Interface(), nil
+	return nil
 }

@@ -2,15 +2,15 @@ package chains
 
 import (
 	"context"
-	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
+	//"github.com/mitchellh/mapstructure"
+	//"github.com/pkg/errors"
 	"github.com/superisaac/nodeb/balancer"
 	"net/http"
 )
 
 type eosChainInfo struct {
-	Last_irreversible_block_num int    `mapstructure,"last_irreversible_block_num"`
-	Last_irreversible_block_id  string `mapstructure,"last_irreversible_block_id"`
+	LastBlockNum int    `json:"last_irreversible_block_num"`
+	LastBlockId  string `json:"last_irreversible_block_id"`
 }
 
 type EosChain struct {
@@ -21,23 +21,18 @@ func NewEosChain() *EosChain {
 }
 
 func (self *EosChain) GetTip(context context.Context, b *balancer.Balancer, ep *balancer.Endpoint) (*balancer.Block, error) {
-	res, err := ep.RequestJson(context,
+	var res eosChainInfo
+	err := ep.RequestJson(context,
 		"POST",
 		"/v1/chain/get_info",
-		nil, nil)
+		nil, nil, &res)
 	if err != nil {
 		return nil, err
 	}
 
-	var tBlock eosChainInfo
-	err = mapstructure.Decode(res, &tBlock)
-	if err != nil {
-		return nil, errors.Wrap(err, "mapst decode eosChainInfo")
-	}
-
 	block := &balancer.Block{
-		Height: tBlock.Last_irreversible_block_num,
-		Hash:   tBlock.Last_irreversible_block_id,
+		Height: res.LastBlockNum,
+		Hash:   res.LastBlockId,
 	}
 	return block, nil
 }

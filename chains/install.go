@@ -21,7 +21,7 @@ func InstallAdaptors(balancer *balancer.Balancer) {
 		"bitcoin", "litecoin", "dogecoin", "dashcoin", "zcash")
 
 	// REST handlers
-	balancer.RegisterREST(NewTronChain(), "tron-full")
+	balancer.RegisterREST(NewTronChain(), "tron-full", "tron-grid")
 	balancer.RegisterREST(NewEosChain(), "eosio", "enu")
 	balancer.RegisterREST(NewAlgorandChain(), "algorand")
 	balancer.RegisterREST(NewKadenaChain(), "kadena")

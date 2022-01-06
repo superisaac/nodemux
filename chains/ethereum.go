@@ -11,9 +11,8 @@ import (
 )
 
 type EthereumBlock struct {
-	Number string `mapstructure,"number"`
-	Hash   string `mapstructure,"hash"`
-	//ParentHash string `mapstructure,"parentHash"`
+	Number string `mapstructure:"number"`
+	Hash   string `mapstructure:"hash"`
 }
 
 type EthereumChain struct {

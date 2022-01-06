@@ -10,7 +10,7 @@ import (
 )
 
 type rippleLedger struct {
-	Ledger_index int `mapstructure,"ledger_index`
+	LedgerIndex int `mapstructure:"ledger_index`
 }
 
 type RippleChain struct {
@@ -44,7 +44,7 @@ func (self *RippleChain) GetTip(context context.Context, b *balancer.Balancer, e
 		}
 
 		block := &balancer.Block{
-			Height: ledger.Ledger_index,
+			Height: ledger.LedgerIndex,
 			//Hash:   ct.Hash,
 		}
 		return block, nil

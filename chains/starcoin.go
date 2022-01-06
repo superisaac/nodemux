@@ -10,12 +10,12 @@ import (
 )
 
 type starcoinBlockHead struct {
-	Block_hash string `mapstructure,"block_hash"`
-	Number     string `mapstructure,"number"`
+	Block_hash string `mapstructure:"block_hash"`
+	Number     string `mapstructure:"number"`
 }
 
 type starcoinBlock struct {
-	Head starcoinBlockHead `mapstructure,"head"`
+	Head starcoinBlockHead `mapstructure:"head"`
 }
 
 type StarcoinChain struct {

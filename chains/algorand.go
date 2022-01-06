@@ -2,14 +2,14 @@ package chains
 
 import (
 	"context"
-	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
+	//"github.com/mitchellh/mapstructure"
+	//"github.com/pkg/errors"
 	"github.com/superisaac/nodeb/balancer"
 	"net/http"
 )
 
 type algorandChainStatus struct {
-	LastRound int `mapstructure,"lastRound"`
+	LastRound int `json:"lastRound"`
 }
 
 type AlgorandChain struct {
@@ -20,20 +20,14 @@ func NewAlgorandChain() *AlgorandChain {
 }
 
 func (self *AlgorandChain) GetTip(context context.Context, b *balancer.Balancer, ep *balancer.Endpoint) (*balancer.Block, error) {
-	res, err := ep.GetJson(context, "/v1/status", nil)
+	var res algorandChainStatus
+	err := ep.GetJson(context, "/v1/status", nil, &res)
 	if err != nil {
 		return nil, err
 	}
 
-	var tBlock algorandChainStatus
-	err = mapstructure.Decode(res, &tBlock)
-	if err != nil {
-		return nil, errors.Wrap(err, "mapst decode algorandChainStatus")
-	}
-
 	block := &balancer.Block{
-		Height: tBlock.LastRound,
-		//Hash:   tBlock.Last_irreversible_block_id,
+		Height: res.LastRound,
 	}
 	return block, nil
 }
