@@ -4,25 +4,25 @@ import (
 	"github.com/superisaac/nodeb/balancer"
 )
 
-func InstallAdaptors(balancer *balancer.Balancer) {
+func InstallAdaptors(factory *balancer.DelegatorFactory) {
 	// JSON-RPC handlers
-	balancer.RegisterRPC(NewEthereumChain(),
+	factory.RegisterRPC(NewEthereumChain(),
 		"ethereum", "binance-chain", "polygon",
 		"okex-token", "huobi-token", "ethereum-classic",
 		"cardano-kevm",
 	)
-	balancer.RegisterRPC(NewRippleChain(), "ripple")
-	balancer.RegisterRPC(NewFilecoinChain(), "filecoin")
-	balancer.RegisterRPC(NewSolanaChain(), "solana")
-	balancer.RegisterRPC(NewStarcoinChain(), "starcoin")
-	balancer.RegisterRPC(NewConfluxChain(), "conflux")
-	balancer.RegisterRPC(NewPolkadotChain(), "polkadot", "kusama")
-	balancer.RegisterRPC(NewBitcoinChain(),
+	factory.RegisterRPC(NewRippleChain(), "ripple")
+	factory.RegisterRPC(NewFilecoinChain(), "filecoin")
+	factory.RegisterRPC(NewSolanaChain(), "solana")
+	factory.RegisterRPC(NewStarcoinChain(), "starcoin")
+	factory.RegisterRPC(NewConfluxChain(), "conflux")
+	factory.RegisterRPC(NewPolkadotChain(), "polkadot", "kusama")
+	factory.RegisterRPC(NewBitcoinChain(),
 		"bitcoin", "litecoin", "dogecoin", "dashcoin", "zcash")
 
 	// REST handlers
-	balancer.RegisterREST(NewTronChain(), "tron-full", "tron-grid")
-	balancer.RegisterREST(NewEosChain(), "eosio", "enu")
-	balancer.RegisterREST(NewAlgorandChain(), "algorand")
-	balancer.RegisterREST(NewKadenaChain(), "kadena")
+	factory.RegisterREST(NewTronChain(), "tron-full", "tron-grid")
+	factory.RegisterREST(NewEosChain(), "eosio", "enu")
+	factory.RegisterREST(NewAlgorandChain(), "algorand")
+	factory.RegisterREST(NewKadenaChain(), "kadena")
 }

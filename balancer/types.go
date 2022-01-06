@@ -44,6 +44,18 @@ type EPSet struct {
 	maxTipHeight int
 }
 
+type Balancer struct {
+	// indexes
+	// the name -> Endpoint map, the primary key
+	nameIndex map[string]*Endpoint
+	// the chain -> name map, the secondary index
+	chainIndex map[ChainRef]*EPSet
+
+	// the function to cancel sync functions
+	cancelSync func()
+}
+
+// Delegators
 type TipDelegator interface {
 	GetTip(ctx context.Context, b *Balancer, ep *Endpoint) (*Block, error)
 }
@@ -59,15 +71,7 @@ type RESTDelegator interface {
 	DelegateREST(ctx context.Context, b *Balancer, chain ChainRef, path string, w http.ResponseWriter, r *http.Request) error
 }
 
-type Balancer struct {
-	// indexes
-	// the name -> Endpoint map, the primary key
-	nameIndex map[string]*Endpoint
-	// the chain -> name map, the secondary index
-	chainIndex map[ChainRef]*EPSet
-
+type DelegatorFactory struct {
 	rpcDelegators  map[string]RPCDelegator
 	restDelegators map[string]RESTDelegator
-
-	cancelSync func()
 }

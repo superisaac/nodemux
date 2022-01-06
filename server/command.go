@@ -81,7 +81,6 @@ func watchConfig(rootCtx context.Context, yamlPath string) {
 					log.Warnf("error config %s", err)
 				} else {
 					b := balancer.NewBalancer()
-					chains.InstallAdaptors(b)
 					b.LoadFromConfig(cfg.Endpoints)
 					b.StartSync(rootCtx)
 					time.Sleep(1 * time.Second)
@@ -126,8 +125,13 @@ func CommandStartServer() {
 	if err != nil {
 		panic(err)
 	}
+
+	// initial delegator factory and add chains support to it
+	factory := balancer.GetDelegatorFactory()
+	chains.InstallAdaptors(factory)
+
+	// initialize balancer
 	b := balancer.NewBalancer()
-	chains.InstallAdaptors(b)
 	b.LoadFromConfig(cfg.Endpoints)
 
 	balancer.SetBalancer(b)

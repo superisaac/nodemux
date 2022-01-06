@@ -122,7 +122,7 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	reqmsg, _ := msg.(*jsonrpc.RequestMessage)
 	blcer := balancer.GetBalancer()
 
-	delegator := blcer.GetRPCDelegator(chain.Name)
+	delegator := balancer.GetDelegatorFactory().GetRPCDelegator(chain.Name)
 	if delegator == nil {
 		jsonrpc.ErrorResponse(w, r, err, 404, "backend not found")
 		return
@@ -184,7 +184,7 @@ func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	blcer := balancer.GetBalancer()
 
-	delegator := blcer.GetRESTDelegator(chain.Name)
+	delegator := balancer.GetDelegatorFactory().GetRESTDelegator(chain.Name)
 	if delegator == nil {
 		w.WriteHeader(404)
 		w.Write([]byte("backend not found"))
