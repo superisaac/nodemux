@@ -8,7 +8,9 @@ func InstallAdaptors(balancer *balancer.Balancer) {
 	// JSON-RPC handlers
 	balancer.RegisterRPC(NewEthereumChain(),
 		"ethereum", "binance-chain", "polygon",
-		"okex-token", "huobi-token", "ethereum-classic")
+		"okex-token", "huobi-token", "ethereum-classic",
+		"cardano-kevm",
+	)
 	balancer.RegisterRPC(NewRippleChain(), "ripple")
 	balancer.RegisterRPC(NewFilecoinChain(), "filecoin")
 	balancer.RegisterRPC(NewSolanaChain(), "solana")
@@ -22,4 +24,5 @@ func InstallAdaptors(balancer *balancer.Balancer) {
 	balancer.RegisterREST(NewTronChain(), "tron-full")
 	balancer.RegisterREST(NewEosChain(), "eosio", "enu")
 	balancer.RegisterREST(NewAlgorandChain(), "algorand")
+	balancer.RegisterREST(NewKadenaChain(), "kadena")
 }
