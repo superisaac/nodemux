@@ -10,7 +10,6 @@ import (
 type Block struct {
 	Height int
 	Hash   string
-	//PrevHash string
 }
 
 type ChainRef struct {
@@ -53,6 +52,8 @@ type Balancer struct {
 
 	// the function to cancel sync functions
 	cancelSync func()
+
+	blockHub BlockHub
 }
 
 // Delegators
@@ -66,7 +67,6 @@ type RPCDelegator interface {
 }
 
 type RESTDelegator interface {
-	//GetTip(ctx context.Context, b *Balancer, ep *Endpoint) (*Block, error)
 	TipDelegator
 	DelegateREST(ctx context.Context, b *Balancer, chain ChainRef, path string, w http.ResponseWriter, r *http.Request) error
 }
@@ -74,4 +74,18 @@ type RESTDelegator interface {
 type DelegatorFactory struct {
 	rpcDelegators  map[string]RPCDelegator
 	restDelegators map[string]RESTDelegator
+}
+
+// chain stream
+type BlockStatus struct {
+	EndpointName string
+	Chain        ChainRef
+	Block        *Block
+}
+
+type BlockHub interface {
+	Sub(ch chan BlockStatus)
+	Unsub(ch chan BlockStatus)
+	Pub() chan BlockStatus
+	Run(rootCtx context.Context) error
 }

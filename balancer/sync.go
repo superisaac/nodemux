@@ -16,30 +16,12 @@ func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
 		return err
 	}
 	if block != nil {
-		ep.Healthy = true
-		heightChanged := false
-
-		if ep.Tip != nil {
-			if ep.Tip.Height > block.Height {
-				logger.Warnf("new tip height %d < old tip height %d", block.Height, ep.Tip.Height)
-				heightChanged = true
-			} else if ep.Tip.Height == block.Height &&
-				ep.Tip.Hash != block.Hash {
-				logger.Warnf("tip hash changed from %s to %s", ep.Tip.Hash, block.Hash)
-			}
+		bs := BlockStatus{
+			EndpointName: ep.Name,
+			Chain:        ep.Chain,
+			Block:        block,
 		}
-		ep.Tip = block
-		if epset, ok := self.chainIndex[ep.Chain]; ok {
-			if heightChanged {
-				epset.ResetMaxTipHeight()
-				ep.Chain.Log().Infof("height changed, max tip height set to %d", epset.maxTipHeight)
-			} else if epset.maxTipHeight < block.Height {
-				epset.maxTipHeight = block.Height
-				ep.Chain.Log().Infof("max tip height set to %d %s", epset.maxTipHeight, block.Hash)
-			}
-		} else {
-			logger.Panicf("cnnot get epset by chain %s", ep.Chain)
-		}
+		self.blockHub.Pub() <- bs
 	} else {
 		logger.Warnf("got nil tip block when accessing %s %s", ep.Name, ep.ServerUrl)
 	}
@@ -80,8 +62,17 @@ func (self *Balancer) StartSync(rootCtx context.Context) {
 		log.Warn("sync alredy started")
 		return
 	}
+
 	ctx, cancel := context.WithCancel(rootCtx)
 	self.cancelSync = cancel
+
+	// start blockhub
+	go self.blockHub.Run(ctx)
+
+	// start updater
+	go self.RunUpdater(ctx)
+
+	// start syncer
 	for _, ep := range self.nameIndex {
 		go self.syncEndpoint(ctx, ep)
 	}
@@ -93,5 +84,63 @@ func (self *Balancer) StopSync() {
 		cancel := self.cancelSync
 		self.cancelSync = nil
 		cancel()
+	}
+}
+
+// updater
+func (self *Balancer) updateStatus(bs BlockStatus) error {
+	ep, ok := self.nameIndex[bs.EndpointName]
+	if !ok {
+		return nil
+	}
+
+	logger := ep.Log()
+	block := bs.Block
+
+	ep.Healthy = true
+	heightChanged := false
+
+	if ep.Tip != nil {
+		if ep.Tip.Height > block.Height {
+			logger.Warnf("new tip height %d < old tip height %d", block.Height, ep.Tip.Height)
+			heightChanged = true
+		} else if ep.Tip.Height == block.Height &&
+			ep.Tip.Hash != block.Hash {
+			logger.Warnf("tip hash changed from %s to %s", ep.Tip.Hash, block.Hash)
+		}
+	}
+	ep.Tip = block
+	if epset, ok := self.chainIndex[ep.Chain]; ok {
+		if heightChanged {
+			epset.ResetMaxTipHeight()
+			ep.Chain.Log().Infof("height changed, max tip height set to %d", epset.maxTipHeight)
+		} else if epset.maxTipHeight < block.Height {
+			epset.maxTipHeight = block.Height
+			ep.Chain.Log().Infof("max tip height set to %d %s", epset.maxTipHeight, block.Hash)
+		}
+	} else {
+		logger.Panicf("cnnot get epset by chain %s", ep.Chain)
+	}
+	return nil
+}
+
+func (self *Balancer) RunUpdater(rootCtx context.Context) {
+	ctx, cancel := context.WithCancel(rootCtx)
+	defer cancel()
+
+	upd := make(chan BlockStatus)
+	self.blockHub.Sub(upd)
+	defer self.blockHub.Unsub(upd)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case bs, ok := <-upd:
+			if !ok {
+				return
+			}
+			self.updateStatus(bs)
+		}
 	}
 }
