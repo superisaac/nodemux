@@ -91,3 +91,7 @@ type Chainhub interface {
 	Pub() chan ChainStatus
 	Run(rootCtx context.Context) error
 }
+
+type ChCmdChainStatus struct {
+	Ch chan ChainStatus
+}

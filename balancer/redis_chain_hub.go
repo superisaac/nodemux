@@ -18,6 +18,9 @@ type RedisChainhub struct {
 	pub          chan ChainStatus
 	subs         []chan ChainStatus
 	redisOptions *redis.Options
+
+	cmdSub   chan ChCmdChainStatus
+	cmdUnsub chan ChCmdChainStatus
 }
 
 func NewRedisChainhub(redisUrl string) (*RedisChainhub, error) {
@@ -50,10 +53,18 @@ func NewRedisChainhub(redisUrl string) (*RedisChainhub, error) {
 }
 
 func (self *RedisChainhub) Sub(ch chan ChainStatus) {
+	self.cmdSub <- ChCmdChainStatus{Ch: ch}
+}
+
+func (self *RedisChainhub) sub(ch chan ChainStatus) {
 	self.subs = append(self.subs, ch)
 }
 
 func (self *RedisChainhub) Unsub(ch chan ChainStatus) {
+	self.cmdUnsub <- ChCmdChainStatus{Ch: ch}
+}
+
+func (self *RedisChainhub) unsub(ch chan ChainStatus) {
 	found := -1
 	for i, sub := range self.subs {
 		if sub == ch {
@@ -79,7 +90,7 @@ func (self *RedisChainhub) listen(rootCtx context.Context) error {
 	pubsub := rdb.Subscribe(ctx, PubsubKey)
 	defer pubsub.Close()
 
-	ch := pubsub.Channel()
+	ch := pubsub.Channel(redis.WithChannelSize(1000))
 
 	for {
 		select {
@@ -116,6 +127,16 @@ func (self *RedisChainhub) Run(rootCtx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
+		case cmd, ok := <-self.cmdSub:
+			if !ok {
+				return nil
+			}
+			self.sub(cmd.Ch)
+		case cmd, ok := <-self.cmdUnsub:
+			if !ok {
+				return nil
+			}
+			self.unsub(cmd.Ch)
 		case chainSt, ok := <-self.pub:
 			if !ok {
 				return nil
