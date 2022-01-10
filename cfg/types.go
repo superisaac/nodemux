@@ -12,7 +12,8 @@ type EndpointConfig struct {
 	//HeightPadding int               `yaml:"height_padding,omitempty"`
 }
 
-type Config struct {
-	Version   string                    `yaml:"version,omitempty"`
-	Endpoints map[string]EndpointConfig `yaml:"endpoints"`
+type NodebConfig struct {
+	Version    string                    `yaml:"version,omitempty"`
+	SyncSource string                    `yaml:"sync_source"`
+	Endpoints  map[string]EndpointConfig `yaml:"endpoints"`
 }

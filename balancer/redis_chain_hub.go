@@ -1,0 +1,135 @@
+package balancer
+
+import (
+	"context"
+	"encoding/json"
+	"github.com/go-redis/redis/v8"
+	"github.com/pkg/errors"
+	"net/url"
+	"strconv"
+)
+
+const (
+	PubsubKey = "chain-status"
+)
+
+// implements ChainStatusHub
+type RedisChainhub struct {
+	pub          chan ChainStatus
+	subs         []chan ChainStatus
+	redisOptions *redis.Options
+}
+
+func NewRedisChainhub(redisUrl string) (*RedisChainhub, error) {
+	u, err := url.Parse(redisUrl)
+	if err != nil {
+		return nil, err
+	}
+	sdb := u.Path[1:]
+	db := 0
+	if sdb != "" {
+		db, err = strconv.Atoi(sdb)
+		if err != nil {
+			return nil, err
+		}
+	}
+	pwd, ok := u.User.Password()
+	if !ok {
+		pwd = ""
+	}
+	opt := &redis.Options{
+		Addr:     u.Host,
+		Password: pwd,
+		DB:       db,
+	}
+	return &RedisChainhub{
+		pub:          make(chan ChainStatus, 100),
+		subs:         make([]chan ChainStatus, 0),
+		redisOptions: opt,
+	}, nil
+}
+
+func (self *RedisChainhub) Sub(ch chan ChainStatus) {
+	self.subs = append(self.subs, ch)
+}
+
+func (self *RedisChainhub) Unsub(ch chan ChainStatus) {
+	found := -1
+	for i, sub := range self.subs {
+		if sub == ch {
+			found = i
+			break
+		}
+	}
+	if found >= 0 {
+		self.subs = append(self.subs[:found], self.subs[found+1:]...)
+	}
+}
+
+func (self RedisChainhub) Pub() chan ChainStatus {
+	return self.pub
+}
+
+func (self *RedisChainhub) listen(rootCtx context.Context) error {
+
+	ctx, cancel := context.WithCancel(rootCtx)
+	defer cancel()
+
+	rdb := redis.NewClient(self.redisOptions)
+	pubsub := rdb.Subscribe(ctx, PubsubKey)
+	defer pubsub.Close()
+
+	ch := pubsub.Channel()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case msg, ok := <-ch:
+			{
+				if !ok {
+					return nil
+				}
+				var chainSt ChainStatus
+				err := json.Unmarshal([]byte(msg.Payload), &chainSt)
+				if err != nil {
+					return err
+				}
+				// broadcast to sub channels
+				for _, sub := range self.subs {
+					sub <- chainSt
+				}
+			}
+		}
+	}
+}
+
+func (self *RedisChainhub) Run(rootCtx context.Context) error {
+	ctx, cancel := context.WithCancel(rootCtx)
+	defer cancel()
+
+	go self.listen(ctx)
+
+	// run publish
+	rdb := redis.NewClient(self.redisOptions)
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case chainSt, ok := <-self.pub:
+			if !ok {
+				return nil
+			}
+
+			data, err := json.Marshal(chainSt)
+			if err != nil {
+				return errors.Wrap(err, "json.Marshal")
+			}
+			err = rdb.Publish(ctx, PubsubKey, data).Err()
+			if err != nil {
+				return errors.Wrap(err, "publish")
+			}
+		}
+	}
+	return nil
+}

@@ -34,7 +34,7 @@ func SetBalancer(b *Balancer) {
 
 func NewBalancer() *Balancer {
 	b := new(Balancer)
-	b.chainHub = NewLocalChainHub()
+	b.chainHub = NewLocalChainhub()
 	b.Reset()
 	return b
 }
@@ -123,8 +123,23 @@ func (self *Balancer) SelectOverHeight(chain ChainRef, method string, heightSpec
 	return nil, false
 }
 
-func (self *Balancer) LoadFromConfig(epcfgs map[string]cfg.EndpointConfig) {
-	for name, epcfg := range epcfgs {
+func BalancerFromConfig(nbcfg *cfg.NodebConfig) *Balancer {
+	b := NewBalancer()
+	b.LoadFromConfig(nbcfg)
+	if nbcfg.SyncSource != "" {
+		// sync source must be a redis URL
+		chainHub, err := NewRedisChainhub(nbcfg.SyncSource)
+		if err != nil {
+			panic(err)
+		}
+		b.chainHub = chainHub
+	}
+	return b
+}
+
+func (self *Balancer) LoadFromConfig(nbcfg *cfg.NodebConfig) {
+	self.cfg = nbcfg
+	for name, epcfg := range nbcfg.Endpoints {
 		ep := NewEndpoint()
 		if !GetDelegatorFactory().SupportChain(epcfg.Chain) {
 			panic(fmt.Sprintf("chain %s not supported", epcfg.Chain))

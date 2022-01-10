@@ -3,6 +3,7 @@ package balancer
 import (
 	"context"
 	"github.com/superisaac/jsonrpc"
+	"github.com/superisaac/nodeb/cfg"
 	"net/http"
 )
 
@@ -44,6 +45,7 @@ type EndpointSet struct {
 }
 
 type Balancer struct {
+	cfg *cfg.NodebConfig
 	// indexes
 	// the name -> Endpoint map, the primary key
 	nameIndex map[string]*Endpoint
@@ -53,7 +55,7 @@ type Balancer struct {
 	// the function to cancel sync functions
 	cancelSync func()
 
-	chainHub ChainStatusHub
+	chainHub Chainhub
 }
 
 // Delegators
@@ -83,7 +85,7 @@ type ChainStatus struct {
 	Tip          *Block   `json:"tip"`
 }
 
-type ChainStatusHub interface {
+type Chainhub interface {
 	Sub(ch chan ChainStatus)
 	Unsub(ch chan ChainStatus)
 	Pub() chan ChainStatus

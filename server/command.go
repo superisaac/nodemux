@@ -76,12 +76,11 @@ func watchConfig(rootCtx context.Context, yamlPath string) {
 
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				log.Infof("watch config, file %s changed, event %#v", yamlPath, event)
-				cfg, err := cfg.ConfigFromFile(event.Name)
+				nbcfg, err := cfg.ConfigFromFile(event.Name)
 				if err != nil {
 					log.Warnf("error config %s", err)
 				} else {
-					b := balancer.NewBalancer()
-					b.LoadFromConfig(cfg.Endpoints)
+					b := balancer.BalancerFromConfig(nbcfg)
 					b.StartSync(rootCtx)
 					time.Sleep(1 * time.Second)
 					balancer.SetBalancer(b)
@@ -121,7 +120,7 @@ func CommandStartServer() {
 		os.Exit(1)
 	}
 
-	cfg, err := cfg.ConfigFromFile(*pYamlPath)
+	nbcfg, err := cfg.ConfigFromFile(*pYamlPath)
 	if err != nil {
 		panic(err)
 	}
@@ -131,8 +130,7 @@ func CommandStartServer() {
 	chains.InstallAdaptors(factory)
 
 	// initialize balancer
-	b := balancer.NewBalancer()
-	b.LoadFromConfig(cfg.Endpoints)
+	b := balancer.BalancerFromConfig(nbcfg)
 
 	balancer.SetBalancer(b)
 

@@ -4,16 +4,17 @@ import (
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
+	"net/url"
 	"os"
 )
 
-func NewConfig() *Config {
-	cfg := &Config{}
+func NewConfig() *NodebConfig {
+	cfg := &NodebConfig{}
 	cfg.validateValues()
 	return cfg
 }
 
-func ConfigFromFile(yamlPath string) (*Config, error) {
+func ConfigFromFile(yamlPath string) (*NodebConfig, error) {
 	cfg := NewConfig()
 	err := cfg.Load(yamlPath)
 	if err != nil {
@@ -22,9 +23,18 @@ func ConfigFromFile(yamlPath string) (*Config, error) {
 	return cfg, nil
 }
 
-func (self *Config) validateValues() error {
+func (self *NodebConfig) validateValues() error {
 	if self.Version == "" {
 		self.Version = "1.0"
+	}
+	if self.SyncSource != "" {
+		u, err := url.Parse(self.SyncSource)
+		if err != nil {
+			return err
+		}
+		if u.Scheme != "redis" {
+			return errors.New("sync source currently only support redis")
+		}
 	}
 	for _, epcfg := range self.Endpoints {
 		if epcfg.Chain == "" {
@@ -45,7 +55,7 @@ func (self *Config) validateValues() error {
 	return nil
 }
 
-func (self *Config) Load(yamlPath string) error {
+func (self *NodebConfig) Load(yamlPath string) error {
 	if _, err := os.Stat(yamlPath); os.IsNotExist(err) {
 		if err != nil {
 			return err
@@ -56,10 +66,10 @@ func (self *Config) Load(yamlPath string) error {
 	if err != nil {
 		return err
 	}
-	return self.LoadYamlData(data)
+	return self.LoadYamldata(data)
 }
 
-func (self *Config) LoadYamlData(yamlData []byte) error {
+func (self *NodebConfig) LoadYamldata(yamlData []byte) error {
 	err := yaml.Unmarshal(yamlData, self)
 	if err != nil {
 		return err
