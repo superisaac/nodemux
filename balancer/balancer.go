@@ -34,7 +34,7 @@ func SetBalancer(b *Balancer) {
 
 func NewBalancer() *Balancer {
 	b := new(Balancer)
-	b.blockHub = NewLocalBlockHub()
+	b.chainHub = NewLocalChainHub()
 	b.Reset()
 	return b
 }

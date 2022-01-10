@@ -13,8 +13,8 @@ type Block struct {
 }
 
 type ChainRef struct {
-	Name    string
-	Network string
+	Name    string `json:"name"`
+	Network string `json:"network"`
 }
 
 type AbnormalResponse struct {
@@ -53,7 +53,7 @@ type Balancer struct {
 	// the function to cancel sync functions
 	cancelSync func()
 
-	blockHub BlockHub
+	chainHub ChainStatusHub
 }
 
 // Delegators
@@ -77,15 +77,15 @@ type DelegatorFactory struct {
 }
 
 // chain stream
-type BlockStatus struct {
-	EndpointName string
-	Chain        ChainRef
-	Block        *Block
+type ChainStatus struct {
+	EndpointName string   `json:"endpoint_name"`
+	Chain        ChainRef `json:"chain"`
+	Tip          *Block   `json:"tip"`
 }
 
-type BlockHub interface {
-	Sub(ch chan BlockStatus)
-	Unsub(ch chan BlockStatus)
-	Pub() chan BlockStatus
+type ChainStatusHub interface {
+	Sub(ch chan ChainStatus)
+	Unsub(ch chan ChainStatus)
+	Pub() chan ChainStatus
 	Run(rootCtx context.Context) error
 }

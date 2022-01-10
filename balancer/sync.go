@@ -16,12 +16,12 @@ func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
 		return err
 	}
 	if block != nil {
-		bs := BlockStatus{
+		bs := ChainStatus{
 			EndpointName: ep.Name,
 			Chain:        ep.Chain,
-			Block:        block,
+			Tip:          block,
 		}
-		self.blockHub.Pub() <- bs
+		self.chainHub.Pub() <- bs
 	} else {
 		logger.Warnf("got nil tip block when accessing %s %s", ep.Name, ep.ServerUrl)
 	}
@@ -67,7 +67,7 @@ func (self *Balancer) StartSync(rootCtx context.Context) {
 	self.cancelSync = cancel
 
 	// start blockhub
-	go self.blockHub.Run(ctx)
+	go self.chainHub.Run(ctx)
 
 	// start updater
 	go self.RunUpdater(ctx)
@@ -88,14 +88,14 @@ func (self *Balancer) StopSync() {
 }
 
 // updater
-func (self *Balancer) updateStatus(bs BlockStatus) error {
+func (self *Balancer) updateStatus(bs ChainStatus) error {
 	ep, ok := self.nameIndex[bs.EndpointName]
 	if !ok {
 		return nil
 	}
 
 	logger := ep.Log()
-	block := bs.Block
+	block := bs.Tip
 
 	ep.Healthy = true
 	heightChanged := false
@@ -128,9 +128,9 @@ func (self *Balancer) RunUpdater(rootCtx context.Context) {
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
-	upd := make(chan BlockStatus)
-	self.blockHub.Sub(upd)
-	defer self.blockHub.Unsub(upd)
+	upd := make(chan ChainStatus)
+	self.chainHub.Sub(upd)
+	defer self.chainHub.Unsub(upd)
 
 	for {
 		select {
