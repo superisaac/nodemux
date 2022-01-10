@@ -56,7 +56,7 @@ func (self Balancer) Syncing() bool {
 	return self.cancelSync != nil
 }
 
-func (self *Balancer) StartSync(rootCtx context.Context) {
+func (self *Balancer) StartSync(rootCtx context.Context, sync bool) {
 	//self.syncing = true
 	if self.Syncing() {
 		log.Warn("sync alredy started")
@@ -73,8 +73,10 @@ func (self *Balancer) StartSync(rootCtx context.Context) {
 	go self.RunUpdater(ctx)
 
 	// start syncer
-	for _, ep := range self.nameIndex {
-		go self.syncEndpoint(ctx, ep)
+	if sync {
+		for _, ep := range self.nameIndex {
+			go self.syncEndpoint(ctx, ep)
+		}
 	}
 }
 

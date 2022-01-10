@@ -48,7 +48,7 @@ func setupLogger(logOutput string) {
 	}
 }
 
-func watchConfig(rootCtx context.Context, yamlPath string) {
+func watchConfig(rootCtx context.Context, yamlPath string, syncEndpoints bool) {
 	log.Infof("watch the config %s", yamlPath)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -81,7 +81,7 @@ func watchConfig(rootCtx context.Context, yamlPath string) {
 					log.Warnf("error config %s", err)
 				} else {
 					b := balancer.BalancerFromConfig(nbcfg)
-					b.StartSync(rootCtx)
+					b.StartSync(rootCtx, syncEndpoints)
 					time.Sleep(1 * time.Second)
 					balancer.SetBalancer(b)
 
@@ -101,6 +101,7 @@ func CommandStartServer() {
 	serverFlags := flag.NewFlagSet("jointrpc-server", flag.ExitOnError)
 	pYamlPath := serverFlags.String("f", "nodeb.yml", "path to nodeb.yml")
 	pWatchConfig := serverFlags.Bool("w", false, "watch config changes using fsnotify")
+	pSyncEndpoints := serverFlags.Bool("sync", true, "sync endpoints statuses")
 
 	pBind := serverFlags.String("b", "127.0.0.1:9000", "The http server address and port")
 	pCertfile := serverFlags.String("cert", "", "tls cert file")
@@ -137,10 +138,10 @@ func CommandStartServer() {
 	rootCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	b.StartSync(rootCtx)
+	b.StartSync(rootCtx, *pSyncEndpoints)
 
 	if *pWatchConfig {
-		go watchConfig(rootCtx, *pYamlPath)
+		go watchConfig(rootCtx, *pYamlPath, *pSyncEndpoints)
 	}
 
 	var httpOpts []HTTPOptionFunc
