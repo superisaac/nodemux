@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"net/url"
 	"strconv"
 )
@@ -48,6 +49,8 @@ func NewRedisChainhub(redisUrl string) (*RedisChainhub, error) {
 	return &RedisChainhub{
 		pub:          make(chan ChainStatus, 100),
 		subs:         make([]chan ChainStatus, 0),
+		cmdSub:       make(chan ChCmdChainStatus, 10),
+		cmdUnsub:     make(chan ChCmdChainStatus, 10),
 		redisOptions: opt,
 	}, nil
 }
@@ -56,7 +59,7 @@ func (self *RedisChainhub) Sub(ch chan ChainStatus) {
 	self.cmdSub <- ChCmdChainStatus{Ch: ch}
 }
 
-func (self *RedisChainhub) sub(ch chan ChainStatus) {
+func (self *RedisChainhub) subscribe(ch chan ChainStatus) {
 	self.subs = append(self.subs, ch)
 }
 
@@ -64,7 +67,7 @@ func (self *RedisChainhub) Unsub(ch chan ChainStatus) {
 	self.cmdUnsub <- ChCmdChainStatus{Ch: ch}
 }
 
-func (self *RedisChainhub) unsub(ch chan ChainStatus) {
+func (self *RedisChainhub) unsubscribe(ch chan ChainStatus) {
 	found := -1
 	for i, sub := range self.subs {
 		if sub == ch {
@@ -82,7 +85,6 @@ func (self RedisChainhub) Pub() chan ChainStatus {
 }
 
 func (self *RedisChainhub) listen(rootCtx context.Context) error {
-
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
@@ -99,11 +101,13 @@ func (self *RedisChainhub) listen(rootCtx context.Context) error {
 		case msg, ok := <-ch:
 			{
 				if !ok {
+					log.Warnf("not ok")
 					return nil
 				}
 				var chainSt ChainStatus
 				err := json.Unmarshal([]byte(msg.Payload), &chainSt)
 				if err != nil {
+					log.Warnf("error unmarshal %#v", err)
 					return err
 				}
 				// broadcast to sub channels
@@ -129,19 +133,21 @@ func (self *RedisChainhub) Run(rootCtx context.Context) error {
 			return nil
 		case cmd, ok := <-self.cmdSub:
 			if !ok {
+				log.Warnf("cmd sub not ok")
 				return nil
 			}
-			self.sub(cmd.Ch)
+			self.subscribe(cmd.Ch)
 		case cmd, ok := <-self.cmdUnsub:
 			if !ok {
+				log.Warnf("cmd unsub not ok")
 				return nil
 			}
-			self.unsub(cmd.Ch)
+			self.unsubscribe(cmd.Ch)
 		case chainSt, ok := <-self.pub:
 			if !ok {
+				log.Warnf("cmd pub not ok")
 				return nil
 			}
-
 			data, err := json.Marshal(chainSt)
 			if err != nil {
 				return errors.Wrap(err, "json.Marshal")

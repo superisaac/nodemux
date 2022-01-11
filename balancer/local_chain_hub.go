@@ -27,7 +27,7 @@ func (self *LocalChainhub) Sub(ch chan ChainStatus) {
 	self.cmdSub <- ChCmdChainStatus{Ch: ch}
 }
 
-func (self *LocalChainhub) sub(ch chan ChainStatus) {
+func (self *LocalChainhub) subscribe(ch chan ChainStatus) {
 	self.subs = append(self.subs, ch)
 }
 
@@ -35,7 +35,7 @@ func (self *LocalChainhub) Unsub(ch chan ChainStatus) {
 	self.cmdUnsub <- ChCmdChainStatus{Ch: ch}
 }
 
-func (self *LocalChainhub) unsub(ch chan ChainStatus) {
+func (self *LocalChainhub) unsubscribe(ch chan ChainStatus) {
 	found := -1
 	for i, sub := range self.subs {
 		if sub == ch {
@@ -68,12 +68,12 @@ func (self *LocalChainhub) Run(rootCtx context.Context) error {
 			if !ok {
 				return nil
 			}
-			self.sub(cmd.Ch)
+			self.subscribe(cmd.Ch)
 		case cmd, ok := <-self.cmdUnsub:
 			if !ok {
 				return nil
 			}
-			self.unsub(cmd.Ch)
+			self.unsubscribe(cmd.Ch)
 		case chainSt, ok := <-self.pub:
 			if !ok {
 				return nil
