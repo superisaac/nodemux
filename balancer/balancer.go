@@ -126,9 +126,9 @@ func (self *Balancer) SelectOverHeight(chain ChainRef, method string, heightSpec
 func BalancerFromConfig(nbcfg *cfg.NodebConfig) *Balancer {
 	b := NewBalancer()
 	b.LoadFromConfig(nbcfg)
-	if nbcfg.SyncSource != "" {
+	if nbcfg.Pubsub.Url != "" {
 		// sync source must be a redis URL
-		chainHub, err := NewRedisChainhub(nbcfg.SyncSource)
+		chainHub, err := NewRedisChainhub(nbcfg.Pubsub.Url)
 		if err != nil {
 			panic(err)
 		}

@@ -27,8 +27,8 @@ func (self *NodebConfig) validateValues() error {
 	if self.Version == "" {
 		self.Version = "1.0"
 	}
-	if self.SyncSource != "" {
-		u, err := url.Parse(self.SyncSource)
+	if self.Pubsub.Url != "" {
+		u, err := url.Parse(self.Pubsub.Url)
 		if err != nil {
 			return err
 		}

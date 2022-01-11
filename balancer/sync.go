@@ -66,8 +66,13 @@ func (self *Balancer) StartSync(rootCtx context.Context, sync bool) {
 	ctx, cancel := context.WithCancel(rootCtx)
 	self.cancelSync = cancel
 
-	// start blockhub
-	go self.chainHub.Run(ctx)
+	// start chainhub
+	go func() {
+		err := self.chainHub.Run(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	// start updater
 	go self.RunUpdater(ctx)

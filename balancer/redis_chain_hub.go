@@ -6,7 +6,9 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"net"
 	"net/url"
+	"reflect"
 	"strconv"
 )
 
@@ -127,6 +129,7 @@ func (self *RedisChainhub) Run(rootCtx context.Context) error {
 
 	// run publish
 	rdb := redis.NewClient(self.redisOptions)
+	networkFailure := 0
 	for {
 		select {
 		case <-ctx.Done():
@@ -154,7 +157,21 @@ func (self *RedisChainhub) Run(rootCtx context.Context) error {
 			}
 			err = rdb.Publish(ctx, PubsubKey, data).Err()
 			if err != nil {
-				return errors.Wrap(err, "publish")
+
+				var opErr *net.OpError
+				if errors.As(err, &opErr) {
+					networkFailure++
+					log.Warnf("redis connect failed %d times, %s", networkFailure, opErr)
+					if networkFailure > 100 {
+						return errors.Wrap(opErr, "networkFailure")
+					}
+
+				} else {
+					log.Warnf("publish error, %s %s", reflect.TypeOf(err), err)
+					return errors.Wrap(err, "publish")
+				}
+			} else {
+				networkFailure = 0
 			}
 		}
 	}

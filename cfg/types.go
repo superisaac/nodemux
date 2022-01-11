@@ -12,8 +12,12 @@ type EndpointConfig struct {
 	//HeightPadding int               `yaml:"height_padding,omitempty"`
 }
 
+type PubsubConfig struct {
+	Url string `yaml:"url"`
+}
+
 type NodebConfig struct {
-	Version    string                    `yaml:"version,omitempty"`
-	SyncSource string                    `yaml:"sync_source"`
-	Endpoints  map[string]EndpointConfig `yaml:"endpoints"`
+	Version   string                    `yaml:"version,omitempty"`
+	Pubsub    PubsubConfig              `yaml:"pubsub"`
+	Endpoints map[string]EndpointConfig `yaml:"endpoints"`
 }
