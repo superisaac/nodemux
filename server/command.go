@@ -103,9 +103,8 @@ func CommandStartServer() {
 	pWatchConfig := serverFlags.Bool("w", false, "watch config changes using fsnotify")
 	pSyncEndpoints := serverFlags.Bool("sync", true, "sync endpoints statuses")
 
-	pBind := serverFlags.String("b", "127.0.0.1:9000", "The http server address and port")
-	pCertfile := serverFlags.String("cert", "", "tls cert file")
-	pKeyfile := serverFlags.String("key", "", "tls key file")
+	pServerYmlPath := serverFlags.String("server", "", "the path to server.yml")
+	pBind := serverFlags.String("b", "", "The http server address and port, default is 127.0.0.1:9000")
 
 	pLogfile := serverFlags.String("log", "", "path to log output, default is stdout")
 
@@ -114,8 +113,27 @@ func CommandStartServer() {
 
 	setupLogger(*pLogfile)
 
-	yamlPath := *pYamlPath
+	// parse server.yml
+	serverCfg := NewServerConfig()
+	serverYamlPath := *pServerYmlPath
+	if serverYamlPath != "" {
+		if _, err := os.Stat(serverYamlPath); err != nil && os.IsNotExist(err) {
+			fmt.Fprintf(os.Stderr, "server.yml not exist\n")
+			os.Exit(1)
+		}
 
+		err := serverCfg.Load(serverYamlPath)
+		if err != nil {
+			panic(err)
+		}
+		bind := *pBind
+		if bind != "" {
+			serverCfg.Bind = bind
+		}
+	}
+
+	// parse nodeb.yml
+	yamlPath := *pYamlPath
 	if _, err := os.Stat(yamlPath); err != nil && os.IsNotExist(err) {
 		fmt.Fprintf(os.Stderr, "config yaml not exist\n")
 		os.Exit(1)
@@ -144,9 +162,5 @@ func CommandStartServer() {
 		go watchConfig(rootCtx, *pYamlPath, *pSyncEndpoints)
 	}
 
-	var httpOpts []HTTPOptionFunc
-	if *pCertfile != "" && *pKeyfile != "" {
-		httpOpts = append(httpOpts, WithTLS(*pCertfile, *pKeyfile))
-	}
-	StartHTTPServer(rootCtx, *pBind, httpOpts...)
+	StartHTTPServer(rootCtx, serverCfg)
 }

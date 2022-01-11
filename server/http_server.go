@@ -14,26 +14,11 @@ import (
 	"regexp"
 )
 
-type HTTPOption struct {
-	keyFile  string
-	certFile string
-}
-
-type HTTPOptionFunc func(opt *HTTPOption)
-
-func WithTLS(certFile string, keyFile string) HTTPOptionFunc {
-	return func(opt *HTTPOption) {
-		opt.certFile = certFile
-		opt.keyFile = keyFile
+func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
+	bind := serverCfg.Bind
+	if bind == "" {
+		bind = "127.0.0.1:9000"
 	}
-}
-
-func StartHTTPServer(rootCtx context.Context, bind string, opts ...HTTPOptionFunc) {
-	httpOption := &HTTPOption{}
-	for _, opt := range opts {
-		opt(httpOption)
-	}
-
 	log.Infof("start http proxy at %s", bind)
 	mux := http.NewServeMux()
 	//mux.Handle("/metrics", NewMetricsCollector(rootCtx))
@@ -59,8 +44,8 @@ func StartHTTPServer(rootCtx context.Context, bind string, opts ...HTTPOptionFun
 		}
 	}()
 
-	if httpOption.certFile != "" && httpOption.keyFile != "" {
-		err = server.ServeTLS(listener, httpOption.certFile, httpOption.keyFile)
+	if serverCfg.CertAvailable() {
+		err = server.ServeTLS(listener, serverCfg.Cert.CAfile, serverCfg.Cert.Keyfile)
 	} else {
 		err = server.Serve(listener)
 	}
