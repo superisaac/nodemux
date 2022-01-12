@@ -1,9 +1,9 @@
 package server
 
 import (
-	//"fmt"
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
@@ -22,11 +22,15 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	}
 	log.Infof("start http proxy at %s", bind)
 	mux := http.NewServeMux()
-	//mux.Handle("/metrics", NewMetricsCollector(rootCtx))
-	//mux.Handle("/ws", NewWSServer(rootCtx))
-	mux.Handle("/metrics", promhttp.Handler())
-	mux.Handle("/jsonrpc", NewRPCRelayer(rootCtx))
-	mux.Handle("/rest", NewRESTRelayer(rootCtx))
+	mux.Handle("/metrics", NewHttpAuthHandler(
+		serverCfg.Metrics.Auth,
+		promhttp.Handler()))
+	mux.Handle("/jsonrpc", NewHttpAuthHandler(
+		serverCfg.Auth,
+		NewRPCRelayer(rootCtx)))
+	mux.Handle("/rest", NewHttpAuthHandler(
+		serverCfg.Auth,
+		NewRESTRelayer(rootCtx)))
 
 	server := &http.Server{Addr: bind, Handler: mux}
 	listener, err := net.Listen("tcp", bind)
@@ -185,3 +189,48 @@ func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("server error"))
 	}
 } // RESTRelayer.ServeHTTP
+
+type HttpAuthHandler struct {
+	authConfig *AuthConfig
+	next       http.Handler
+}
+
+func NewHttpAuthHandler(authConfig *AuthConfig, next http.Handler) *HttpAuthHandler {
+	return &HttpAuthHandler{authConfig: authConfig, next: next}
+}
+
+func (self HttpAuthHandler) TryAuth(r *http.Request) bool {
+	if self.authConfig == nil || !self.authConfig.Available() {
+		return true
+	}
+
+	if self.authConfig.Basic != nil {
+		basicAuth := self.authConfig.Basic
+		if username, password, ok := r.BasicAuth(); ok {
+			if basicAuth.Username == username && basicAuth.Password == password {
+				return true
+			}
+		}
+	}
+
+	if self.authConfig.Bearer != nil && self.authConfig.Bearer.Token != "" {
+		bearerAuth := self.authConfig.Bearer
+		authHeader := r.Header.Get("Authorization")
+		expect := fmt.Sprintf("Bearer %s", bearerAuth.Token)
+		if authHeader == expect {
+			return true
+		}
+	}
+
+	return false
+
+}
+
+func (self *HttpAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if !self.TryAuth(r) {
+		w.WriteHeader(401)
+		w.Write([]byte("auth failed!\n"))
+		return
+	}
+	self.next.ServeHTTP(w, r)
+}

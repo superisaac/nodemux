@@ -11,9 +11,29 @@ type CertConfig struct {
 	Keyfile string `yaml:"key"`
 }
 
+type BasicAuthConfig struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
+
+type BearerAuthConfig struct {
+	Token string `yaml:"token"`
+}
+
+type AuthConfig struct {
+	Basic  *BasicAuthConfig  `yaml:"basic,omitempty"`
+	Bearer *BearerAuthConfig `yaml:"bearer,omitempty"`
+}
+
+type MetricsConfig struct {
+	Auth *AuthConfig `yaml:"auth,omitempty"`
+}
+
 type ServerConfig struct {
-	Bind string     `yaml:version,omitempty`
-	Cert CertConfig `yaml:"cert,omitempty"`
+	Bind    string        `yaml:version,omitempty`
+	Cert    CertConfig    `yaml:"cert,omitempty"`
+	Metrics MetricsConfig `yaml:"metrics,omitempty"`
+	Auth    *AuthConfig   `yaml:"auth,omitempty"`
 }
 
 func NewServerConfig() *ServerConfig {
@@ -59,4 +79,15 @@ func (self *ServerConfig) validateValues() error {
 
 func (self ServerConfig) CertAvailable() bool {
 	return self.Cert.CAfile != "" && self.Cert.Keyfile != ""
+}
+
+// Auth config
+func (self AuthConfig) Available() bool {
+	if self.Bearer != nil && self.Bearer.Token != "" {
+		return true
+	}
+	if self.Basic != nil && self.Basic.Username != "" && self.Basic.Password != "" {
+		return true
+	}
+	return false
 }
