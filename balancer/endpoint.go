@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonrpc"
 	"io"
@@ -30,6 +31,13 @@ func (self *EndpointSet) ResetMaxTipHeight() {
 	self.maxTipHeight = maxHeight
 }
 
+func (self EndpointSet) prometheusLabels(chain string, network string) prometheus.Labels {
+	return prometheus.Labels{
+		"chain":   chain,
+		"network": network,
+	}
+}
+
 /// Create an empty endpoint
 func NewEndpoint() *Endpoint {
 	return &Endpoint{Healthy: true}
@@ -41,6 +49,14 @@ func (self Endpoint) Log() *log.Entry {
 		"network": self.Chain.Network,
 		"name":    self.Name,
 	})
+}
+
+func (self Endpoint) prometheusLabels() prometheus.Labels {
+	return prometheus.Labels{
+		"chain":    self.Chain.Name,
+		"network":  self.Chain.Network,
+		"endpoint": self.Name,
+	}
 }
 
 func (self *Endpoint) Connect() {

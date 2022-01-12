@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonrpc"
 	"github.com/superisaac/nodeb/balancer"
@@ -23,6 +24,7 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	mux := http.NewServeMux()
 	//mux.Handle("/metrics", NewMetricsCollector(rootCtx))
 	//mux.Handle("/ws", NewWSServer(rootCtx))
+	mux.Handle("/metrics", promhttp.Handler())
 	mux.Handle("/jsonrpc", NewRPCRelayer(rootCtx))
 	mux.Handle("/rest", NewRESTRelayer(rootCtx))
 
