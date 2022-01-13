@@ -83,6 +83,7 @@ type ChainStatus struct {
 	EndpointName string   `json:"endpoint_name"`
 	Chain        ChainRef `json:"chain"`
 	Tip          *Block   `json:"tip"`
+	Healthy      bool     `json:"healthy"`
 }
 
 type Chainhub interface {

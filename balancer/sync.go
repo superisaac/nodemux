@@ -3,60 +3,14 @@ package balancer
 import (
 	"context"
 	log "github.com/sirupsen/logrus"
-	"time"
+	//"time"
 )
-
-func (self *Balancer) syncTip(rootCtx context.Context, ep *Endpoint) error {
-	logger := ep.Log()
-	delegator := GetDelegatorFactory().GetTipDelegator(ep.Chain.Name)
-	block, err := delegator.GetTip(rootCtx, self, ep)
-	if err != nil {
-		logger.Warnf("mark unhealthy due to tip height error %s", err)
-		ep.Healthy = false
-		return err
-	}
-	if block != nil {
-		bs := ChainStatus{
-			EndpointName: ep.Name,
-			Chain:        ep.Chain,
-			Tip:          block,
-		}
-		self.chainHub.Pub() <- bs
-	} else {
-		logger.Warnf("got nil tip block when accessing %s %s", ep.Name, ep.ServerUrl)
-	}
-	return nil
-}
-
-func (self *Balancer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
-	ep.Log().Info("sync job started")
-	ctx, cancel := context.WithCancel(rootCtx)
-	defer cancel()
-	for {
-		if !self.Syncing() {
-			break
-		}
-		sleepTime := 1 * time.Second
-		err := self.syncTip(ctx, ep)
-		if err != nil {
-			// unhealthy
-			sleepTime = 15 * time.Second
-		}
-		select {
-		case <-ctx.Done():
-			break
-		case <-time.After(sleepTime):
-			break
-		}
-	}
-	ep.Log().Info("sync job stopped")
-}
 
 func (self Balancer) Syncing() bool {
 	return self.cancelSync != nil
 }
 
-func (self *Balancer) StartSync(rootCtx context.Context, sync bool) {
+func (self *Balancer) StartSync(rootCtx context.Context, fetch bool) {
 	//self.syncing = true
 	if self.Syncing() {
 		log.Warn("sync alredy started")
@@ -78,9 +32,9 @@ func (self *Balancer) StartSync(rootCtx context.Context, sync bool) {
 	go self.RunUpdater(ctx)
 
 	// start syncer
-	if sync {
+	if fetch {
 		for _, ep := range self.nameIndex {
-			go self.syncEndpoint(ctx, ep)
+			go self.fetchEndpoint(ctx, ep)
 		}
 	}
 }
@@ -100,11 +54,14 @@ func (self *Balancer) updateStatus(bs ChainStatus) error {
 	if !ok {
 		return nil
 	}
+	ep.Healthy = bs.Healthy
 
 	logger := ep.Log()
 	block := bs.Tip
+	if block == nil {
+		return nil
+	}
 
-	ep.Healthy = true
 	heightChanged := false
 
 	if ep.Tip != nil {

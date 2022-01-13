@@ -48,7 +48,7 @@ func setupLogger(logOutput string) {
 	}
 }
 
-func watchConfig(rootCtx context.Context, yamlPath string, syncEndpoints bool) {
+func watchConfig(rootCtx context.Context, yamlPath string, fetch bool) {
 	log.Infof("watch the config %s", yamlPath)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -81,7 +81,7 @@ func watchConfig(rootCtx context.Context, yamlPath string, syncEndpoints bool) {
 					log.Warnf("error config %s", err)
 				} else {
 					b := balancer.BalancerFromConfig(nbcfg)
-					b.StartSync(rootCtx, syncEndpoints)
+					b.StartSync(rootCtx, fetch)
 					time.Sleep(1 * time.Second)
 					balancer.SetBalancer(b)
 
@@ -101,7 +101,7 @@ func CommandStartServer() {
 	serverFlags := flag.NewFlagSet("jointrpc-server", flag.ExitOnError)
 	pYamlPath := serverFlags.String("f", "nodeb.yml", "path to nodeb.yml")
 	pWatchConfig := serverFlags.Bool("w", false, "watch config changes using fsnotify")
-	pSyncEndpoints := serverFlags.Bool("sync", true, "sync endpoints statuses")
+	pFetchEndpoints := serverFlags.Bool("fetch", true, "fetch endpoints statuses")
 
 	pServerYmlPath := serverFlags.String("server", "", "the path to server.yml")
 	pBind := serverFlags.String("b", "", "The http server address and port, default is 127.0.0.1:9000")
@@ -156,10 +156,10 @@ func CommandStartServer() {
 	rootCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	b.StartSync(rootCtx, *pSyncEndpoints)
+	b.StartSync(rootCtx, *pFetchEndpoints)
 
 	if *pWatchConfig {
-		go watchConfig(rootCtx, *pYamlPath, *pSyncEndpoints)
+		go watchConfig(rootCtx, *pYamlPath, *pFetchEndpoints)
 	}
 
 	StartHTTPServer(rootCtx, serverCfg)

@@ -12,14 +12,17 @@ type LocalChainhub struct {
 
 	cmdSub   chan ChCmdChainStatus
 	cmdUnsub chan ChCmdChainStatus
+
+	snapshots map[ChainRef]ChainStatus
 }
 
 func NewLocalChainhub() *LocalChainhub {
 	return &LocalChainhub{
-		pub:      make(chan ChainStatus, 100),
-		subs:     make([]chan ChainStatus, 0),
-		cmdSub:   make(chan ChCmdChainStatus, 10),
-		cmdUnsub: make(chan ChCmdChainStatus, 10),
+		pub:       make(chan ChainStatus, 100),
+		subs:      make([]chan ChainStatus, 0),
+		cmdSub:    make(chan ChCmdChainStatus, 10),
+		cmdUnsub:  make(chan ChCmdChainStatus, 10),
+		snapshots: make(map[ChainRef]ChainStatus, 10),
 	}
 }
 
@@ -29,6 +32,9 @@ func (self *LocalChainhub) Sub(ch chan ChainStatus) {
 
 func (self *LocalChainhub) subscribe(ch chan ChainStatus) {
 	self.subs = append(self.subs, ch)
+	for _, chainSt := range self.snapshots {
+		ch <- chainSt
+	}
 }
 
 func (self *LocalChainhub) Unsub(ch chan ChainStatus) {
@@ -56,10 +62,6 @@ func (self *LocalChainhub) Run(rootCtx context.Context) error {
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
-	// defer func() {
-	// release all subs
-	//self.subs = make([]chan ChainStatus, 0)
-	//}()
 	for {
 		select {
 		case <-ctx.Done():
@@ -78,6 +80,7 @@ func (self *LocalChainhub) Run(rootCtx context.Context) error {
 			if !ok {
 				return nil
 			}
+			self.snapshots[chainSt.Chain] = chainSt
 			for _, sub := range self.subs {
 				sub <- chainSt
 			}
