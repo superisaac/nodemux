@@ -10,7 +10,7 @@ import (
 	"github.com/superisaac/jsonrpc"
 	"github.com/superisaac/nodeb/balancer"
 	"io"
-	"net"
+	//"net"
 	"net/http"
 	"regexp"
 )
@@ -34,17 +34,21 @@ func startEntrypointServer(rootCtx context.Context, entryCfg EntrypointConfig, s
 		handler = rest1
 	}
 	log.Infof("entrypoint server %s listens at %s", chain, entryCfg.Bind)
+	var err error
 	if serverCfg.CertAvailable() {
-		http.ListenAndServeTLS(
+		err = http.ListenAndServeTLS(
 			entryCfg.Bind,
 			serverCfg.Cert.CAfile,
 			serverCfg.Cert.Keyfile,
 			NewHttpAuthHandler(
 				serverCfg.Auth, handler))
 	} else {
-		http.ListenAndServe(entryCfg.Bind,
+		err = http.ListenAndServe(entryCfg.Bind,
 			NewHttpAuthHandler(
 				serverCfg.Auth, handler))
+	}
+	if err != nil {
+		log.Println("entry point error ---", err)
 	}
 }
 
@@ -65,31 +69,32 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		serverCfg.Auth,
 		NewRESTRelayer(rootCtx)))
 
-	server := &http.Server{Addr: bind, Handler: mux}
-	listener, err := net.Listen("tcp", bind)
-	if err != nil {
-		panic(err)
-	}
-
 	for _, entryCfg := range serverCfg.Entrypoints {
 		go startEntrypointServer(rootCtx, entryCfg, serverCfg)
 	}
 
-	serverCtx, cancelServer := context.WithCancel(rootCtx)
-	defer cancelServer()
-	go func() {
-		for {
-			<-serverCtx.Done()
-			log.Debugf("http server %s stops", bind)
-			listener.Close()
-			return
-		}
-	}()
+	// server := &http.Server{Addr: bind, Handler: mux}
+	// listener, err := net.Listen("tcp", bind)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
+	// serverCtx, cancelServer := context.WithCancel(rootCtx)
+	// defer cancelServer()
+	// go func() {
+	// 	for {
+	// 		<-serverCtx.Done()
+	// 		log.Debugf("http server %s stops", bind)
+	// 		listener.Close()
+	// 		return
+	// 	}
+	// }()
+
+	var err error
 	if serverCfg.CertAvailable() {
-		err = server.ServeTLS(listener, serverCfg.Cert.CAfile, serverCfg.Cert.Keyfile)
+		err = http.ListenAndServeTLS(bind, serverCfg.Cert.CAfile, serverCfg.Cert.Keyfile, mux)
 	} else {
-		err = server.Serve(listener)
+		err = http.ListenAndServe(bind, mux)
 	}
 	if err != nil {
 		log.Println("HTTP Server Error - ", err)
