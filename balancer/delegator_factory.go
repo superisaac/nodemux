@@ -24,14 +24,14 @@ func newDelegatorFactory() *DelegatorFactory {
 	}
 }
 
-func (self DelegatorFactory) SupportChain(chain string) bool {
+func (self DelegatorFactory) SupportChain(chain string) (bool, string) {
 	if _, ok := self.rpcDelegators[chain]; ok {
-		return true
+		return true, "JSONRPC"
 	}
 	if _, ok := self.restDelegators[chain]; ok {
-		return true
+		return true, "REST"
 	}
-	return false
+	return false, ""
 }
 
 func (self DelegatorFactory) GetTipDelegator(chain string) TipDelegator {

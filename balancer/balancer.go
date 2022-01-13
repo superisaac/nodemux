@@ -141,7 +141,7 @@ func (self *Balancer) LoadFromConfig(nbcfg *cfg.NodebConfig) {
 	self.cfg = nbcfg
 	for name, epcfg := range nbcfg.Endpoints {
 		ep := NewEndpoint()
-		if !GetDelegatorFactory().SupportChain(epcfg.Chain) {
+		if support, _ := GetDelegatorFactory().SupportChain(epcfg.Chain); !support {
 			panic(fmt.Sprintf("chain %s not supported", epcfg.Chain))
 		}
 		chain := ChainRef{Name: epcfg.Chain, Network: epcfg.Network}

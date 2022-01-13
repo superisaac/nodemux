@@ -15,6 +15,39 @@ import (
 	"regexp"
 )
 
+func startEntrypointServer(rootCtx context.Context, entryCfg EntrypointConfig, serverCfg *ServerConfig) {
+	support, rpcType := balancer.GetDelegatorFactory().SupportChain(entryCfg.Chain)
+	if !support {
+		log.Warnf("entry point for chain %s not supported", entryCfg.Chain)
+		return
+	}
+	chain := balancer.ChainRef{Name: entryCfg.Chain, Network: entryCfg.Network}
+	var handler http.Handler
+	if rpcType == "JSONRPC" {
+		rpc1 := NewRPCRelayer(rootCtx)
+		rpc1.chain = chain
+		handler = rpc1
+	} else {
+		// rpcType == 'REST'
+		rest1 := NewRESTRelayer(rootCtx)
+		rest1.chain = chain
+		handler = rest1
+	}
+	log.Infof("entrypoint server %s listens at %s", chain, entryCfg.Bind)
+	if serverCfg.CertAvailable() {
+		http.ListenAndServeTLS(
+			entryCfg.Bind,
+			serverCfg.Cert.CAfile,
+			serverCfg.Cert.Keyfile,
+			NewHttpAuthHandler(
+				serverCfg.Auth, handler))
+	} else {
+		http.ListenAndServe(entryCfg.Bind,
+			NewHttpAuthHandler(
+				serverCfg.Auth, handler))
+	}
+}
+
 func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	bind := serverCfg.Bind
 	if bind == "" {
@@ -38,9 +71,12 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		panic(err)
 	}
 
+	for _, entryCfg := range serverCfg.Entrypoints {
+		go startEntrypointServer(rootCtx, entryCfg, serverCfg)
+	}
+
 	serverCtx, cancelServer := context.WithCancel(rootCtx)
 	defer cancelServer()
-
 	go func() {
 		for {
 			<-serverCtx.Done()
@@ -65,6 +101,7 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 type RPCRelayer struct {
 	rootCtx context.Context
 	regex   *regexp.Regexp
+	chain   balancer.ChainRef
 }
 
 func NewRPCRelayer(rootCtx context.Context) *RPCRelayer {
@@ -81,16 +118,19 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	matches := self.regex.FindStringSubmatch(r.URL.Path)
-	if len(matches) < 3 {
-		log.Warnf("http url pattern failed")
-		w.WriteHeader(404)
-		w.Write([]byte("not found"))
-		return
+	chain := self.chain
+	if chain.Empty() {
+		matches := self.regex.FindStringSubmatch(r.URL.Path)
+		if len(matches) < 3 {
+			log.Warnf("http url pattern failed")
+			w.WriteHeader(404)
+			w.Write([]byte("not found"))
+			return
+		}
+		chainName := matches[1]
+		network := matches[2]
+		chain = balancer.ChainRef{Name: chainName, Network: network}
 	}
-	chainName := matches[1]
-	network := matches[2]
-	chain := balancer.ChainRef{Name: chainName, Network: network}
 
 	var buffer bytes.Buffer
 	_, err := buffer.ReadFrom(r.Body)
@@ -151,6 +191,7 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type RESTRelayer struct {
 	rootCtx context.Context
 	regex   *regexp.Regexp
+	chain   balancer.ChainRef
 }
 
 func NewRESTRelayer(rootCtx context.Context) *RESTRelayer {
@@ -161,17 +202,21 @@ func NewRESTRelayer(rootCtx context.Context) *RESTRelayer {
 }
 
 func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	matches := self.regex.FindStringSubmatch(r.URL.Path)
-	if len(matches) < 4 {
-		log.Warnf("http url pattern failed")
-		w.WriteHeader(404)
-		w.Write([]byte("not found"))
-		return
+	chain := self.chain
+	method := r.URL.Path
+	if chain.Empty() {
+		matches := self.regex.FindStringSubmatch(r.URL.Path)
+		if len(matches) < 4 {
+			log.Warnf("http url pattern failed")
+			w.WriteHeader(404)
+			w.Write([]byte("not found"))
+			return
+		}
+		chainName := matches[1]
+		network := matches[2]
+		method = "/" + matches[3]
+		chain = balancer.ChainRef{Name: chainName, Network: network}
 	}
-	chainName := matches[1]
-	network := matches[2]
-	method := "/" + matches[3]
-	chain := balancer.ChainRef{Name: chainName, Network: network}
 
 	blcer := balancer.GetBalancer()
 

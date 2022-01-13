@@ -64,11 +64,8 @@ func (self *RedisChainhub) Sub(ch chan ChainStatus) {
 	self.cmdSub <- ChCmdChainStatus{Ch: ch}
 }
 
-func (self *RedisChainhub) subscribe(ch chan ChainStatus) error {
+func (self *RedisChainhub) subscribe(ctx context.Context, rdb *redis.Client, ch chan ChainStatus) error {
 	self.subs = append(self.subs, ch)
-	rdb := redis.NewClient(self.redisOptions)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	snKeys, err := rdb.Keys(ctx, fmt.Sprintf("%s:*", snapshotPrefix)).Result()
 	if err != nil {
 		return err
@@ -163,7 +160,7 @@ func (self *RedisChainhub) Run(rootCtx context.Context) error {
 				log.Warnf("cmd sub not ok")
 				return nil
 			}
-			err := self.subscribe(cmd.Ch)
+			err := self.subscribe(ctx, rdb, cmd.Ch)
 			networkFailure, err = handleRedisError(networkFailure, err, "subscribe")
 			if err != nil {
 				return err
