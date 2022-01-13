@@ -69,7 +69,7 @@ func (self *RedisChainhub) subscribe(ch chan ChainStatus) error {
 	rdb := redis.NewClient(self.redisOptions)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	snKeys, err := rdb.Keys(ctx, fmt.Sprintf("%s:", snapshotPrefix)).Result()
+	snKeys, err := rdb.Keys(ctx, fmt.Sprintf("%s:*", snapshotPrefix)).Result()
 	if err != nil {
 		return err
 	}
@@ -164,21 +164,9 @@ func (self *RedisChainhub) Run(rootCtx context.Context) error {
 				return nil
 			}
 			err := self.subscribe(cmd.Ch)
+			networkFailure, err = handleRedisError(networkFailure, err, "subscribe")
 			if err != nil {
-				var opErr *net.OpError
-				if errors.As(err, &opErr) {
-					networkFailure++
-					log.Warnf("redis connect failed %d times, %s", networkFailure, opErr)
-					if networkFailure > 100 {
-						return errors.Wrap(opErr, "networkFailure")
-					}
-
-				} else {
-					log.Warnf("subscribe error, %s %s", reflect.TypeOf(err), err)
-					return errors.Wrap(err, "subscribe")
-				}
-			} else {
-				networkFailure = 0
+				return err
 			}
 		case cmd, ok := <-self.cmdUnsub:
 			if !ok {
@@ -191,22 +179,11 @@ func (self *RedisChainhub) Run(rootCtx context.Context) error {
 				log.Warnf("cmd pub not ok")
 				return nil
 			}
-			err := self.publishChainStatus(ctx, rdb, chainSt)
-			if err != nil {
-				var opErr *net.OpError
-				if errors.As(err, &opErr) {
-					networkFailure++
-					log.Warnf("redis connect failed %d times, %s", networkFailure, opErr)
-					if networkFailure > 100 {
-						return errors.Wrap(opErr, "networkFailure")
-					}
 
-				} else {
-					log.Warnf("publish error, %s %s", reflect.TypeOf(err), err)
-					return errors.Wrap(err, "publish")
-				}
-			} else {
-				networkFailure = 0
+			err := self.publishChainStatus(ctx, rdb, chainSt)
+			networkFailure, err = handleRedisError(networkFailure, err, "publish")
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -229,4 +206,23 @@ func (self RedisChainhub) publishChainStatus(ctx context.Context, rdb *redis.Cli
 		return err
 	}
 	return nil
+}
+
+func handleRedisError(networkFailure int, err error, fn string) (int, error) {
+	if err != nil {
+		var opErr *net.OpError
+		if errors.As(err, &opErr) {
+			networkFailure++
+			log.Warnf("redis connect failed %d times, %s", networkFailure, opErr)
+			if networkFailure > 100 {
+				return networkFailure, errors.Wrap(opErr, "networkFailure")
+			}
+		} else {
+			log.Warnf("%s error, %s %s", fn, reflect.TypeOf(err), err)
+			return networkFailure, errors.Wrap(err, fn)
+		}
+	} else {
+		networkFailure = 0
+	}
+	return networkFailure, nil
 }

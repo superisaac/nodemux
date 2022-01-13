@@ -95,7 +95,7 @@ func (self *Balancer) RunUpdater(rootCtx context.Context) {
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
-	upd := make(chan ChainStatus)
+	upd := make(chan ChainStatus, 1000)
 	self.chainHub.Sub(upd)
 	defer self.chainHub.Unsub(upd)
 
