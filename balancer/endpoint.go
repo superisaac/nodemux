@@ -40,7 +40,7 @@ func (self EndpointSet) prometheusLabels(chain string, network string) prometheu
 
 /// Create an empty endpoint
 func NewEndpoint() *Endpoint {
-	return &Endpoint{Healthy: true}
+	return &Endpoint{Healthy: true, connected: true}
 }
 
 func (self Endpoint) Log() *log.Entry {

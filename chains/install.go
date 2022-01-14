@@ -28,3 +28,8 @@ func InstallAdaptors(factory *balancer.DelegatorFactory) {
 	factory.RegisterREST(NewAlgorandChain(), "algorand")
 	factory.RegisterREST(NewKadenaChain(), "kadena")
 }
+
+// func init() {
+// 	factory := balancer.GetDelegatorFactory()
+// 	InstallAdaptors(factory)
+// }

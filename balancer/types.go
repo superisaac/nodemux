@@ -35,7 +35,8 @@ type Endpoint struct {
 	Healthy bool
 	Tip     *Block
 
-	client *http.Client
+	connected bool
+	client    *http.Client
 }
 
 type EndpointSet struct {

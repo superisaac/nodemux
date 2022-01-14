@@ -18,7 +18,7 @@ func (self *Balancer) fetchTip(rootCtx context.Context, ep *Endpoint, lastBlock 
 	block, err := delegator.GetTip(rootCtx, self, ep)
 	if err != nil {
 		logger.Warnf("mark unhealthy due to tip height error %s", err)
-		//ep.Healthy = false
+		ep.connected = false
 		bs := ChainStatus{
 			EndpointName: ep.Name,
 			Chain:        ep.Chain,
@@ -29,8 +29,8 @@ func (self *Balancer) fetchTip(rootCtx context.Context, ep *Endpoint, lastBlock 
 		return nil, err
 	}
 	if block != nil {
+		ep.connected = true
 		if !blockIsEqual(lastBlock, block) {
-			//if true {
 			bs := ChainStatus{
 				EndpointName: ep.Name,
 				Chain:        ep.Chain,
