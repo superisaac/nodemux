@@ -8,13 +8,13 @@ import (
 	"os"
 )
 
-func NewConfig() *NodebConfig {
-	cfg := &NodebConfig{}
+func NewConfig() *NodepoolConfig {
+	cfg := &NodepoolConfig{}
 	cfg.validateValues()
 	return cfg
 }
 
-func ConfigFromFile(yamlPath string) (*NodebConfig, error) {
+func ConfigFromFile(yamlPath string) (*NodepoolConfig, error) {
 	cfg := NewConfig()
 	err := cfg.Load(yamlPath)
 	if err != nil {
@@ -23,7 +23,7 @@ func ConfigFromFile(yamlPath string) (*NodebConfig, error) {
 	return cfg, nil
 }
 
-func (self *NodebConfig) validateValues() error {
+func (self *NodepoolConfig) validateValues() error {
 	if self.Version == "" {
 		self.Version = "1.0"
 	}
@@ -55,7 +55,7 @@ func (self *NodebConfig) validateValues() error {
 	return nil
 }
 
-func (self *NodebConfig) Load(yamlPath string) error {
+func (self *NodepoolConfig) Load(yamlPath string) error {
 	if _, err := os.Stat(yamlPath); os.IsNotExist(err) {
 		if err != nil {
 			return err
@@ -69,7 +69,7 @@ func (self *NodebConfig) Load(yamlPath string) error {
 	return self.LoadYamldata(data)
 }
 
-func (self *NodebConfig) LoadYamldata(yamlData []byte) error {
+func (self *NodepoolConfig) LoadYamldata(yamlData []byte) error {
 	err := yaml.Unmarshal(yamlData, self)
 	if err != nil {
 		return err

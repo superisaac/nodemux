@@ -3,7 +3,7 @@ package balancer
 import (
 	"context"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodeb/cfg"
+	"github.com/superisaac/nodepool/cfg"
 	"net/http"
 )
 
@@ -46,7 +46,7 @@ type EndpointSet struct {
 }
 
 type Balancer struct {
-	cfg *cfg.NodebConfig
+	cfg *cfg.NodepoolConfig
 	// indexes
 	// the name -> Endpoint map, the primary key
 	nameIndex map[string]*Endpoint

@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/nodeb/balancer"
-	"github.com/superisaac/nodeb/cfg"
-	"github.com/superisaac/nodeb/chains"
+	"github.com/superisaac/nodepool/balancer"
+	"github.com/superisaac/nodepool/cfg"
+	"github.com/superisaac/nodepool/chains"
 	"os"
 	"time"
 )
@@ -99,7 +99,7 @@ func watchConfig(rootCtx context.Context, yamlPath string, fetch bool) {
 
 func CommandStartServer() {
 	serverFlags := flag.NewFlagSet("jointrpc-server", flag.ExitOnError)
-	pYamlPath := serverFlags.String("f", "nodeb.yml", "path to nodeb.yml")
+	pYamlPath := serverFlags.String("f", "nodepool.yml", "path to nodepool.yml")
 	pWatchConfig := serverFlags.Bool("w", false, "watch config changes using fsnotify")
 	pFetchEndpoints := serverFlags.Bool("fetch", true, "fetch endpoints statuses")
 
@@ -132,7 +132,7 @@ func CommandStartServer() {
 		}
 	}
 
-	// parse nodeb.yml
+	// parse nodepool.yml
 	yamlPath := *pYamlPath
 	if _, err := os.Stat(yamlPath); err != nil && os.IsNotExist(err) {
 		fmt.Fprintf(os.Stderr, "config yaml not exist\n")

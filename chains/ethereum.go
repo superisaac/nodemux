@@ -7,7 +7,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodeb/balancer"
+	"github.com/superisaac/nodepool/balancer"
 )
 
 type EthereumBlock struct {

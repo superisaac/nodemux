@@ -2,27 +2,27 @@
 gofiles := $(shell find . -name '*.go')
 goflag := -gcflags=-G=3
 
-build: bin/nodeb
+build: bin/nodepool
 
 all: test build
 
-bin/nodeb: ${gofiles}
-	go build ${goflag} -o $@ nodeb.go
+bin/nodepool: ${gofiles}
+	go build ${goflag} -o $@ nodepool.go
 
 test:
-	go test ${goflag} -v github.com/superisaac/nodeb/cfg
-	go test ${goflag} -v github.com/superisaac/nodeb/balancer
-	go test ${goflag} -v github.com/superisaac/nodeb/chains
-	go test ${goflag} -v github.com/superisaac/nodeb/server
+	go test ${goflag} -v github.com/superisaac/nodepool/cfg
+	go test ${goflag} -v github.com/superisaac/nodepool/balancer
+	go test ${goflag} -v github.com/superisaac/nodepool/chains
+	go test ${goflag} -v github.com/superisaac/nodepool/server
 
 clean:
-	rm -rf build dist bin/nodeb
+	rm -rf build dist bin/nodepool
 
 gofmt:
 	go fmt cfg/*.go
 	go fmt balancer/*.go
 	go fmt chains/*.go
 	go fmt server/*.go
-	go fmt nodeb.go
+	go fmt nodepool.go
 
 .PHONY: build all test gofmt dist

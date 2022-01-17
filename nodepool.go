@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/superisaac/nodeb/server"
+	"github.com/superisaac/nodepool/server"
 )
 
 func main() {

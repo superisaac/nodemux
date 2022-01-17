@@ -1,3 +1,3 @@
-# nodeb
-reverse proxy and load balancer of blockchain nodes
+# nodepool
+nodepool maintains pools of blockchain nodes, relay and load-balance JSONRPC and REST requests to nodes
 

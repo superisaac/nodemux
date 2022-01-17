@@ -16,7 +16,7 @@ type StoreConfig struct {
 	Url string `yaml:"url"`
 }
 
-type NodebConfig struct {
+type NodepoolConfig struct {
 	Version   string                    `yaml:"version,omitempty"`
 	Store     StoreConfig               `yaml:"store,omitempty"`
 	Endpoints map[string]EndpointConfig `yaml:"endpoints"`

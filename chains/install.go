@@ -1,7 +1,7 @@
 package chains
 
 import (
-	"github.com/superisaac/nodeb/balancer"
+	"github.com/superisaac/nodepool/balancer"
 )
 
 func InstallAdaptors(factory *balancer.DelegatorFactory) {
