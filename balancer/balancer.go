@@ -5,7 +5,6 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodepool/cfg"
 	"net/http"
 	//"sync"
 )
@@ -123,7 +122,7 @@ func (self *Balancer) SelectOverHeight(chain ChainRef, method string, heightSpec
 	return nil, false
 }
 
-func BalancerFromConfig(nbcfg *cfg.NodepoolConfig) *Balancer {
+func BalancerFromConfig(nbcfg *NodepoolConfig) *Balancer {
 	b := NewBalancer()
 	b.LoadFromConfig(nbcfg)
 	if nbcfg.Store.Url != "" {
@@ -140,7 +139,7 @@ func BalancerFromConfig(nbcfg *cfg.NodepoolConfig) *Balancer {
 	return b
 }
 
-func (self *Balancer) LoadFromConfig(nbcfg *cfg.NodepoolConfig) {
+func (self *Balancer) LoadFromConfig(nbcfg *NodepoolConfig) {
 	self.cfg = nbcfg
 	for name, epcfg := range nbcfg.Endpoints {
 		ep := NewEndpoint()

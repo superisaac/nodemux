@@ -7,7 +7,6 @@ import (
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/nodepool/balancer"
-	"github.com/superisaac/nodepool/cfg"
 	"github.com/superisaac/nodepool/chains"
 	"os"
 	"time"
@@ -76,7 +75,7 @@ func watchConfig(rootCtx context.Context, yamlPath string, fetch bool) {
 
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				log.Infof("watch config, file %s changed, event %#v", yamlPath, event)
-				nbcfg, err := cfg.ConfigFromFile(event.Name)
+				nbcfg, err := balancer.ConfigFromFile(event.Name)
 				if err != nil {
 					log.Warnf("error config %s", err)
 				} else {
@@ -139,7 +138,7 @@ func CommandStartServer() {
 		os.Exit(1)
 	}
 
-	nbcfg, err := cfg.ConfigFromFile(*pYamlPath)
+	nbcfg, err := balancer.ConfigFromFile(*pYamlPath)
 	if err != nil {
 		panic(err)
 	}
