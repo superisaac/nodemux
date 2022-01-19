@@ -2,7 +2,7 @@ package chains
 
 import (
 	"context"
-	"github.com/superisaac/nodepool/balancer"
+	"github.com/superisaac/nodemux/balancer"
 	"net/http"
 )
 

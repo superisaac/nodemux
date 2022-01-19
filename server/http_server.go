@@ -8,7 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodepool/balancer"
+	"github.com/superisaac/nodemux/balancer"
 	"io"
 	//"net"
 	"net/http"

@@ -45,7 +45,7 @@ type EndpointSet struct {
 }
 
 type Balancer struct {
-	cfg *NodepoolConfig
+	cfg *NodemuxConfig
 	// indexes
 	// the name -> Endpoint map, the primary key
 	nameIndex map[string]*Endpoint

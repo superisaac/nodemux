@@ -6,13 +6,13 @@ import (
 
 var (
 	metricsBlockTip = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "nodepool",
+		Namespace: "nodemux",
 		Name:      "block_tip",
 		Help:      "block tips of each chain/network",
 	}, []string{"chain", "network"})
 
 	metricsEndpointBlockTip = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "nodepool",
+		Namespace: "nodemux",
 		Name:      "endpoint_block_tip",
 		Help:      "block tips of each chain/network/endpoint",
 	}, []string{"chain", "network", "endpoint"})

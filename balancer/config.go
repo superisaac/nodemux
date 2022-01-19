@@ -22,7 +22,7 @@ type StoreConfig struct {
 	Url string `yaml:"url"`
 }
 
-type NodepoolConfig struct {
+type NodemuxConfig struct {
 	Version   string                    `yaml:"version,omitempty"`
 	Store     StoreConfig               `yaml:"store,omitempty"`
 	Endpoints map[string]EndpointConfig `yaml:"endpoints"`
@@ -30,13 +30,13 @@ type NodepoolConfig struct {
 
 // methods
 
-func NewConfig() *NodepoolConfig {
-	cfg := &NodepoolConfig{}
+func NewConfig() *NodemuxConfig {
+	cfg := &NodemuxConfig{}
 	cfg.validateValues()
 	return cfg
 }
 
-func ConfigFromFile(yamlPath string) (*NodepoolConfig, error) {
+func ConfigFromFile(yamlPath string) (*NodemuxConfig, error) {
 	cfg := NewConfig()
 	err := cfg.Load(yamlPath)
 	if err != nil {
@@ -45,7 +45,7 @@ func ConfigFromFile(yamlPath string) (*NodepoolConfig, error) {
 	return cfg, nil
 }
 
-func (self *NodepoolConfig) validateValues() error {
+func (self *NodemuxConfig) validateValues() error {
 	if self.Version == "" {
 		self.Version = "1.0"
 	}
@@ -77,7 +77,7 @@ func (self *NodepoolConfig) validateValues() error {
 	return nil
 }
 
-func (self *NodepoolConfig) Load(yamlPath string) error {
+func (self *NodemuxConfig) Load(yamlPath string) error {
 	if _, err := os.Stat(yamlPath); os.IsNotExist(err) {
 		if err != nil {
 			return err
@@ -91,7 +91,7 @@ func (self *NodepoolConfig) Load(yamlPath string) error {
 	return self.LoadYamldata(data)
 }
 
-func (self *NodepoolConfig) LoadYamldata(yamlData []byte) error {
+func (self *NodemuxConfig) LoadYamldata(yamlData []byte) error {
 	err := yaml.Unmarshal(yamlData, self)
 	if err != nil {
 		return err

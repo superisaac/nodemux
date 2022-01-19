@@ -6,7 +6,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodepool/balancer"
+	"github.com/superisaac/nodemux/balancer"
 )
 
 type filecoinBlock struct {

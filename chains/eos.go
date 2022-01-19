@@ -4,7 +4,7 @@ import (
 	"context"
 	//"github.com/mitchellh/mapstructure"
 	//"github.com/pkg/errors"
-	"github.com/superisaac/nodepool/balancer"
+	"github.com/superisaac/nodemux/balancer"
 	"net/http"
 )
 

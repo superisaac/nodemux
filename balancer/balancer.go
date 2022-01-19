@@ -122,7 +122,7 @@ func (self *Balancer) SelectOverHeight(chain ChainRef, method string, heightSpec
 	return nil, false
 }
 
-func BalancerFromConfig(nbcfg *NodepoolConfig) *Balancer {
+func BalancerFromConfig(nbcfg *NodemuxConfig) *Balancer {
 	b := NewBalancer()
 	b.LoadFromConfig(nbcfg)
 	if nbcfg.Store.Url != "" {
@@ -139,7 +139,7 @@ func BalancerFromConfig(nbcfg *NodepoolConfig) *Balancer {
 	return b
 }
 
-func (self *Balancer) LoadFromConfig(nbcfg *NodepoolConfig) {
+func (self *Balancer) LoadFromConfig(nbcfg *NodemuxConfig) {
 	self.cfg = nbcfg
 	for name, epcfg := range nbcfg.Endpoints {
 		ep := NewEndpoint()

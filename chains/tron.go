@@ -3,7 +3,7 @@ package chains
 import (
 	"context"
 	//"github.com/pkg/errors"
-	"github.com/superisaac/nodepool/balancer"
+	"github.com/superisaac/nodemux/balancer"
 	"net/http"
 	//"strconv"
 )

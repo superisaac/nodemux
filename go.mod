@@ -1,4 +1,4 @@
-module github.com/superisaac/nodepool
+module github.com/superisaac/nodemux
 
 go 1.17
 

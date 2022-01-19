@@ -1,3 +1,3 @@
-# nodepool
-nodepool maintains pools of blockchain nodes, relay and load-balance JSONRPC and REST requests to nodes
+# nodemux
+nodemux is the multiplexer and load balancer of block chain nodes
 
