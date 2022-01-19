@@ -15,7 +15,46 @@ import (
 	"regexp"
 )
 
-func startEntrypointServer(rootCtx context.Context, entryCfg EntrypointConfig, serverCfg *ServerConfig) {
+func startServer(bind string, handler http.Handler, tlsConfigs ...*TLSConfig) error {
+	var tlsConfig *TLSConfig
+	for _, cfg := range tlsConfigs {
+		if cfg != nil {
+			tlsConfig = cfg
+			break
+		}
+	}
+
+	if tlsConfig != nil {
+		return http.ListenAndServeTLS(
+			bind,
+			tlsConfig.Certfile,
+			tlsConfig.Keyfile,
+			handler)
+	} else {
+		return http.ListenAndServe(bind, handler)
+	}
+}
+
+func startMetricsServer(rootCtx context.Context, serverCfg *ServerConfig) {
+	bind := serverCfg.Metrics.Bind
+	if bind == "" {
+		//bind = "0.0.0.0:9996"
+		log.Panicf("metrics bind is empty")
+		return
+	}
+
+	handler := NewHttpAuthHandler(
+		serverCfg.Metrics.Auth,
+		promhttp.Handler())
+	err := startServer(bind, handler,
+		serverCfg.Metrics.TLS,
+		serverCfg.TLS)
+	if err != nil {
+		log.Warnf("start metrics server error %s", err)
+	}
+}
+
+func startEntrypointServer(rootCtx context.Context, entryCfg *EntrypointConfig, serverCfg *ServerConfig) {
 	support, rpcType := balancer.GetDelegatorFactory().SupportChain(entryCfg.Chain)
 	if !support {
 		log.Warnf("entry point for chain %s not supported", entryCfg.Chain)
@@ -34,19 +73,23 @@ func startEntrypointServer(rootCtx context.Context, entryCfg EntrypointConfig, s
 		handler = rest1
 	}
 	log.Infof("entrypoint server %s listens at %s", chain, entryCfg.Bind)
-	var err error
-	if serverCfg.CertAvailable() {
-		err = http.ListenAndServeTLS(
-			entryCfg.Bind,
-			serverCfg.Cert.CAfile,
-			serverCfg.Cert.Keyfile,
-			NewHttpAuthHandler(
-				serverCfg.Auth, handler))
-	} else {
-		err = http.ListenAndServe(entryCfg.Bind,
-			NewHttpAuthHandler(
-				serverCfg.Auth, handler))
-	}
+	err := startServer(entryCfg.Bind,
+		NewHttpAuthHandler(
+			serverCfg.Auth, handler),
+		entryCfg.TLS, serverCfg.TLS)
+
+	// if serverCfg.TLS != nil {
+	// 	err = http.ListenAndServeTLS(
+	// 		entryCfg.Bind,
+	// 		serverCfg.TLS.Certfile,
+	// 		serverCfg.TLS.Keyfile,
+	// 		NewHttpAuthHandler(
+	// 			serverCfg.Auth, handler))
+	// } else {
+	// 	err = http.ListenAndServe(entryCfg.Bind,
+	// 		NewHttpAuthHandler(
+	// 			serverCfg.Auth, handler))
+	// }
 	if err != nil {
 		log.Println("entry point error ---", err)
 	}
@@ -73,6 +116,10 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		go startEntrypointServer(rootCtx, entryCfg, serverCfg)
 	}
 
+	if serverCfg.Metrics.Bind != "" {
+		go startMetricsServer(rootCtx, serverCfg)
+	}
+
 	// server := &http.Server{Addr: bind, Handler: mux}
 	// listener, err := net.Listen("tcp", bind)
 	// if err != nil {
@@ -90,12 +137,13 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	// 	}
 	// }()
 
-	var err error
-	if serverCfg.CertAvailable() {
-		err = http.ListenAndServeTLS(bind, serverCfg.Cert.CAfile, serverCfg.Cert.Keyfile, mux)
-	} else {
-		err = http.ListenAndServe(bind, mux)
-	}
+	err := startServer(bind, mux, serverCfg.TLS)
+	// var err error
+	// if serverCfg.TLS != nil {
+	// 	err = http.ListenAndServeTLS(bind, serverCfg.TLS.Certfile, serverCfg.TLS.Keyfile, mux)
+	// } else {
+	// 	err = http.ListenAndServe(bind, mux)
+	// }
 	if err != nil {
 		log.Println("HTTP Server Error - ", err)
 		//panic(err)
@@ -250,7 +298,7 @@ func NewHttpAuthHandler(authConfig *AuthConfig, next http.Handler) *HttpAuthHand
 }
 
 func (self HttpAuthHandler) TryAuth(r *http.Request) bool {
-	if self.authConfig == nil || !self.authConfig.Available() {
+	if self.authConfig == nil {
 		return true
 	}
 

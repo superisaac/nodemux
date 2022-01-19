@@ -1,15 +1,20 @@
 package server
 
 import (
+	//"fmt"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 )
 
-type CertConfig struct {
-	CAfile  string `yaml:"ca"`
-	Keyfile string `yaml:"key"`
+type validConfig interface {
+	validateValues() error
+}
+
+type TLSConfig struct {
+	Certfile string `yaml:"cert"`
+	Keyfile  string `yaml:"key"`
 }
 
 type BasicAuthConfig struct {
@@ -27,25 +32,30 @@ type AuthConfig struct {
 }
 
 type MetricsConfig struct {
+	Bind string      `yaml:"bind"`
 	Auth *AuthConfig `yaml:"auth,omitempty"`
+	TLS  *TLSConfig  `yaml:"tls:omitempty"`
 }
 
 type EntrypointConfig struct {
-	Chain   string `yaml:"chain"`
-	Network string `yaml:"network"`
-	Bind    string `yaml:version,omitempty`
+	Chain   string      `yaml:"chain"`
+	Network string      `yaml:"network"`
+	Bind    string      `yaml:version,omitempty`
+	Auth    *AuthConfig `yaml:"auth,omitempty"`
+	TLS     *TLSConfig  `yaml:"tls:omitempty"`
 }
 
 type ServerConfig struct {
-	Bind        string             `yaml:version,omitempty`
-	Cert        CertConfig         `yaml:"cert,omitempty"`
-	Metrics     MetricsConfig      `yaml:"metrics,omitempty"`
-	Auth        *AuthConfig        `yaml:"auth,omitempty"`
-	Entrypoints []EntrypointConfig `yaml:"entrypoints,omitempty"`
+	Bind        string              `yaml:version,omitempty`
+	TLS         *TLSConfig          `yaml:"tls,omitempty"`
+	Metrics     *MetricsConfig      `yaml:"metrics,omitempty"`
+	Auth        *AuthConfig         `yaml:"auth,omitempty"`
+	Entrypoints []*EntrypointConfig `yaml:"entrypoints,omitempty"`
 }
 
 func NewServerConfig() *ServerConfig {
 	cfg := &ServerConfig{}
+	cfg.Metrics = &MetricsConfig{}
 	return cfg
 }
 
@@ -82,25 +92,93 @@ func (self *ServerConfig) LoadYamldata(yamlData []byte) error {
 }
 
 func (self *ServerConfig) validateValues() error {
+	if self.Metrics == nil {
+		self.Metrics = &MetricsConfig{}
+	}
+	children := []validConfig{self.TLS, self.Auth, self.Metrics}
+	for _, childcfg := range children {
+		if childcfg != nil {
+			err := childcfg.validateValues()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	for _, entrycfg := range self.Entrypoints {
-		if entrycfg.Chain == "" || entrycfg.Network == "" || entrycfg.Bind == "" {
-			return errors.New("fields of entrypoint cannot be empty")
+		err := entrycfg.validateValues()
+		if err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func (self ServerConfig) CertAvailable() bool {
-	return self.Cert.CAfile != "" && self.Cert.Keyfile != ""
+// validators
+func (self *TLSConfig) validateValues() error {
+	if self == nil {
+		return nil
+	}
+	if self.Certfile == "" {
+		return errors.New("ca file is empty")
+	}
+	if self.Keyfile == "" {
+		return errors.New("key file is empty")
+	}
+	return nil
 }
 
 // Auth config
-func (self AuthConfig) Available() bool {
-	if self.Bearer != nil && self.Bearer.Token != "" {
-		return true
+func (self *AuthConfig) validateValues() error {
+	if self == nil {
+		return nil
 	}
-	if self.Basic != nil && self.Basic.Username != "" && self.Basic.Password != "" {
-		return true
+	if self.Bearer != nil && self.Bearer.Token == "" {
+		return errors.New("bearer token cannot be empty")
 	}
-	return false
+	if self.Basic != nil && (self.Basic.Username == "" || self.Basic.Password == "") {
+		return errors.New("basic username and password cannot be empty")
+	}
+	return nil
+}
+
+func (self *EntrypointConfig) validateValues() error {
+	if self == nil {
+		return nil
+	}
+	if self.Chain == "" {
+		return errors.New("entrypoint, chain cannot be empty")
+	}
+	if self.Network == "" {
+		return errors.New("entrypoint, network cannot be empty")
+	}
+	if self.Bind == "" {
+		return errors.New("entrypoint, bind address cannot be empty")
+	}
+	children := []validConfig{self.TLS, self.Auth}
+	for _, cfg := range children {
+		if cfg != nil {
+			err := cfg.validateValues()
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (self *MetricsConfig) validateValues() error {
+	if self == nil {
+		return nil
+	}
+	children := []validConfig{self.TLS, self.Auth}
+	for _, cfg := range children {
+		if cfg != nil {
+			err := cfg.validateValues()
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
