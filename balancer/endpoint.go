@@ -182,6 +182,31 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 func (self *Endpoint) GetJson(rootCtx context.Context, path string, headers map[string]string, target interface{}) error {
 	return self.RequestJson(rootCtx, "GET", path, nil, headers, target)
 }
+func (self Endpoint) encodeBody(body interface{}) ([]byte, string, error) {
+	if body == nil {
+		return nil, "", nil
+	} else if data, ok := body.([]byte); ok {
+		return data, "", nil
+	} else {
+		data, err := json.Marshal(body)
+		if err != nil {
+			return nil, "", err
+		}
+		return data, "application/json", nil
+	}
+	// TODO: handle http form
+}
+
+func (self *Endpoint) PostJson(rootCtx context.Context, path string, body interface{}, headers map[string]string, target interface{}) error {
+	data, ctype, err := self.encodeBody(body)
+	if err != nil {
+		return errors.Wrap(err, "encodeBody")
+	}
+	if ctype != "" {
+		headers["Content-Type"] = ctype
+	}
+	return self.RequestJson(rootCtx, "POST", path, data, headers, target)
+}
 
 func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path string, data []byte, headers map[string]string, target interface{}) error {
 	self.Connect()
@@ -200,7 +225,7 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 	if err != nil {
 		return errors.Wrap(err, "http.NewRequestWithContext")
 	}
-	//req.Header.Set("X-Forward-For", r.RemoteAddr)
+
 	req.Header.Set("Accept", "application/json")
 	if headers != nil {
 		for k, v := range headers {

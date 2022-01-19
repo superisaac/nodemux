@@ -22,8 +22,7 @@ func NewEosChain() *EosChain {
 
 func (self *EosChain) GetTip(context context.Context, b *balancer.Balancer, ep *balancer.Endpoint) (*balancer.Block, error) {
 	var res eosChainInfo
-	err := ep.RequestJson(context,
-		"POST",
+	err := ep.PostJson(context,
 		"/v1/chain/get_info",
 		nil, nil, &res)
 	if err != nil {

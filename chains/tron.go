@@ -31,8 +31,7 @@ func NewTronChain() *TronChain {
 
 func (self *TronChain) GetTip(context context.Context, b *balancer.Balancer, ep *balancer.Endpoint) (*balancer.Block, error) {
 	var res tronBlock
-	err := ep.RequestJson(context,
-		"POST",
+	err := ep.PostJson(context,
 		"/walletsolidity/getnowblock",
 		nil, nil, &res)
 	if err != nil {
