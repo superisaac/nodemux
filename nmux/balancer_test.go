@@ -1,4 +1,4 @@
-package balancer
+package nmux
 
 import (
 	log "github.com/sirupsen/logrus"
@@ -25,10 +25,10 @@ func TestEndpoint(t *testing.T) {
 	assert.Equal("http://127.0.0.1:8899/aa/bb/v1/status", ep.FullUrl("/v1/status"))
 }
 
-func TestBalancer(t *testing.T) {
+func TestMultiplexer(t *testing.T) {
 	assert := assert.New(t)
 
-	b := NewBalancer()
+	b := NewMultiplexer()
 
 	chain := ChainRef{Name: "binance-chain", Network: "mainnet"}
 	ep := NewEndpoint()

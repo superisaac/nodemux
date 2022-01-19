@@ -6,7 +6,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodemux/balancer"
+	"github.com/superisaac/nodemux/nmux"
 )
 
 type rippleLedger struct {
@@ -20,7 +20,7 @@ func NewRippleChain() *RippleChain {
 	return &RippleChain{}
 }
 
-func (self *RippleChain) GetTip(context context.Context, b *balancer.Balancer, ep *balancer.Endpoint) (*balancer.Block, error) {
+func (self *RippleChain) GetTip(context context.Context, b *nmux.Multiplexer, ep *nmux.Endpoint) (*nmux.Block, error) {
 	filter := map[string]interface{}{
 		"ledger_index": "validated",
 		"accounts":     false,
@@ -43,7 +43,7 @@ func (self *RippleChain) GetTip(context context.Context, b *balancer.Balancer, e
 			return nil, errors.Wrap(err, "decode rpcblock")
 		}
 
-		block := &balancer.Block{
+		block := &nmux.Block{
 			Height: ledger.LedgerIndex,
 			//Hash:   ct.Hash,
 		}
@@ -55,7 +55,7 @@ func (self *RippleChain) GetTip(context context.Context, b *balancer.Balancer, e
 
 }
 
-func (self *RippleChain) DelegateRPC(rootCtx context.Context, b *balancer.Balancer, chain balancer.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+func (self *RippleChain) DelegateRPC(rootCtx context.Context, b *nmux.Multiplexer, chain nmux.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -10)
 }

@@ -1,4 +1,4 @@
-package balancer
+package nmux
 
 import (
 	"context"
@@ -44,7 +44,7 @@ type EndpointSet struct {
 	maxTipHeight int
 }
 
-type Balancer struct {
+type Multiplexer struct {
 	cfg *NodemuxConfig
 	// indexes
 	// the name -> Endpoint map, the primary key
@@ -60,17 +60,17 @@ type Balancer struct {
 
 // Delegators
 type TipDelegator interface {
-	GetTip(ctx context.Context, b *Balancer, ep *Endpoint) (*Block, error)
+	GetTip(ctx context.Context, b *Multiplexer, ep *Endpoint) (*Block, error)
 }
 
 type RPCDelegator interface {
 	TipDelegator
-	DelegateRPC(ctx context.Context, b *Balancer, chain ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error)
+	DelegateRPC(ctx context.Context, b *Multiplexer, chain ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error)
 }
 
 type RESTDelegator interface {
 	TipDelegator
-	DelegateREST(ctx context.Context, b *Balancer, chain ChainRef, path string, w http.ResponseWriter, r *http.Request) error
+	DelegateREST(ctx context.Context, b *Multiplexer, chain ChainRef, path string, w http.ResponseWriter, r *http.Request) error
 }
 
 type DelegatorFactory struct {

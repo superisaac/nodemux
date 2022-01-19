@@ -1,4 +1,4 @@
-package balancer
+package nmux
 
 import (
 	"context"
@@ -12,7 +12,7 @@ func blockIsEqual(a, b *Block) bool {
 	return a.Height == b.Height && a.Hash == b.Hash
 }
 
-func (self *Balancer) fetchTip(rootCtx context.Context, ep *Endpoint, lastBlock *Block) (*Block, error) {
+func (self *Multiplexer) fetchTip(rootCtx context.Context, ep *Endpoint, lastBlock *Block) (*Block, error) {
 	logger := ep.Log()
 	delegator := GetDelegatorFactory().GetTipDelegator(ep.Chain.Name)
 	block, err := delegator.GetTip(rootCtx, self, ep)
@@ -45,7 +45,7 @@ func (self *Balancer) fetchTip(rootCtx context.Context, ep *Endpoint, lastBlock 
 	return block, nil
 }
 
-func (self *Balancer) fetchEndpoint(rootCtx context.Context, ep *Endpoint) {
+func (self *Multiplexer) fetchEndpoint(rootCtx context.Context, ep *Endpoint) {
 	ep.Log().Info("fetch job started")
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()

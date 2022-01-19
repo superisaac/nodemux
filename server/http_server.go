@@ -8,7 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodemux/balancer"
+	"github.com/superisaac/nodemux/nmux"
 	"io"
 	//"net"
 	"net/http"
@@ -55,12 +55,12 @@ func startMetricsServer(rootCtx context.Context, serverCfg *ServerConfig) {
 }
 
 func startEntrypointServer(rootCtx context.Context, entryCfg *EntrypointConfig, serverCfg *ServerConfig) {
-	support, rpcType := balancer.GetDelegatorFactory().SupportChain(entryCfg.Chain)
+	support, rpcType := nmux.GetDelegatorFactory().SupportChain(entryCfg.Chain)
 	if !support {
 		log.Warnf("entry point for chain %s not supported", entryCfg.Chain)
 		return
 	}
-	chain := balancer.ChainRef{Name: entryCfg.Chain, Network: entryCfg.Network}
+	chain := nmux.ChainRef{Name: entryCfg.Chain, Network: entryCfg.Network}
 	var handler http.Handler
 	if rpcType == "JSONRPC" {
 		rpc1 := NewRPCRelayer(rootCtx)
@@ -101,14 +101,14 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		bind = "127.0.0.1:9000"
 	}
 	log.Infof("start http proxy at %s", bind)
-	mux := http.NewServeMux()
-	mux.Handle("/metrics", NewHttpAuthHandler(
+	serverMux := http.NewServeMux()
+	serverMux.Handle("/metrics", NewHttpAuthHandler(
 		serverCfg.Metrics.Auth,
 		promhttp.Handler()))
-	mux.Handle("/jsonrpc", NewHttpAuthHandler(
+	serverMux.Handle("/jsonrpc", NewHttpAuthHandler(
 		serverCfg.Auth,
 		NewRPCRelayer(rootCtx)))
-	mux.Handle("/rest", NewHttpAuthHandler(
+	serverMux.Handle("/rest", NewHttpAuthHandler(
 		serverCfg.Auth,
 		NewRESTRelayer(rootCtx)))
 
@@ -120,7 +120,7 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		go startMetricsServer(rootCtx, serverCfg)
 	}
 
-	// server := &http.Server{Addr: bind, Handler: mux}
+	// server := &http.Server{Addr: bind, Handler: serverMux}
 	// listener, err := net.Listen("tcp", bind)
 	// if err != nil {
 	// 	panic(err)
@@ -137,12 +137,12 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	// 	}
 	// }()
 
-	err := startServer(bind, mux, serverCfg.TLS)
+	err := startServer(bind, serverMux, serverCfg.TLS)
 	// var err error
 	// if serverCfg.TLS != nil {
-	// 	err = http.ListenAndServeTLS(bind, serverCfg.TLS.Certfile, serverCfg.TLS.Keyfile, mux)
+	// 	err = http.ListenAndServeTLS(bind, serverCfg.TLS.Certfile, serverCfg.TLS.Keyfile, serverMux)
 	// } else {
-	// 	err = http.ListenAndServe(bind, mux)
+	// 	err = http.ListenAndServe(bind, serverMux)
 	// }
 	if err != nil {
 		log.Println("HTTP Server Error - ", err)
@@ -154,7 +154,7 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 type RPCRelayer struct {
 	rootCtx context.Context
 	regex   *regexp.Regexp
-	chain   balancer.ChainRef
+	chain   nmux.ChainRef
 }
 
 func NewRPCRelayer(rootCtx context.Context) *RPCRelayer {
@@ -182,7 +182,7 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		chainName := matches[1]
 		network := matches[2]
-		chain = balancer.ChainRef{Name: chainName, Network: network}
+		chain = nmux.ChainRef{Name: chainName, Network: network}
 	}
 
 	var buffer bytes.Buffer
@@ -204,9 +204,9 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	reqmsg, _ := msg.(*jsonrpc.RequestMessage)
-	blcer := balancer.GetBalancer()
+	blcer := nmux.GetMultiplexer()
 
-	delegator := balancer.GetDelegatorFactory().GetRPCDelegator(chain.Name)
+	delegator := nmux.GetDelegatorFactory().GetRPCDelegator(chain.Name)
 	if delegator == nil {
 		jsonrpc.ErrorResponse(w, r, err, 404, "backend not found")
 		return
@@ -215,7 +215,7 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	resmsg, err := delegator.DelegateRPC(self.rootCtx, blcer, chain, reqmsg)
 	if err != nil {
 		// put the original http response
-		var abnErr *balancer.AbnormalResponse
+		var abnErr *nmux.AbnormalResponse
 		if errors.As(err, &abnErr) {
 			origResp := abnErr.Response
 			for hn, hvs := range origResp.Header {
@@ -244,7 +244,7 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type RESTRelayer struct {
 	rootCtx context.Context
 	regex   *regexp.Regexp
-	chain   balancer.ChainRef
+	chain   nmux.ChainRef
 }
 
 func NewRESTRelayer(rootCtx context.Context) *RESTRelayer {
@@ -268,12 +268,12 @@ func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		chainName := matches[1]
 		network := matches[2]
 		method = "/" + matches[3]
-		chain = balancer.ChainRef{Name: chainName, Network: network}
+		chain = nmux.ChainRef{Name: chainName, Network: network}
 	}
 
-	blcer := balancer.GetBalancer()
+	blcer := nmux.GetMultiplexer()
 
-	delegator := balancer.GetDelegatorFactory().GetRESTDelegator(chain.Name)
+	delegator := nmux.GetDelegatorFactory().GetRESTDelegator(chain.Name)
 	if delegator == nil {
 		w.WriteHeader(404)
 		w.Write([]byte("backend not found"))

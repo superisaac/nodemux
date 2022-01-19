@@ -1,4 +1,4 @@
-package balancer
+package nmux
 
 import (
 	"context"
@@ -10,40 +10,40 @@ import (
 )
 
 var (
-	_instance *Balancer
+	_instance *Multiplexer
 	//once      sync.Once
 )
 
-func GetBalancer() *Balancer {
+func GetMultiplexer() *Multiplexer {
 	//once.Do(func() {
-	//	_instance = NewBalancer()
+	//	_instance = NewMultiplexer()
 	//})
 	if _instance == nil {
-		log.Panicf("Balancer instance is nil")
+		log.Panicf("Multiplexer instance is nil")
 	}
 	return _instance
 }
 
-func SetBalancer(b *Balancer) {
+func SetMultiplexer(b *Multiplexer) {
 	if _instance != nil {
 		_instance.StopSync()
 	}
 	_instance = b
 }
 
-func NewBalancer() *Balancer {
-	b := new(Balancer)
+func NewMultiplexer() *Multiplexer {
+	b := new(Multiplexer)
 	b.chainHub = NewLocalChainhub()
 	b.Reset()
 	return b
 }
 
-func (self *Balancer) Reset() {
+func (self *Multiplexer) Reset() {
 	self.nameIndex = make(map[string]*Endpoint)
 	self.chainIndex = make(map[ChainRef]*EndpointSet)
 }
 
-func (self *Balancer) Add(endpoint *Endpoint) bool {
+func (self *Multiplexer) Add(endpoint *Endpoint) bool {
 	if _, exist := self.nameIndex[endpoint.Name]; exist {
 		// already exist
 		log.Warnf("endpoint %s already exist", endpoint.Name)
@@ -62,7 +62,7 @@ func (self *Balancer) Add(endpoint *Endpoint) bool {
 	return true
 }
 
-func (self *Balancer) Select(chain ChainRef, method string) (*Endpoint, bool) {
+func (self *Multiplexer) Select(chain ChainRef, method string) (*Endpoint, bool) {
 	if eps, ok := self.chainIndex[chain]; ok {
 		for i := 0; i < len(eps.items); i++ {
 			idx := eps.cursor % len(eps.items)
@@ -86,7 +86,7 @@ func (self *Balancer) Select(chain ChainRef, method string) (*Endpoint, bool) {
 	return nil, false
 }
 
-func (self *Balancer) SelectOverHeight(chain ChainRef, method string, heightSpec int) (*Endpoint, bool) {
+func (self *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightSpec int) (*Endpoint, bool) {
 
 	if eps, ok := self.chainIndex[chain]; ok {
 		for i := 0; i < len(eps.items); i++ {
@@ -122,8 +122,8 @@ func (self *Balancer) SelectOverHeight(chain ChainRef, method string, heightSpec
 	return nil, false
 }
 
-func BalancerFromConfig(nbcfg *NodemuxConfig) *Balancer {
-	b := NewBalancer()
+func MultiplexerFromConfig(nbcfg *NodemuxConfig) *Multiplexer {
+	b := NewMultiplexer()
 	b.LoadFromConfig(nbcfg)
 	if nbcfg.Store.Url != "" {
 		// sync source must be a redis URL
@@ -139,7 +139,7 @@ func BalancerFromConfig(nbcfg *NodemuxConfig) *Balancer {
 	return b
 }
 
-func (self *Balancer) LoadFromConfig(nbcfg *NodemuxConfig) {
+func (self *Multiplexer) LoadFromConfig(nbcfg *NodemuxConfig) {
 	self.cfg = nbcfg
 	for name, epcfg := range nbcfg.Endpoints {
 		ep := NewEndpoint()
@@ -161,7 +161,7 @@ func (self *Balancer) LoadFromConfig(nbcfg *NodemuxConfig) {
 	}
 }
 
-func (self *Balancer) DefaultRelayMessage(rootCtx context.Context, chain ChainRef, reqmsg *jsonrpc.RequestMessage, overHeight int) (jsonrpc.IMessage, error) {
+func (self *Multiplexer) DefaultRelayMessage(rootCtx context.Context, chain ChainRef, reqmsg *jsonrpc.RequestMessage, overHeight int) (jsonrpc.IMessage, error) {
 	ep, found := self.SelectOverHeight(chain, reqmsg.Method, overHeight)
 	if !found {
 		return jsonrpc.ErrMethodNotFound.ToMessage(reqmsg), nil
@@ -170,7 +170,7 @@ func (self *Balancer) DefaultRelayMessage(rootCtx context.Context, chain ChainRe
 	return resmsg, err
 }
 
-func (self *Balancer) DefaultPipeREST(rootCtx context.Context, chain ChainRef, path string, w http.ResponseWriter, r *http.Request, overHeight int) error {
+func (self *Multiplexer) DefaultPipeREST(rootCtx context.Context, chain ChainRef, path string, w http.ResponseWriter, r *http.Request, overHeight int) error {
 	ep, found := self.SelectOverHeight(chain, path, overHeight)
 	if !found {
 		//return jsonrpc.ErrMethodNotFound.ToMessage(reqmsg), nil

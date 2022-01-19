@@ -6,7 +6,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodemux/balancer"
+	"github.com/superisaac/nodemux/nmux"
 )
 
 type solanaBlockValue struct {
@@ -28,7 +28,7 @@ func NewSolanaChain() *SolanaChain {
 	return &SolanaChain{}
 }
 
-func (self *SolanaChain) GetTip(context context.Context, b *balancer.Balancer, ep *balancer.Endpoint) (*balancer.Block, error) {
+func (self *SolanaChain) GetTip(context context.Context, b *nmux.Multiplexer, ep *nmux.Endpoint) (*nmux.Block, error) {
 	reqMsg := jsonrpc.NewRequestMessage(
 		1, "getLatestBlockhash", []interface{}{})
 	resMsg, err := ep.CallRPC(context, reqMsg)
@@ -41,7 +41,7 @@ func (self *SolanaChain) GetTip(context context.Context, b *balancer.Balancer, e
 		if err != nil {
 			return nil, errors.Wrap(err, "decode rpcblock")
 		}
-		block := &balancer.Block{
+		block := &nmux.Block{
 			Height: bt.Value.LastValidBlockHeight,
 			Hash:   bt.Value.Blockhash,
 		}
@@ -53,7 +53,7 @@ func (self *SolanaChain) GetTip(context context.Context, b *balancer.Balancer, e
 
 }
 
-func (self *SolanaChain) DelegateRPC(rootCtx context.Context, b *balancer.Balancer, chain balancer.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+func (self *SolanaChain) DelegateRPC(rootCtx context.Context, b *nmux.Multiplexer, chain nmux.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -10)
 }

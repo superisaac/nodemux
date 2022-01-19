@@ -10,7 +10,7 @@ bin/nodemux: ${gofiles}
 	go build ${goflag} -o $@ nodemux.go
 
 test:
-	go test ${goflag} -v github.com/superisaac/nodemux/balancer
+	go test ${goflag} -v github.com/superisaac/nodemux/nmux
 	go test ${goflag} -v github.com/superisaac/nodemux/chains
 	go test ${goflag} -v github.com/superisaac/nodemux/server
 
@@ -18,7 +18,7 @@ clean:
 	rm -rf build dist bin/nodemux
 
 gofmt:
-	go fmt balancer/*.go
+	go fmt nmux/*.go
 	go fmt chains/*.go
 	go fmt server/*.go
 	go fmt nodemux.go

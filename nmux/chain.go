@@ -1,4 +1,4 @@
-package balancer
+package nmux
 
 import (
 	"fmt"

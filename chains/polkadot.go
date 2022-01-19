@@ -5,7 +5,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodemux/balancer"
+	"github.com/superisaac/nodemux/nmux"
 	//"strconv"
 )
 
@@ -21,7 +21,7 @@ func NewPolkadotChain() *PolkadotChain {
 	return &PolkadotChain{}
 }
 
-func (self *PolkadotChain) GetTip(context context.Context, b *balancer.Balancer, ep *balancer.Endpoint) (*balancer.Block, error) {
+func (self *PolkadotChain) GetTip(context context.Context, b *nmux.Multiplexer, ep *nmux.Endpoint) (*nmux.Block, error) {
 	reqMsg := jsonrpc.NewRequestMessage(
 		1, "chain_getHeader", []interface{}{})
 	resMsg, err := ep.CallRPC(context, reqMsg)
@@ -35,7 +35,7 @@ func (self *PolkadotChain) GetTip(context context.Context, b *balancer.Balancer,
 			return nil, errors.Wrap(err, "decode rpcblock")
 		}
 
-		block := &balancer.Block{
+		block := &nmux.Block{
 			Height: bt.Number,
 			Hash:   bt.Hash,
 		}
@@ -47,7 +47,7 @@ func (self *PolkadotChain) GetTip(context context.Context, b *balancer.Balancer,
 
 }
 
-func (self *PolkadotChain) DelegateRPC(rootCtx context.Context, b *balancer.Balancer, chain balancer.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+func (self *PolkadotChain) DelegateRPC(rootCtx context.Context, b *nmux.Multiplexer, chain nmux.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -2)
 }

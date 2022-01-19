@@ -1,4 +1,4 @@
-package balancer
+package nmux
 
 import (
 	"github.com/pkg/errors"

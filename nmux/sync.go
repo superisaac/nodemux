@@ -1,4 +1,4 @@
-package balancer
+package nmux
 
 import (
 	"context"
@@ -6,11 +6,11 @@ import (
 	//"time"
 )
 
-func (self Balancer) Syncing() bool {
+func (self Multiplexer) Syncing() bool {
 	return self.cancelSync != nil
 }
 
-func (self *Balancer) StartSync(rootCtx context.Context, fetch bool) {
+func (self *Multiplexer) StartSync(rootCtx context.Context, fetch bool) {
 	//self.syncing = true
 	if self.Syncing() {
 		log.Warn("sync alredy started")
@@ -39,7 +39,7 @@ func (self *Balancer) StartSync(rootCtx context.Context, fetch bool) {
 	}
 }
 
-func (self *Balancer) StopSync() {
+func (self *Multiplexer) StopSync() {
 	//self.syncing = false
 	if self.Syncing() {
 		cancel := self.cancelSync
@@ -49,7 +49,7 @@ func (self *Balancer) StopSync() {
 }
 
 // updater
-func (self *Balancer) updateStatus(bs ChainStatus) error {
+func (self *Multiplexer) updateStatus(bs ChainStatus) error {
 	ep, ok := self.nameIndex[bs.EndpointName]
 	if !ok {
 		return nil
@@ -91,7 +91,7 @@ func (self *Balancer) updateStatus(bs ChainStatus) error {
 	return nil
 }
 
-func (self *Balancer) RunUpdater(rootCtx context.Context) {
+func (self *Multiplexer) RunUpdater(rootCtx context.Context) {
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
