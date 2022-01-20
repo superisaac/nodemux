@@ -135,7 +135,9 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsonrpc.RequestMe
 } // CallHTTP
 
 func (self Endpoint) FullUrl(path string) string {
-	if strings.HasSuffix(self.ServerUrl, "/") {
+	if path == "" {
+		return self.ServerUrl
+	} else if strings.HasSuffix(self.ServerUrl, "/") {
 		return self.ServerUrl + path[1:]
 	} else {
 		return self.ServerUrl + path
