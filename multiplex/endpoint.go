@@ -126,6 +126,8 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsonrpc.RequestMe
 		return nil, errors.Wrap(err, "ioutil.ReadAll")
 	}
 
+	//fmt.Printf("respBody %s\n", respBody)
+
 	respMsg, err := jsonrpc.ParseBytes(respBody)
 	if err != nil {
 		return nil, err

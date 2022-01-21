@@ -43,6 +43,11 @@ func (self *Multiplexer) Reset() {
 	self.chainIndex = make(map[ChainRef]*EndpointSet)
 }
 
+func (self Multiplexer) Get(epName string) (*Endpoint, bool) {
+	ep, ok := self.nameIndex[epName]
+	return ep, ok
+}
+
 func (self *Multiplexer) Add(endpoint *Endpoint) bool {
 	if _, exist := self.nameIndex[endpoint.Name]; exist {
 		// already exist

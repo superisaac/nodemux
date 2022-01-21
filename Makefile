@@ -18,7 +18,7 @@ clean:
 	rm -rf build dist bin/nodemux
 
 gofmt:
-	go fmt nmux/*.go
+	go fmt multiplex/*.go
 	go fmt chains/*.go
 	go fmt server/*.go
 	go fmt nodemux.go
