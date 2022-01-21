@@ -10,7 +10,7 @@ bin/nodemux: ${gofiles}
 	go build ${goflag} -o $@ nodemux.go
 
 test:
-	go test ${goflag} -v github.com/superisaac/nodemux/nmux
+	go test ${goflag} -v github.com/superisaac/nodemux/multiplex
 	go test ${goflag} -v github.com/superisaac/nodemux/chains
 	go test ${goflag} -v github.com/superisaac/nodemux/server
 

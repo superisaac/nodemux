@@ -7,7 +7,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodemux/nmux"
+	"github.com/superisaac/nodemux/multiplex"
 )
 
 type EthereumBlock struct {
@@ -22,7 +22,7 @@ func NewEthereumChain() *EthereumChain {
 	return &EthereumChain{}
 }
 
-func (self *EthereumChain) GetTip(context context.Context, b *nmux.Multiplexer, ep *nmux.Endpoint) (*nmux.Block, error) {
+func (self *EthereumChain) GetTip(context context.Context, b *multiplex.Multiplexer, ep *multiplex.Endpoint) (*multiplex.Block, error) {
 	reqMsg := jsonrpc.NewRequestMessage(
 		1, "eth_getBlockByNumber",
 		[]interface{}{"latest", false})
@@ -40,7 +40,7 @@ func (self *EthereumChain) GetTip(context context.Context, b *nmux.Multiplexer, 
 		if err != nil {
 			return nil, errors.Wrapf(err, "hexutil.decode %s", bt.Number)
 		}
-		block := &nmux.Block{
+		block := &multiplex.Block{
 			Height: int(height),
 			Hash:   bt.Hash,
 			//PrevHash: bt.ParentHash,
@@ -53,7 +53,7 @@ func (self *EthereumChain) GetTip(context context.Context, b *nmux.Multiplexer, 
 
 }
 
-func (self *EthereumChain) DelegateRPC(rootCtx context.Context, b *nmux.Multiplexer, chain nmux.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+func (self *EthereumChain) DelegateRPC(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -5)
 }

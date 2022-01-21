@@ -1,4 +1,4 @@
-package nmux
+package multiplex
 
 import (
 	"github.com/prometheus/client_golang/prometheus"

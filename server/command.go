@@ -7,7 +7,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/nodemux/chains"
-	"github.com/superisaac/nodemux/nmux"
+	"github.com/superisaac/nodemux/multiplex"
 	"os"
 	"time"
 )
@@ -75,14 +75,14 @@ func watchConfig(rootCtx context.Context, yamlPath string, fetch bool) {
 
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				log.Infof("watch config, file %s changed, event %#v", yamlPath, event)
-				nbcfg, err := nmux.ConfigFromFile(event.Name)
+				nbcfg, err := multiplex.ConfigFromFile(event.Name)
 				if err != nil {
 					log.Warnf("error config %s", err)
 				} else {
-					b := nmux.MultiplexerFromConfig(nbcfg)
+					b := multiplex.MultiplexerFromConfig(nbcfg)
 					b.StartSync(rootCtx, fetch)
 					time.Sleep(1 * time.Second)
-					nmux.SetMultiplexer(b)
+					multiplex.SetMultiplexer(b)
 
 				}
 			}
@@ -138,19 +138,19 @@ func CommandStartServer() {
 		os.Exit(1)
 	}
 
-	nbcfg, err := nmux.ConfigFromFile(*pYamlPath)
+	nbcfg, err := multiplex.ConfigFromFile(*pYamlPath)
 	if err != nil {
 		panic(err)
 	}
 
 	// initial delegator factory and add chains support to it
-	factory := nmux.GetDelegatorFactory()
+	factory := multiplex.GetDelegatorFactory()
 	chains.InstallAdaptors(factory)
 
-	// initialize nmux
-	b := nmux.MultiplexerFromConfig(nbcfg)
+	// initialize multiplex
+	b := multiplex.MultiplexerFromConfig(nbcfg)
 
-	nmux.SetMultiplexer(b)
+	multiplex.SetMultiplexer(b)
 
 	rootCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()

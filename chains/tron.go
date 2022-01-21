@@ -3,7 +3,7 @@ package chains
 import (
 	"context"
 	//"github.com/pkg/errors"
-	"github.com/superisaac/nodemux/nmux"
+	"github.com/superisaac/nodemux/multiplex"
 	"net/http"
 	//"strconv"
 )
@@ -29,7 +29,7 @@ func NewTronChain() *TronChain {
 	return &TronChain{}
 }
 
-func (self *TronChain) GetTip(context context.Context, b *nmux.Multiplexer, ep *nmux.Endpoint) (*nmux.Block, error) {
+func (self *TronChain) GetTip(context context.Context, b *multiplex.Multiplexer, ep *multiplex.Endpoint) (*multiplex.Block, error) {
 	var res tronBlock
 	err := ep.PostJson(context,
 		"/walletsolidity/getnowblock",
@@ -39,14 +39,14 @@ func (self *TronChain) GetTip(context context.Context, b *nmux.Multiplexer, ep *
 	}
 
 	height := res.BlockHeader.RawData.Number
-	block := &nmux.Block{
+	block := &multiplex.Block{
 		Height: height,
 		Hash:   res.BlockID,
 	}
 	return block, nil
 }
 
-func (self *TronChain) DelegateREST(rootCtx context.Context, b *nmux.Multiplexer, chain nmux.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+func (self *TronChain) DelegateREST(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
 	return b.DefaultPipeREST(rootCtx, chain, path, w, r, -30)
 }

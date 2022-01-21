@@ -1,4 +1,4 @@
-package nmux
+package multiplex
 
 import (
 	"context"
@@ -211,7 +211,7 @@ func handleRedisError(networkFailure int, err error, fn string) (int, error) {
 		if errors.As(err, &opErr) {
 			networkFailure++
 			log.Warnf("redis connect failed %d times, %s", networkFailure, opErr)
-			if networkFailure > 100 {
+			if networkFailure > 30 {
 				return networkFailure, errors.Wrap(opErr, "networkFailure")
 			}
 		} else {

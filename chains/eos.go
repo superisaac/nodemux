@@ -4,7 +4,7 @@ import (
 	"context"
 	//"github.com/mitchellh/mapstructure"
 	//"github.com/pkg/errors"
-	"github.com/superisaac/nodemux/nmux"
+	"github.com/superisaac/nodemux/multiplex"
 	"net/http"
 )
 
@@ -20,7 +20,7 @@ func NewEosChain() *EosChain {
 	return &EosChain{}
 }
 
-func (self *EosChain) GetTip(context context.Context, b *nmux.Multiplexer, ep *nmux.Endpoint) (*nmux.Block, error) {
+func (self *EosChain) GetTip(context context.Context, b *multiplex.Multiplexer, ep *multiplex.Endpoint) (*multiplex.Block, error) {
 	var res eosChainInfo
 	err := ep.PostJson(context,
 		"/v1/chain/get_info",
@@ -29,14 +29,14 @@ func (self *EosChain) GetTip(context context.Context, b *nmux.Multiplexer, ep *n
 		return nil, err
 	}
 
-	block := &nmux.Block{
+	block := &multiplex.Block{
 		Height: res.LastBlockNum,
 		Hash:   res.LastBlockId,
 	}
 	return block, nil
 }
 
-func (self *EosChain) DelegateREST(rootCtx context.Context, b *nmux.Multiplexer, chain nmux.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+func (self *EosChain) DelegateREST(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
 	return b.DefaultPipeREST(rootCtx, chain, path, w, r, -30)
 }

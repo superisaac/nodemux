@@ -1,4 +1,4 @@
-package nmux
+package multiplex
 
 import (
 	log "github.com/sirupsen/logrus"

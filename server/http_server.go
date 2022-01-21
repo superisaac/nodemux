@@ -8,7 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodemux/nmux"
+	"github.com/superisaac/nodemux/multiplex"
 	"io"
 	//"net"
 	"net/http"
@@ -55,12 +55,12 @@ func startMetricsServer(rootCtx context.Context, serverCfg *ServerConfig) {
 }
 
 func startEntrypointServer(rootCtx context.Context, entryCfg *EntrypointConfig, serverCfg *ServerConfig) {
-	support, rpcType := nmux.GetDelegatorFactory().SupportChain(entryCfg.Chain)
+	support, rpcType := multiplex.GetDelegatorFactory().SupportChain(entryCfg.Chain)
 	if !support {
 		log.Warnf("entry point for chain %s not supported", entryCfg.Chain)
 		return
 	}
-	chain := nmux.ChainRef{Name: entryCfg.Chain, Network: entryCfg.Network}
+	chain := multiplex.ChainRef{Name: entryCfg.Chain, Network: entryCfg.Network}
 	var handler http.Handler
 	if rpcType == "JSONRPC" {
 		rpc1 := NewRPCRelayer(rootCtx)
@@ -154,7 +154,7 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 type RPCRelayer struct {
 	rootCtx context.Context
 	regex   *regexp.Regexp
-	chain   nmux.ChainRef
+	chain   multiplex.ChainRef
 }
 
 func NewRPCRelayer(rootCtx context.Context) *RPCRelayer {
@@ -182,7 +182,7 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		chainName := matches[1]
 		network := matches[2]
-		chain = nmux.ChainRef{Name: chainName, Network: network}
+		chain = multiplex.ChainRef{Name: chainName, Network: network}
 	}
 
 	var buffer bytes.Buffer
@@ -204,9 +204,9 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	reqmsg, _ := msg.(*jsonrpc.RequestMessage)
-	blcer := nmux.GetMultiplexer()
+	blcer := multiplex.GetMultiplexer()
 
-	delegator := nmux.GetDelegatorFactory().GetRPCDelegator(chain.Name)
+	delegator := multiplex.GetDelegatorFactory().GetRPCDelegator(chain.Name)
 	if delegator == nil {
 		jsonrpc.ErrorResponse(w, r, err, 404, "backend not found")
 		return
@@ -215,7 +215,7 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	resmsg, err := delegator.DelegateRPC(self.rootCtx, blcer, chain, reqmsg)
 	if err != nil {
 		// put the original http response
-		var abnErr *nmux.AbnormalResponse
+		var abnErr *multiplex.AbnormalResponse
 		if errors.As(err, &abnErr) {
 			origResp := abnErr.Response
 			for hn, hvs := range origResp.Header {
@@ -244,7 +244,7 @@ func (self *RPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type RESTRelayer struct {
 	rootCtx context.Context
 	regex   *regexp.Regexp
-	chain   nmux.ChainRef
+	chain   multiplex.ChainRef
 }
 
 func NewRESTRelayer(rootCtx context.Context) *RESTRelayer {
@@ -268,12 +268,12 @@ func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		chainName := matches[1]
 		network := matches[2]
 		method = "/" + matches[3]
-		chain = nmux.ChainRef{Name: chainName, Network: network}
+		chain = multiplex.ChainRef{Name: chainName, Network: network}
 	}
 
-	blcer := nmux.GetMultiplexer()
+	blcer := multiplex.GetMultiplexer()
 
-	delegator := nmux.GetDelegatorFactory().GetRESTDelegator(chain.Name)
+	delegator := multiplex.GetDelegatorFactory().GetRESTDelegator(chain.Name)
 	if delegator == nil {
 		w.WriteHeader(404)
 		w.Write([]byte("backend not found"))

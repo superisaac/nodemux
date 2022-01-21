@@ -5,7 +5,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodemux/nmux"
+	"github.com/superisaac/nodemux/multiplex"
 )
 
 type ConfluxChain struct {
@@ -15,7 +15,7 @@ func NewConfluxChain() *ConfluxChain {
 	return &ConfluxChain{}
 }
 
-func (self *ConfluxChain) GetTip(context context.Context, b *nmux.Multiplexer, ep *nmux.Endpoint) (*nmux.Block, error) {
+func (self *ConfluxChain) GetTip(context context.Context, b *multiplex.Multiplexer, ep *multiplex.Endpoint) (*multiplex.Block, error) {
 	reqMsg := jsonrpc.NewRequestMessage(
 		1, "cfx_epochNumber",
 		[]interface{}{"latest_mined"})
@@ -30,7 +30,7 @@ func (self *ConfluxChain) GetTip(context context.Context, b *nmux.Multiplexer, e
 			return nil, errors.Wrap(err, "decode rpcblock")
 		}
 
-		block := &nmux.Block{
+		block := &multiplex.Block{
 			Height: height,
 			//Hash:   ""
 		}
@@ -42,7 +42,7 @@ func (self *ConfluxChain) GetTip(context context.Context, b *nmux.Multiplexer, e
 
 }
 
-func (self *ConfluxChain) DelegateRPC(rootCtx context.Context, b *nmux.Multiplexer, chain nmux.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+func (self *ConfluxChain) DelegateRPC(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -5)
 }

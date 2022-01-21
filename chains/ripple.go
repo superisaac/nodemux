@@ -3,7 +3,7 @@ package chains
 import (
 	"context"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodemux/nmux"
+	"github.com/superisaac/nodemux/multiplex"
 )
 
 type rippleLedger struct {
@@ -35,7 +35,7 @@ func NewRippleChain() *RippleChain {
 	return &RippleChain{}
 }
 
-func (self *RippleChain) GetTip(context context.Context, b *nmux.Multiplexer, ep *nmux.Endpoint) (*nmux.Block, error) {
+func (self *RippleChain) GetTip(context context.Context, b *multiplex.Multiplexer, ep *multiplex.Endpoint) (*multiplex.Block, error) {
 	filter := rippleLedgerFilter{
 		LedgerIndex:  "validated",
 		Accounts:     false,
@@ -53,7 +53,7 @@ func (self *RippleChain) GetTip(context context.Context, b *nmux.Multiplexer, ep
 	if err != nil {
 		return nil, err
 	}
-	block := &nmux.Block{
+	block := &multiplex.Block{
 		Height: res.Result.LedgerIndex,
 		//Hash:   ct.Hash,
 	}
@@ -72,7 +72,7 @@ func (self *RippleChain) GetTip(context context.Context, b *nmux.Multiplexer, ep
 	// 		return nil, errors.Wrap(err, "decode rpcblock")
 	// 	}
 
-	// 	block := &nmux.Block{
+	// 	block := &multiplex.Block{
 	// 		Height: ledger.LedgerIndex,
 	// 		//Hash:   ct.Hash,
 	// 	}
@@ -84,7 +84,7 @@ func (self *RippleChain) GetTip(context context.Context, b *nmux.Multiplexer, ep
 
 }
 
-func (self *RippleChain) DelegateRPC(rootCtx context.Context, b *nmux.Multiplexer, chain nmux.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+func (self *RippleChain) DelegateRPC(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -10)
 }
