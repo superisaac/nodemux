@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/golang-lru"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonrpc"
 	"github.com/superisaac/nodemux/multiplex"
 )
@@ -64,10 +65,14 @@ func (self *EthereumChain) updateTxCache(chain multiplex.ChainRef, block *ethere
 func (self *EthereumChain) endpointFromCache(chain multiplex.ChainRef, b *multiplex.Multiplexer, txHash string) (*multiplex.Endpoint, bool) {
 	if idx, ok := self.txIndexes[chain]; ok {
 		if v, ok := idx.lruCache.Get(txHash); ok {
-			if epName, ok := v.(string); ok {
-				if ep, ok := b.Get(epName); ok && ep.Healthy {
-					return ep, ok
-				}
+			epName, ok := v.(string)
+			if !ok {
+				log.Panicf("epName for txHash %s is not string", txHash)
+				return nil, false
+			}
+
+			if ep, ok := b.Get(epName); ok && ep.Healthy {
+				return ep, ok
 			}
 		}
 	}
@@ -108,7 +113,9 @@ func (self *EthereumChain) GetTip(context context.Context, b *multiplex.Multiple
 
 func (self *EthereumChain) DelegateRPC(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
 	// Custom relay methods can be defined here
-	if reqmsg.Method == "eth_getTransactionByHash" && len(reqmsg.Params) > 0 {
+	if (reqmsg.Method == "eth_getTransactionByHash" ||
+		reqmsg.Method == "eth_getTransactionReceipt") &&
+		len(reqmsg.Params) > 0 {
 		if txHash, ok := reqmsg.Params[0].(string); ok {
 			if ep, ok := self.endpointFromCache(chain, b, txHash); ok {
 				resmsg, err := ep.CallRPC(rootCtx, reqmsg)

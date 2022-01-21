@@ -2,8 +2,9 @@ package chains
 
 import (
 	"context"
-	"github.com/superisaac/jsonrpc"
+	//"github.com/superisaac/jsonrpc"
 	"github.com/superisaac/nodemux/multiplex"
+	"net/http"
 )
 
 type rippleLedger struct {
@@ -84,7 +85,12 @@ func (self *RippleChain) GetTip(context context.Context, b *multiplex.Multiplexe
 
 }
 
-func (self *RippleChain) DelegateRPC(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+func (self *RippleChain) DelegateREST(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
-	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -10)
+	return b.DefaultPipeREST(rootCtx, chain, path, w, r, -10)
 }
+
+// func (self *RippleChain) DelegateREST(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+// 	// Custom relay methods can be defined here
+// 	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -10)
+// }
