@@ -9,16 +9,15 @@ import (
 	"github.com/superisaac/nodemux/multiplex"
 )
 
-type solanaBlockValue struct {
-	Blockhash            string `mapstructure:"blockhash"`
-	LastValidBlockHeight int    `mapstructure:"lastValidBlockHeight"`
-}
-type solanaBlockContext struct {
-	Slot int `mapstructure:"slot"`
-}
 type solanaBlock struct {
-	Value   solanaBlockValue   `mapstructure:"value"`
-	Context solanaBlockContext `mapstructure:"context"`
+	Value struct {
+		Blockhash            string `mapstructure:"blockhash"`
+		LastValidBlockHeight int    `mapstructure:"lastValidBlockHeight"`
+	} `mapstructure:"value"`
+
+	Context struct {
+		Slot int `mapstructure:"slot"`
+	} `mapstructure:"context"`
 }
 
 type SolanaChain struct {

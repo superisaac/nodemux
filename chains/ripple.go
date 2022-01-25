@@ -2,17 +2,14 @@ package chains
 
 import (
 	"context"
-	//"github.com/superisaac/jsonrpc"
 	"github.com/superisaac/nodemux/multiplex"
 	"net/http"
 )
 
-type rippleLedger struct {
-	LedgerIndex int `mapstructure:"ledger_index json:"ledger_index"`
-}
-
 type rippleLedgerResult struct {
-	Result rippleLedger
+	Result struct {
+		LedgerIndex int `mapstructure:"ledger_index json:"ledger_index"`
+	}
 }
 
 type rippleLedgerFilter struct {

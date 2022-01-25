@@ -9,13 +9,11 @@ import (
 	"strconv"
 )
 
-type starcoinBlockHead struct {
-	Block_hash string `mapstructure:"block_hash"`
-	Number     string `mapstructure:"number"`
-}
-
 type starcoinBlock struct {
-	Head starcoinBlockHead `mapstructure:"head"`
+	Head struct {
+		Blockhash string `mapstructure:"block_hash"`
+		Number    string `mapstructure:"number"`
+	} `mapstructure:"head"`
 }
 
 type StarcoinChain struct {
@@ -46,7 +44,7 @@ func (self *StarcoinChain) GetTip(context context.Context, b *multiplex.Multiple
 
 		block := &multiplex.Block{
 			Height: height,
-			Hash:   bt.Head.Block_hash,
+			Hash:   bt.Head.Blockhash,
 		}
 		return block, nil
 	} else {

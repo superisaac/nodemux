@@ -376,6 +376,8 @@ github.com/superisaac/jsonrpc v0.0.3 h1:UuK1uTQaBPajSHOBV3ngkq1cwnA+EaVNTXyVeO+e
 github.com/superisaac/jsonrpc v0.0.3/go.mod h1:iD47oOk6MEfkLhrZdn1At5M3oxp9jrU6HtDEvmv5a8w=
 github.com/superisaac/jsonrpc v0.0.4 h1:L8LCcRjm79aEDR5hV0vqSE+Wz+SORU+YtbOvVNa8mYc=
 github.com/superisaac/jsonrpc v0.0.4/go.mod h1:iD47oOk6MEfkLhrZdn1At5M3oxp9jrU6HtDEvmv5a8w=
+github.com/superisaac/jsonrpc v0.0.6 h1:0ww0I1ztIqTUtk3Z47Fnej2E/17bAEA40180whSIWQM=
+github.com/superisaac/jsonrpc v0.0.6/go.mod h1:uwwnAuJRW3vz/9n3Ay3U3rLF6mcaUZpgRlgC7RGfcWo=
 github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7/go.mod h1:q4W45IWZaF22tdD+VEXcAWRA037jwmWEB5VWYORlTpc=
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tklauser/go-sysconf v0.3.5/go.mod h1:MkWzOF4RMCshBAMXuhXJs64Rte09mITnppBXY/rYEFI=

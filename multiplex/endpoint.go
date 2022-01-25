@@ -134,7 +134,7 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsonrpc.RequestMe
 	}
 	respMsg.SetTraceId(traceId)
 	return respMsg, nil
-} // CallHTTP
+} // CallRPC
 
 func (self Endpoint) FullUrl(path string) string {
 	if path == "" {
@@ -146,6 +146,7 @@ func (self Endpoint) FullUrl(path string) string {
 	}
 }
 
+// RESTful methods
 func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.ResponseWriter, r *http.Request) error {
 	self.Connect()
 

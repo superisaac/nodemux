@@ -2,24 +2,19 @@ package chains
 
 import (
 	"context"
-	//"github.com/pkg/errors"
 	"github.com/superisaac/nodemux/multiplex"
 	"net/http"
-	//"strconv"
 )
 
-type tronBlockRawData struct {
-	Number     int    `json:"number"`
-	ParentHash string `json:"parentHash"`
-}
-
-type tronBlockHeader struct {
-	RawData tronBlockRawData `json:"raw_data"`
-}
-
 type tronBlock struct {
-	BlockHeader tronBlockHeader `json:"block_header"`
-	BlockID     string          `json:"blockID"`
+	BlockHeader struct {
+		RawData struct {
+			Number     int    `json:"number"`
+			ParentHash string `json:"parentHash"`
+		} `json:"raw_data"`
+	} `json:"block_header"`
+
+	BlockID string `json:"blockID"`
 }
 
 type TronChain struct {
