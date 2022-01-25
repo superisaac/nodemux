@@ -81,7 +81,7 @@ type RESTDelegator interface {
 
 type GraphQLDelegator interface {
 	TipDelegator
-	DelegateGraphQL(ctx context.Context, b *Multiplexer, chain ChainRef, w http.ResponseWriter, r *http.Request) error
+	DelegateGraphQL(ctx context.Context, b *Multiplexer, chain ChainRef, path string, w http.ResponseWriter, r *http.Request) error
 }
 
 type DelegatorFactory struct {

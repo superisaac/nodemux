@@ -97,12 +97,15 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	serverMux.Handle("/metrics", NewHttpAuthHandler(
 		serverCfg.Metrics.Auth,
 		promhttp.Handler()))
-	serverMux.Handle("/jsonrpc", NewHttpAuthHandler(
+	serverMux.Handle("/jsonrpc/", NewHttpAuthHandler(
 		serverCfg.Auth,
 		NewRPCRelayer(rootCtx)))
-	serverMux.Handle("/rest", NewHttpAuthHandler(
+	serverMux.Handle("/rest/", NewHttpAuthHandler(
 		serverCfg.Auth,
 		NewRESTRelayer(rootCtx)))
+	serverMux.Handle("/graphql/", NewHttpAuthHandler(
+		serverCfg.Auth,
+		NewGraphQLRelayer(rootCtx)))
 
 	for _, entryCfg := range serverCfg.Entrypoints {
 		go startEntrypointServer(rootCtx, entryCfg, serverCfg)
@@ -267,21 +270,16 @@ type GraphQLRelayer struct {
 func NewGraphQLRelayer(rootCtx context.Context) *GraphQLRelayer {
 	return &GraphQLRelayer{
 		rootCtx: rootCtx,
-		regex:   regexp.MustCompile(`^/jsonrpc/([^/]+)/([^/]+)$`),
+		regex:   regexp.MustCompile(`^/graphql/([^/]+)/([^/]+)(/.*)?$`),
 	}
 }
 
 func (self *GraphQLRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// only support POST
-	if r.Method != "POST" {
-		jsonrpc.ErrorResponse(w, r, errors.New("method not allowed"), 405, "Method not allowed")
-		return
-	}
-
 	chain := self.chain
+	path := "/"
 	if chain.Empty() {
 		matches := self.regex.FindStringSubmatch(r.URL.Path)
-		if len(matches) < 3 {
+		if len(matches) < 4 {
 			log.Warnf("http url pattern failed")
 			w.WriteHeader(404)
 			w.Write([]byte("not found"))
@@ -289,11 +287,11 @@ func (self *GraphQLRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		chainName := matches[1]
 		network := matches[2]
+		path = matches[3]
 		chain = multiplex.ChainRef{Name: chainName, Network: network}
 	}
 
 	m := multiplex.GetMultiplexer()
-
 	delegator := multiplex.GetDelegatorFactory().GetGraphQLDelegator(chain.Name)
 	if delegator == nil {
 		w.WriteHeader(404)
@@ -301,7 +299,7 @@ func (self *GraphQLRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := delegator.DelegateGraphQL(self.rootCtx, m, chain, w, r)
+	err := delegator.DelegateGraphQL(self.rootCtx, m, chain, path, w, r)
 	if err != nil {
 		log.Warnf("error delegate rest %s", err)
 		w.WriteHeader(500)

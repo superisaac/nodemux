@@ -58,7 +58,7 @@ func (self *FantumChain) GetTip(context context.Context, b *multiplex.Multiplexe
 	return block, nil
 }
 
-func (self *FantumChain) DelegateGraphQL(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, w http.ResponseWriter, r *http.Request) error {
+func (self *FantumChain) DelegateGraphQL(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
-	return b.DefaultPipeGraphQL(rootCtx, chain, w, r, -10)
+	return b.DefaultPipeGraphQL(rootCtx, chain, path, w, r, -10)
 }

@@ -191,8 +191,8 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 	return nil
 }
 
-func (self *Endpoint) GetJson(rootCtx context.Context, path string, headers map[string]string, target interface{}) error {
-	return self.RequestJson(rootCtx, "GET", path, nil, headers, target)
+func (self *Endpoint) GetJson(rootCtx context.Context, path string, headers map[string]string, output interface{}) error {
+	return self.RequestJson(rootCtx, "GET", path, nil, headers, output)
 }
 func (self Endpoint) encodeBody(body interface{}) ([]byte, string, error) {
 	if body == nil {
@@ -209,7 +209,7 @@ func (self Endpoint) encodeBody(body interface{}) ([]byte, string, error) {
 	// TODO: handle http form
 }
 
-func (self *Endpoint) PostJson(rootCtx context.Context, path string, body interface{}, headers map[string]string, target interface{}) error {
+func (self *Endpoint) PostJson(rootCtx context.Context, path string, body interface{}, headers map[string]string, output interface{}) error {
 	data, ctype, err := self.encodeBody(body)
 	if err != nil {
 		return errors.Wrap(err, "encodeBody")
@@ -220,10 +220,10 @@ func (self *Endpoint) PostJson(rootCtx context.Context, path string, body interf
 		}
 		headers["Content-Type"] = ctype
 	}
-	return self.RequestJson(rootCtx, "POST", path, data, headers, target)
+	return self.RequestJson(rootCtx, "POST", path, data, headers, output)
 }
 
-func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path string, data []byte, headers map[string]string, target interface{}) error {
+func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path string, data []byte, headers map[string]string, output interface{}) error {
 	self.Connect()
 
 	ctx, cancel := context.WithCancel(rootCtx)
@@ -267,7 +267,7 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 		return errors.Wrap(err, "ioutil.ReadAll")
 	}
 
-	err = json.Unmarshal(respBody, target)
+	err = json.Unmarshal(respBody, output)
 	if err != nil {
 		return errors.Wrap(err, "json.Unmarshal")
 	}
