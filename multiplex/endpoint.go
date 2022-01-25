@@ -215,6 +215,9 @@ func (self *Endpoint) PostJson(rootCtx context.Context, path string, body interf
 		return errors.Wrap(err, "encodeBody")
 	}
 	if ctype != "" {
+		if headers == nil {
+			headers = make(map[string]string)
+		}
 		headers["Content-Type"] = ctype
 	}
 	return self.RequestJson(rootCtx, "POST", path, data, headers, target)

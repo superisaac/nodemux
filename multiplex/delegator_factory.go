@@ -19,25 +19,32 @@ func GetDelegatorFactory() *DelegatorFactory {
 
 func newDelegatorFactory() *DelegatorFactory {
 	return &DelegatorFactory{
-		rpcDelegators:  make(map[string]RPCDelegator),
-		restDelegators: make(map[string]RESTDelegator),
+		rpcDelegators:   make(map[string]RPCDelegator),
+		restDelegators:  make(map[string]RESTDelegator),
+		graphDelegators: make(map[string]GraphQLDelegator),
 	}
 }
 
-func (self DelegatorFactory) SupportChain(chain string) (bool, string) {
+func (self DelegatorFactory) SupportChain(chain string) (bool, int) {
 	if _, ok := self.rpcDelegators[chain]; ok {
-		return true, "JSONRPC"
+		return true, ApiJSONRPC
 	}
 	if _, ok := self.restDelegators[chain]; ok {
-		return true, "REST"
+		return true, ApiREST
 	}
-	return false, ""
+
+	if _, ok := self.graphDelegators[chain]; ok {
+		return true, ApiGraphQL
+	}
+	return false, 0
 }
 
 func (self DelegatorFactory) GetTipDelegator(chain string) TipDelegator {
 	if delg, ok := self.rpcDelegators[chain]; ok {
 		return delg
 	} else if delg, ok := self.restDelegators[chain]; ok {
+		return delg
+	} else if delg, ok := self.graphDelegators[chain]; ok {
 		return delg
 	}
 	log.Panicf("chain %s not supported", chain)
@@ -68,6 +75,21 @@ func (self *DelegatorFactory) RegisterREST(delegator RESTDelegator, chains ...st
 
 func (self DelegatorFactory) GetRESTDelegator(chain string) RESTDelegator {
 	if delegator, ok := self.restDelegators[chain]; ok {
+		return delegator
+	}
+	log.Panicf("chain %s not supported", chain)
+	return nil
+}
+
+// GraphQL delegators
+func (self *DelegatorFactory) RegisterGraphQL(delegator GraphQLDelegator, chains ...string) {
+	for _, chain := range chains {
+		self.graphDelegators[chain] = delegator
+	}
+}
+
+func (self DelegatorFactory) GetGraphQLDelegator(chain string) GraphQLDelegator {
+	if delegator, ok := self.graphDelegators[chain]; ok {
 		return delegator
 	}
 	log.Panicf("chain %s not supported", chain)

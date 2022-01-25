@@ -6,6 +6,12 @@ import (
 	"net/http"
 )
 
+const (
+	ApiJSONRPC = iota
+	ApiREST
+	ApiGraphQL
+)
+
 // data structures
 type Block struct {
 	Height int
@@ -73,9 +79,15 @@ type RESTDelegator interface {
 	DelegateREST(ctx context.Context, b *Multiplexer, chain ChainRef, path string, w http.ResponseWriter, r *http.Request) error
 }
 
+type GraphQLDelegator interface {
+	TipDelegator
+	DelegateGraphQL(ctx context.Context, b *Multiplexer, chain ChainRef, w http.ResponseWriter, r *http.Request) error
+}
+
 type DelegatorFactory struct {
-	rpcDelegators  map[string]RPCDelegator
-	restDelegators map[string]RESTDelegator
+	rpcDelegators   map[string]RPCDelegator
+	restDelegators  map[string]RESTDelegator
+	graphDelegators map[string]GraphQLDelegator
 }
 
 // chain stream

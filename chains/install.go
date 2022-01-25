@@ -29,6 +29,9 @@ func InstallAdaptors(factory *multiplex.DelegatorFactory) {
 	factory.RegisterREST(NewEosChain(), "eosio", "enu")
 	factory.RegisterREST(NewAlgorandChain(), "algorand")
 	factory.RegisterREST(NewKadenaChain(), "kadena")
+
+	// GraphQL handlers
+	factory.RegisterGraphQL(NewFantumChain(), "fantum")
 }
 
 // func init() {

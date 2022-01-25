@@ -57,37 +57,9 @@ func (self *RippleChain) GetTip(context context.Context, b *multiplex.Multiplexe
 	}
 	return block, nil
 
-	// reqMsg := jsonrpc.NewRequestMessage(
-	// 	1, "ledger", []interface{}{filter})
-	// resMsg, err := ep.CallRPC(context, reqMsg)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if resMsg.IsResult() {
-	// 	var ledger rippleLedger
-	// 	err := mapstructure.Decode(resMsg.MustResult(), &ledger)
-	// 	if err != nil {
-	// 		return nil, errors.Wrap(err, "decode rpcblock")
-	// 	}
-
-	// 	block := &multiplex.Block{
-	// 		Height: ledger.LedgerIndex,
-	// 		//Hash:   ct.Hash,
-	// 	}
-	// 	return block, nil
-	// } else {
-	// 	errBody := resMsg.MustError()
-	// 	return nil, errBody
-	// }
-
 }
 
 func (self *RippleChain) DelegateREST(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
 	return b.DefaultPipeREST(rootCtx, chain, path, w, r, -10)
 }
-
-// func (self *RippleChain) DelegateREST(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
-// 	// Custom relay methods can be defined here
-// 	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -10)
-// }

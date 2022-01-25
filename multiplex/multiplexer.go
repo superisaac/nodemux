@@ -186,3 +186,14 @@ func (self *Multiplexer) DefaultPipeREST(rootCtx context.Context, chain ChainRef
 	err := ep.PipeRequest(rootCtx, path, w, r)
 	return err
 }
+
+func (self *Multiplexer) DefaultPipeGraphQL(rootCtx context.Context, chain ChainRef, w http.ResponseWriter, r *http.Request, overHeight int) error {
+	ep, found := self.SelectOverHeight(chain, "", overHeight)
+	if !found {
+		w.WriteHeader(404)
+		w.Write([]byte("not found"))
+		return nil
+	}
+	err := ep.PipeRequest(rootCtx, "", w, r)
+	return err
+}

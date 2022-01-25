@@ -62,15 +62,19 @@ func startEntrypointServer(rootCtx context.Context, entryCfg *EntrypointConfig, 
 	}
 	chain := multiplex.ChainRef{Name: entryCfg.Chain, Network: entryCfg.Network}
 	var handler http.Handler
-	if rpcType == "JSONRPC" {
+	if rpcType == multiplex.ApiJSONRPC {
 		rpc1 := NewRPCRelayer(rootCtx)
 		rpc1.chain = chain
 		handler = rpc1
-	} else {
-		// rpcType == 'REST'
+	} else if rpcType == multiplex.ApiREST {
 		rest1 := NewRESTRelayer(rootCtx)
 		rest1.chain = chain
 		handler = rest1
+	} else {
+		// rpcType == multiplex.ApiGraphQL
+		graph1 := NewGraphQLRelayer(rootCtx)
+		graph1.chain = chain
+		handler = graph1
 	}
 	log.Infof("entrypoint server %s listens at %s", chain, entryCfg.Bind)
 	err := startServer(entryCfg.Bind,
@@ -78,18 +82,6 @@ func startEntrypointServer(rootCtx context.Context, entryCfg *EntrypointConfig, 
 			serverCfg.Auth, handler),
 		entryCfg.TLS, serverCfg.TLS)
 
-	// if serverCfg.TLS != nil {
-	// 	err = http.ListenAndServeTLS(
-	// 		entryCfg.Bind,
-	// 		serverCfg.TLS.Certfile,
-	// 		serverCfg.TLS.Keyfile,
-	// 		NewHttpAuthHandler(
-	// 			serverCfg.Auth, handler))
-	// } else {
-	// 	err = http.ListenAndServe(entryCfg.Bind,
-	// 		NewHttpAuthHandler(
-	// 			serverCfg.Auth, handler))
-	// }
 	if err != nil {
 		log.Println("entry point error ---", err)
 	}
@@ -120,30 +112,7 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		go startMetricsServer(rootCtx, serverCfg)
 	}
 
-	// server := &http.Server{Addr: bind, Handler: serverMux}
-	// listener, err := net.Listen("tcp", bind)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// serverCtx, cancelServer := context.WithCancel(rootCtx)
-	// defer cancelServer()
-	// go func() {
-	// 	for {
-	// 		<-serverCtx.Done()
-	// 		log.Debugf("http server %s stops", bind)
-	// 		listener.Close()
-	// 		return
-	// 	}
-	// }()
-
 	err := startServer(bind, serverMux, serverCfg.TLS)
-	// var err error
-	// if serverCfg.TLS != nil {
-	// 	err = http.ListenAndServeTLS(bind, serverCfg.TLS.Certfile, serverCfg.TLS.Keyfile, serverMux)
-	// } else {
-	// 	err = http.ListenAndServe(bind, serverMux)
-	// }
 	if err != nil {
 		log.Println("HTTP Server Error - ", err)
 		//panic(err)
@@ -271,7 +240,7 @@ func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		chain = multiplex.ChainRef{Name: chainName, Network: network}
 	}
 
-	blcer := multiplex.GetMultiplexer()
+	m := multiplex.GetMultiplexer()
 
 	delegator := multiplex.GetDelegatorFactory().GetRESTDelegator(chain.Name)
 	if delegator == nil {
@@ -280,13 +249,65 @@ func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := delegator.DelegateREST(self.rootCtx, blcer, chain, method, w, r)
+	err := delegator.DelegateREST(self.rootCtx, m, chain, method, w, r)
 	if err != nil {
 		log.Warnf("error delegate rest %s", err)
 		w.WriteHeader(500)
 		w.Write([]byte("server error"))
 	}
 } // RESTRelayer.ServeHTTP
+
+// GraphQL Handler
+type GraphQLRelayer struct {
+	rootCtx context.Context
+	regex   *regexp.Regexp
+	chain   multiplex.ChainRef
+}
+
+func NewGraphQLRelayer(rootCtx context.Context) *GraphQLRelayer {
+	return &GraphQLRelayer{
+		rootCtx: rootCtx,
+		regex:   regexp.MustCompile(`^/jsonrpc/([^/]+)/([^/]+)$`),
+	}
+}
+
+func (self *GraphQLRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// only support POST
+	if r.Method != "POST" {
+		jsonrpc.ErrorResponse(w, r, errors.New("method not allowed"), 405, "Method not allowed")
+		return
+	}
+
+	chain := self.chain
+	if chain.Empty() {
+		matches := self.regex.FindStringSubmatch(r.URL.Path)
+		if len(matches) < 3 {
+			log.Warnf("http url pattern failed")
+			w.WriteHeader(404)
+			w.Write([]byte("not found"))
+			return
+		}
+		chainName := matches[1]
+		network := matches[2]
+		chain = multiplex.ChainRef{Name: chainName, Network: network}
+	}
+
+	m := multiplex.GetMultiplexer()
+
+	delegator := multiplex.GetDelegatorFactory().GetGraphQLDelegator(chain.Name)
+	if delegator == nil {
+		w.WriteHeader(404)
+		w.Write([]byte("backend not found"))
+		return
+	}
+
+	err := delegator.DelegateGraphQL(self.rootCtx, m, chain, w, r)
+	if err != nil {
+		log.Warnf("error delegate rest %s", err)
+		w.WriteHeader(500)
+		w.Write([]byte("server error"))
+	}
+} // GraphQLRelayer.ServeHTTP
 
 type HttpAuthHandler struct {
 	authConfig *AuthConfig
@@ -321,7 +342,6 @@ func (self HttpAuthHandler) TryAuth(r *http.Request) bool {
 	}
 
 	return false
-
 }
 
 func (self *HttpAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
