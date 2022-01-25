@@ -161,6 +161,13 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 		return errors.Wrap(err, "http.NewRequestWithContext")
 	}
 
+	// copy request headers
+	for k, vlist := range r.Header {
+		for _, v := range vlist {
+			req.Header.Add(k, v)
+		}
+	}
+
 	if self.Headers != nil {
 		for k, v := range self.Headers {
 			req.Header.Set(k, v)
