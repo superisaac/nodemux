@@ -132,7 +132,7 @@ type RPCRelayer struct {
 func NewRPCRelayer(rootCtx context.Context) *RPCRelayer {
 	return &RPCRelayer{
 		rootCtx: rootCtx,
-		regex:   regexp.MustCompile(`^/jsonrpc/([^/]+)/([^/]+)$`),
+		regex:   regexp.MustCompile(`^/jsonrpc/([^/]+)/([^/]+)/?$`),
 	}
 }
 

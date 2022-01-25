@@ -7,14 +7,14 @@ import (
 	"net/http"
 )
 
-type fantumBlock struct {
+type fantomBlock struct {
 	Number string
 	Hash   string
 
 	height int
 }
 
-func (self *fantumBlock) Height() int {
+func (self *fantomBlock) Height() int {
 	if self.height <= 0 {
 		height, err := hexutil.DecodeUint64(self.Number)
 		if err != nil {
@@ -25,27 +25,27 @@ func (self *fantumBlock) Height() int {
 	return self.height
 }
 
-type fantumTipResult struct {
+type fantomTipResult struct {
 	Data struct {
-		Block fantumBlock
+		Block fantomBlock
 	}
 }
 
-type fantumTipRequest struct {
+type fantomTipRequest struct {
 	Query string
 }
 
-type FantumChain struct {
+type FantomChain struct {
 }
 
-func NewFantumChain() *FantumChain {
-	return &FantumChain{}
+func NewFantomChain() *FantomChain {
+	return &FantomChain{}
 }
 
-func (self *FantumChain) GetTip(context context.Context, b *multiplex.Multiplexer, ep *multiplex.Endpoint) (*multiplex.Block, error) {
+func (self *FantomChain) GetTip(context context.Context, b *multiplex.Multiplexer, ep *multiplex.Endpoint) (*multiplex.Block, error) {
 	q := "{block(){number hash}}"
-	req := fantumTipRequest{Query: q}
-	var res fantumTipResult
+	req := fantomTipRequest{Query: q}
+	var res fantomTipResult
 	err := ep.PostJson(context, "", req, nil, &res)
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (self *FantumChain) GetTip(context context.Context, b *multiplex.Multiplexe
 	return block, nil
 }
 
-func (self *FantumChain) DelegateGraphQL(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+func (self *FantomChain) DelegateGraphQL(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
 	return b.DefaultPipeGraphQL(rootCtx, chain, path, w, r, -10)
 }

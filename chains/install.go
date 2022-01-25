@@ -10,6 +10,7 @@ func InstallAdaptors(factory *multiplex.DelegatorFactory) {
 		"ethereum", "binance-chain", "polygon",
 		"okex-token", "huobi-token", "ethereum-classic",
 		"cardano-kevm",
+		"fantom-web3",
 	)
 
 	factory.RegisterRPC(NewBitcoinChain(),
@@ -31,7 +32,7 @@ func InstallAdaptors(factory *multiplex.DelegatorFactory) {
 	factory.RegisterREST(NewKadenaChain(), "kadena")
 
 	// GraphQL handlers
-	factory.RegisterGraphQL(NewFantumChain(), "fantum")
+	factory.RegisterGraphQL(NewFantomChain(), "fantom")
 }
 
 // func init() {
