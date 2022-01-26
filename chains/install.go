@@ -33,6 +33,7 @@ func InstallAdaptors(factory *multiplex.DelegatorFactory) {
 
 	// GraphQL handlers
 	factory.RegisterGraphQL(NewFantomChain(), "fantom")
+	factory.RegisterGraphQL(NewCardanoChain(), "cardano")
 }
 
 // func init() {
