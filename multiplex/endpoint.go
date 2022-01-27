@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/jsonrpc"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -72,69 +71,6 @@ func (self *Endpoint) Connect() {
 		}
 	}
 }
-
-func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
-	self.Connect()
-
-	traceId := reqmsg.TraceId()
-
-	reqmsg.SetTraceId("")
-
-	marshaled, err := jsonrpc.MessageBytes(reqmsg)
-	if err != nil {
-		return nil, err
-	}
-	reader := bytes.NewReader(marshaled)
-
-	ctx, cancel := context.WithCancel(rootCtx)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, "POST", self.ServerUrl, reader)
-	if err != nil {
-		return nil, errors.Wrap(err, "http.NewRequestWithContext")
-	}
-	//req.Header.Add("X-Trace-Id", traceId)
-	req.Header.Set("Content-Type", "application/json")
-	//req.Header.Set("Accept", "application/json")
-	if self.Headers != nil {
-		for k, v := range self.Headers {
-			req.Header.Set(k, v)
-		}
-	}
-
-	resp, err := self.client.Do(req)
-	if err != nil {
-		return nil, errors.Wrap(err, "http Do")
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		self.Log().Warnf("invalid response status %d", resp.StatusCode)
-		abnResp := &AbnormalResponse{
-			//Code: resp.StatusCode,
-			// TODO: filter scam headers
-			//Header: resp.Header,
-			//Body:   body,
-			Response: resp,
-		}
-		return nil, errors.Wrap(abnResp, "abnormal response")
-		//return nil, errors.New(fmt.Sprintf("bad resp %d", resp.StatusCode))
-	}
-
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "ioutil.ReadAll")
-	}
-
-	//fmt.Printf("respBody %s\n", respBody)
-
-	respMsg, err := jsonrpc.ParseBytes(respBody)
-	if err != nil {
-		return nil, err
-	}
-	respMsg.SetTraceId(traceId)
-	return respMsg, nil
-} // CallRPC
 
 func (self Endpoint) FullUrl(path string) string {
 	if path == "" {

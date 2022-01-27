@@ -3,6 +3,7 @@ package multiplex
 import (
 	"context"
 	"github.com/superisaac/jsonrpc"
+	"github.com/superisaac/jsonrpc/http"
 	"net/http"
 )
 
@@ -42,6 +43,7 @@ type Endpoint struct {
 
 	connected bool
 	client    *http.Client
+	rpcClient jsonrpchttp.IClient
 }
 
 type EndpointSet struct {

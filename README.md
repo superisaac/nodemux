@@ -1,3 +1,2 @@
 # nodemux
-nodemux is the multiplexer and load balancer of block chain nodes
-
+nodemux is the gateway and load balancer of multiple block chain nodes
