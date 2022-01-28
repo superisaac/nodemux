@@ -127,6 +127,46 @@ func (self *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightS
 	return nil, false
 }
 
+func (self *Multiplexer) SelectWebsocketEndpoint(chain ChainRef, method string, heightSpec int) (ep1 *Endpoint, found bool) {
+
+	if eps, ok := self.chainIndex[chain]; ok {
+		for i := 0; i < len(eps.items); i++ {
+			idx := eps.cursor % len(eps.items)
+			eps.cursor += 1
+
+			ep := eps.items[idx]
+
+			if !ep.IsWebsocket() {
+				continue
+			}
+
+			height := heightSpec
+			if heightSpec < 0 {
+				height = eps.maxTipHeight + heightSpec
+			}
+			if !ep.Healthy {
+				continue
+			}
+
+			if height >= 0 {
+				if ep.Tip == nil || ep.Tip.Height < height {
+					continue
+				}
+			}
+
+			if method != "" && ep.SkipMethods != nil {
+				if _, ok := ep.SkipMethods[method]; ok {
+					// the method is not provided by the endpoint, so skip it
+					continue
+				}
+			}
+
+			return ep, true
+		}
+	}
+	return nil, false
+}
+
 func MultiplexerFromConfig(nbcfg *NodemuxConfig) *Multiplexer {
 	b := NewMultiplexer()
 	b.LoadFromConfig(nbcfg)

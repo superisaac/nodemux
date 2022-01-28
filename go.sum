@@ -385,6 +385,10 @@ github.com/superisaac/jsonrpc v0.0.9 h1:q04L8FtQc4C4ZiT400R24lKqu15SyBMDiZq7mLcq
 github.com/superisaac/jsonrpc v0.0.9/go.mod h1:Ze6fN1KHNNYfJAg5xtFFKZMM720wrXDDUtwSu+N17P0=
 github.com/superisaac/jsoz v0.0.10 h1:+cRMTZcp+hTPuWyjBcbg3LA3bwa+gNCwT53iR8hPs5w=
 github.com/superisaac/jsoz v0.0.10/go.mod h1:YUeVmNbob9nSNG8XsL6LLQbVh1jSQuJnj0x5IfKELRQ=
+github.com/superisaac/jsoz v0.0.12 h1:PpsuM7SxNiMWg0w/R5CSqW5k+S3lvamoUzab4WL3bBo=
+github.com/superisaac/jsoz v0.0.12/go.mod h1:CzTweM/WeAzHb0Gf+lfiNgnfpqDVOrlgcA3sJAx0nUg=
+github.com/superisaac/jsoz v0.0.13 h1:FuIEML1FMqNttGi5fMUdu8ZfedxsjAK5S6EzodQC5HQ=
+github.com/superisaac/jsoz v0.0.13/go.mod h1:CzTweM/WeAzHb0Gf+lfiNgnfpqDVOrlgcA3sJAx0nUg=
 github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7/go.mod h1:q4W45IWZaF22tdD+VEXcAWRA037jwmWEB5VWYORlTpc=
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tklauser/go-sysconf v0.3.5/go.mod h1:MkWzOF4RMCshBAMXuhXJs64Rte09mITnppBXY/rYEFI=

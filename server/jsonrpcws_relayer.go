@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 	"github.com/superisaac/jsoz"
 	"github.com/superisaac/jsoz/http"
 	"github.com/superisaac/nodemux/core"
@@ -15,15 +17,21 @@ type JSONRPCWSRelayer struct {
 	regex     *regexp.Regexp
 	chain     nodemuxcore.ChainRef
 	rpcServer *jsozhttp.WSServer
+
+	pairs map[*http.Request]*jsozhttp.WSClient
 }
 
 func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 	relayer := &JSONRPCWSRelayer{
 		rootCtx: rootCtx,
 		regex:   regexp.MustCompile(`^/jsonrpc\-ws/([^/]+)/([^/]+)/?$`),
+		pairs:   make(map[*http.Request]*jsozhttp.WSClient),
 	}
 
 	rpcServer := jsozhttp.NewWSServer(nil)
+	rpcServer.Router.OnClose(func(r *http.Request) {
+		relayer.onClose(r)
+	})
 	rpcServer.Router.OnMissing(func(req *jsozhttp.RPCRequest) (interface{}, error) {
 		return relayer.delegateRPC(req)
 	})
@@ -31,10 +39,22 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 	return relayer
 }
 
+func (self *JSONRPCWSRelayer) onClose(r *http.Request) {
+	delete(self.pairs, r)
+}
+
 func (self *JSONRPCWSRelayer) delegateRPC(req *jsozhttp.RPCRequest) (interface{}, error) {
 	r := req.HttpRequest()
 	msg := req.Msg()
 	chain := self.chain
+	data := req.Data()
+	if data == nil {
+		return nil, errors.New("request data is nil")
+	}
+	ws, ok := data.(*websocket.Conn)
+	if !ok {
+		return nil, errors.New("requst data is not websocket conn")
+	}
 	if chain.Empty() {
 		matches := self.regex.FindStringSubmatch(r.URL.Path)
 		if len(matches) < 3 {
@@ -51,26 +71,42 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsozhttp.RPCRequest) (interface{}
 		}
 	}
 
-	if !msg.IsRequest() {
-		return nil, jsozhttp.SimpleHttpResponse{
-			Code: 400,
-			Body: []byte("bad request"),
-		}
-	}
-
-	reqmsg, _ := msg.(*jsoz.RequestMessage)
 	m := nodemuxcore.GetMultiplexer()
 
-	delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(chain.Name)
-	if delegator == nil {
-		return nil, jsozhttp.SimpleHttpResponse{
-			Code: 404,
-			Body: []byte("backend not found"),
+	if !msg.IsRequest() {
+		if wsClient, ok := self.pairs[r]; ok {
+			err := wsClient.Send(self.rootCtx, msg)
+			return nil, err
+		} else if ep, found := m.SelectWebsocketEndpoint(chain, "", -2); found {
+			wsClient := jsozhttp.NewWSClient(ep.Config.Url)
+			wsClient.OnMessage(func(m jsoz.Message) {
+				err := self.rpcServer.SendMessage(ws, m)
+				if err != nil {
+					m.Log().Warnf("send message error %s", err)
+				}
+			})
+			self.pairs[r] = wsClient
+			err := wsClient.Send(self.rootCtx, msg)
+			return nil, err
+		} else {
+			return nil, jsozhttp.SimpleHttpResponse{
+				Code: 400,
+				Body: []byte("no websocket upstreams"),
+			}
 		}
-	}
+	} else {
+		delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(chain.Name)
+		reqmsg, _ := msg.(*jsoz.RequestMessage)
+		if delegator == nil {
+			return nil, jsozhttp.SimpleHttpResponse{
+				Code: 404,
+				Body: []byte("backend not found"),
+			}
+		}
 
-	resmsg, err := delegator.DelegateRPC(self.rootCtx, m, chain, reqmsg)
-	return resmsg, err
+		resmsg, err := delegator.DelegateRPC(self.rootCtx, m, chain, reqmsg)
+		return resmsg, err
+	}
 }
 
 func (self *JSONRPCWSRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {

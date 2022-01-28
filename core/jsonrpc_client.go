@@ -5,6 +5,7 @@ import (
 	"context"
 	"github.com/superisaac/jsoz"
 	"github.com/superisaac/jsoz/http"
+	"strings"
 )
 
 func (self *Endpoint) connectRPC() {
@@ -26,3 +27,7 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsoz.RequestMessa
 	self.connectRPC()
 	return self.rpcClient.Call(rootCtx, reqmsg)
 } // CallRPC
+
+func (self Endpoint) IsWebsocket() bool {
+	return strings.HasPrefix(self.Config.Url, "wss://") || strings.HasPrefix(self.Config.Url, "ws://")
+}
