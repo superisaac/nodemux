@@ -7,7 +7,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/jsonrpc"
+	"github.com/superisaac/jsoz"
 	"github.com/superisaac/nodemux/core"
 )
 
@@ -81,7 +81,7 @@ func (self *EthereumChain) endpointFromCache(chain nodemuxcore.ChainRef, b *node
 }
 
 func (self *EthereumChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	reqMsg := jsonrpc.NewRequestMessage(
+	reqMsg := jsoz.NewRequestMessage(
 		1, "eth_getBlockByNumber",
 		[]interface{}{"latest", false})
 	resMsg, err := ep.CallRPC(context, reqMsg)
@@ -111,7 +111,7 @@ func (self *EthereumChain) GetTip(context context.Context, b *nodemuxcore.Multip
 
 }
 
-func (self *EthereumChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+func (self *EthereumChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoz.RequestMessage) (jsoz.Message, error) {
 	// Custom relay methods can be defined here
 	if (reqmsg.Method == "eth_getTransactionByHash" ||
 		reqmsg.Method == "eth_getTransactionReceipt") &&

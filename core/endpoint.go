@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/jsonrpc/http"
+	"github.com/superisaac/jsoz/http"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -205,7 +205,7 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 
 	if resp.StatusCode != 200 {
 		self.Log().Warnf("invalid response status %d", resp.StatusCode)
-		abnResp := &jsonrpchttp.UpstreamResponse{
+		abnResp := &jsozhttp.UpstreamResponse{
 			Response: resp,
 		}
 		return errors.Wrap(abnResp, "abnormal response")

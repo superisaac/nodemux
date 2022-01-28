@@ -3,13 +3,13 @@ package nodemuxcore
 // JSONRPC client from http or websocket
 import (
 	"context"
-	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/jsonrpc/http"
+	"github.com/superisaac/jsoz"
+	"github.com/superisaac/jsoz/http"
 )
 
 func (self *Endpoint) connectRPC() {
 	if self.rpcClient == nil {
-		c, err := jsonrpchttp.GetClient(self.Config.Url)
+		c, err := jsozhttp.GetClient(self.Config.Url)
 		if err != nil {
 			panic(err)
 		}
@@ -17,7 +17,11 @@ func (self *Endpoint) connectRPC() {
 	}
 }
 
-func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+func (self *Endpoint) RPCClient() jsozhttp.Client {
+	return self.rpcClient
+}
+
+func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsoz.RequestMessage) (jsoz.Message, error) {
 	//self.Connect()
 	self.connectRPC()
 	return self.rpcClient.Call(rootCtx, reqmsg)
