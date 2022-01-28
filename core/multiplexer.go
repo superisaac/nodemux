@@ -147,21 +147,12 @@ func MultiplexerFromConfig(nbcfg *NodemuxConfig) *Multiplexer {
 func (self *Multiplexer) LoadFromConfig(nbcfg *NodemuxConfig) {
 	self.cfg = nbcfg
 	for name, epcfg := range nbcfg.Endpoints {
-		ep := NewEndpoint()
+
 		if support, _ := GetDelegatorFactory().SupportChain(epcfg.Chain); !support {
 			panic(fmt.Sprintf("chain %s not supported", epcfg.Chain))
 		}
-		chain := ChainRef{Name: epcfg.Chain, Network: epcfg.Network}
-		ep.Name = name
-		ep.Chain = chain
-		ep.ServerUrl = epcfg.Url
-		ep.Headers = epcfg.Headers
-		if epcfg.SkipMethods != nil {
-			ep.SkipMethods = make(map[string]bool)
-			for _, meth := range epcfg.SkipMethods {
-				ep.SkipMethods[meth] = true
-			}
-		}
+
+		ep := NewEndpoint(name, epcfg)
 		self.Add(ep)
 	}
 }

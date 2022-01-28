@@ -16,12 +16,11 @@ func TestMain(m *testing.M) {
 func TestEndpoint(t *testing.T) {
 	assert := assert.New(t)
 
-	chain := ChainRef{Name: "eosio", Network: "mainnet"}
-	ep := NewEndpoint()
-	ep.Name = "tron01"
-	ep.Chain = chain
-	ep.ServerUrl = "http://127.0.0.1:8899/aa/bb/"
-
+	ep := NewEndpoint("tron01", EndpointConfig{
+		Chain:   "eosio",
+		Network: "mainnet",
+		Url:     "http://127.0.0.1:8899/aa/bb/",
+	})
 	assert.Equal("http://127.0.0.1:8899/aa/bb/v1/status", ep.FullUrl("/v1/status"))
 }
 
@@ -31,11 +30,11 @@ func TestMultiplexer(t *testing.T) {
 	b := NewMultiplexer()
 
 	chain := ChainRef{Name: "binance-chain", Network: "mainnet"}
-	ep := NewEndpoint()
-	ep.Name = "bsc01"
-	ep.Chain = chain
-	ep.ServerUrl = "http://127.0.0.1:8899"
-
+	ep := NewEndpoint("bsc01", EndpointConfig{
+		Chain:   "binance-chain",
+		Network: "mainnet",
+		Url:     "http://127.0.0.1:8899",
+	})
 	b.Add(ep)
 
 	assert.Equal(1, len(b.nameIndex))
@@ -43,5 +42,5 @@ func TestMultiplexer(t *testing.T) {
 
 	ep1, ok := b.SelectOverHeight(chain, "", -1)
 	assert.True(ok)
-	assert.Equal(ep.ServerUrl, ep1.ServerUrl)
+	assert.Equal(ep.Config.Url, ep1.Config.Url)
 }

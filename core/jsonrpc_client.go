@@ -9,7 +9,7 @@ import (
 
 func (self *Endpoint) connectRPC() {
 	if self.rpcClient == nil {
-		c, err := jsonrpchttp.GetClient(self.ServerUrl)
+		c, err := jsonrpchttp.GetClient(self.Config.Url)
 		if err != nil {
 			panic(err)
 		}

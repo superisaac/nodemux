@@ -40,7 +40,7 @@ func (self *Multiplexer) fetchTip(rootCtx context.Context, ep *Endpoint, lastBlo
 			self.chainHub.Pub() <- bs
 		}
 	} else {
-		logger.Warnf("got nil tip block when accessing %s %s", ep.Name, ep.ServerUrl)
+		logger.Warnf("got nil tip block when accessing %s %s", ep.Name, ep.Config.Url)
 	}
 	return block, nil
 }

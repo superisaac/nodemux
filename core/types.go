@@ -31,10 +31,11 @@ type ChainRef struct {
 
 type Endpoint struct {
 	// configured items
-	Name      string
-	Chain     ChainRef
-	ServerUrl string
-	Headers   map[string]string
+	Config EndpointConfig
+	Name   string
+	Chain  ChainRef
+	//ServerUrl string
+	//Headers   map[string]string
 	//HeightPadding int
 	SkipMethods map[string]bool
 

@@ -33,9 +33,26 @@ func (self EndpointSet) prometheusLabels(chain string, network string) prometheu
 	}
 }
 
-/// Create an empty endpoint
-func NewEndpoint() *Endpoint {
-	return &Endpoint{Healthy: true, connected: true}
+/// Create an endpoint instance
+func NewEndpoint(name string, epcfg EndpointConfig) *Endpoint {
+	chain := ChainRef{
+		Name:    epcfg.Chain,
+		Network: epcfg.Network}
+
+	ep := &Endpoint{
+		Config:    epcfg,
+		Name:      name,
+		Chain:     chain,
+		Healthy:   true,
+		connected: true}
+
+	if epcfg.SkipMethods != nil {
+		ep.SkipMethods = make(map[string]bool)
+		for _, meth := range epcfg.SkipMethods {
+			ep.SkipMethods[meth] = true
+		}
+	}
+	return ep
 }
 
 func (self Endpoint) Log() *log.Entry {
@@ -70,11 +87,11 @@ func (self *Endpoint) Connect() {
 
 func (self Endpoint) FullUrl(path string) string {
 	if path == "" {
-		return self.ServerUrl
-	} else if strings.HasSuffix(self.ServerUrl, "/") {
-		return self.ServerUrl + path[1:]
+		return self.Config.Url
+	} else if strings.HasSuffix(self.Config.Url, "/") {
+		return self.Config.Url + path[1:]
 	} else {
-		return self.ServerUrl + path
+		return self.Config.Url + path
 	}
 }
 
@@ -100,8 +117,8 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 		}
 	}
 
-	if self.Headers != nil {
-		for k, v := range self.Headers {
+	if self.Config.Headers != nil {
+		for k, v := range self.Config.Headers {
 			req.Header.Set(k, v)
 		}
 	}
