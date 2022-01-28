@@ -1,4 +1,4 @@
-package multiplex
+package nodemuxcore
 
 import (
 	"github.com/prometheus/client_golang/prometheus"

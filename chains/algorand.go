@@ -4,7 +4,7 @@ import (
 	"context"
 	//"github.com/mitchellh/mapstructure"
 	//"github.com/pkg/errors"
-	"github.com/superisaac/nodemux/multiplex"
+	"github.com/superisaac/nodemux/core"
 	"net/http"
 )
 
@@ -19,20 +19,20 @@ func NewAlgorandChain() *AlgorandChain {
 	return &AlgorandChain{}
 }
 
-func (self *AlgorandChain) GetTip(context context.Context, b *multiplex.Multiplexer, ep *multiplex.Endpoint) (*multiplex.Block, error) {
+func (self *AlgorandChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res algorandChainStatus
 	err := ep.GetJson(context, "/v1/status", nil, &res)
 	if err != nil {
 		return nil, err
 	}
 
-	block := &multiplex.Block{
+	block := &nodemuxcore.Block{
 		Height: res.LastRound,
 	}
 	return block, nil
 }
 
-func (self *AlgorandChain) DelegateREST(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+func (self *AlgorandChain) DelegateREST(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
 	return b.DefaultPipeREST(rootCtx, chain, path, w, r, -5)
 }

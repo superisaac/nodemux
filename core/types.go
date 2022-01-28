@@ -1,4 +1,4 @@
-package multiplex
+package nodemuxcore
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 
 const (
 	ApiJSONRPC = iota
+	ApiJSONRPCWS
 	ApiREST
 	ApiGraphQL
 )
@@ -24,9 +25,9 @@ type ChainRef struct {
 	Network string `json:"network"`
 }
 
-type AbnormalResponse struct {
-	Response *http.Response
-}
+// type AbnormalResponse struct {
+// 	Response *http.Response
+// }
 
 type Endpoint struct {
 	// configured items

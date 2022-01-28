@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/nodemux/multiplex"
+	"github.com/superisaac/nodemux/core"
 	"net/http"
 	"regexp"
 )
@@ -12,7 +12,7 @@ import (
 type RESTRelayer struct {
 	rootCtx context.Context
 	regex   *regexp.Regexp
-	chain   multiplex.ChainRef
+	chain   nodemuxcore.ChainRef
 }
 
 func NewRESTRelayer(rootCtx context.Context) *RESTRelayer {
@@ -36,12 +36,12 @@ func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		chainName := matches[1]
 		network := matches[2]
 		method = "/" + matches[3]
-		chain = multiplex.ChainRef{Name: chainName, Network: network}
+		chain = nodemuxcore.ChainRef{Name: chainName, Network: network}
 	}
 
-	m := multiplex.GetMultiplexer()
+	m := nodemuxcore.GetMultiplexer()
 
-	delegator := multiplex.GetDelegatorFactory().GetRESTDelegator(chain.Name)
+	delegator := nodemuxcore.GetDelegatorFactory().GetRESTDelegator(chain.Name)
 	if delegator == nil {
 		w.WriteHeader(404)
 		w.Write([]byte("backend not found"))

@@ -3,7 +3,7 @@ package chains
 import (
 	"context"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/superisaac/nodemux/multiplex"
+	"github.com/superisaac/nodemux/core"
 	"net/http"
 )
 
@@ -42,7 +42,7 @@ func NewFantomChain() *FantomChain {
 	return &FantomChain{}
 }
 
-func (self *FantomChain) GetTip(context context.Context, b *multiplex.Multiplexer, ep *multiplex.Endpoint) (*multiplex.Block, error) {
+func (self *FantomChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	q := "{block(){number hash}}"
 	req := fantomTipRequest{Query: q}
 	var res fantomTipResult
@@ -51,14 +51,14 @@ func (self *FantomChain) GetTip(context context.Context, b *multiplex.Multiplexe
 		return nil, err
 	}
 
-	block := &multiplex.Block{
+	block := &nodemuxcore.Block{
 		Height: res.Data.Block.Height(),
 		Hash:   res.Data.Block.Hash,
 	}
 	return block, nil
 }
 
-func (self *FantomChain) DelegateGraphQL(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+func (self *FantomChain) DelegateGraphQL(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
 	return b.DefaultPipeGraphQL(rootCtx, chain, path, w, r, -10)
 }

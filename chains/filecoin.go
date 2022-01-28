@@ -6,7 +6,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodemux/multiplex"
+	"github.com/superisaac/nodemux/core"
 )
 
 type filecoinBlock struct {
@@ -21,7 +21,7 @@ func NewFilecoinChain() *FilecoinChain {
 	return &FilecoinChain{}
 }
 
-func (self *FilecoinChain) GetTip(context context.Context, b *multiplex.Multiplexer, ep *multiplex.Endpoint) (*multiplex.Block, error) {
+func (self *FilecoinChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqMsg := jsonrpc.NewRequestMessage(
 		1, "Filecoin.ChainHead", []interface{}{})
 	resMsg, err := ep.CallRPC(context, reqMsg)
@@ -35,7 +35,7 @@ func (self *FilecoinChain) GetTip(context context.Context, b *multiplex.Multiple
 			return nil, errors.Wrap(err, "decode rpcblock")
 		}
 		// TODO: get block hash, currently tip.hash is not necessary
-		block := &multiplex.Block{
+		block := &nodemuxcore.Block{
 			Height: bt.Height,
 			//Hash:   bt.Hash,
 		}
@@ -47,7 +47,7 @@ func (self *FilecoinChain) GetTip(context context.Context, b *multiplex.Multiple
 
 }
 
-func (self *FilecoinChain) DelegateRPC(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+func (self *FilecoinChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -3)
 }

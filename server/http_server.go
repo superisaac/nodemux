@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/nodemux/multiplex"
+	"github.com/superisaac/nodemux/core"
 	"net/http"
 )
 
@@ -49,23 +49,27 @@ func startMetricsServer(rootCtx context.Context, serverCfg *ServerConfig) {
 }
 
 func startEntrypointServer(rootCtx context.Context, entryCfg *EntrypointConfig, serverCfg *ServerConfig) {
-	support, rpcType := multiplex.GetDelegatorFactory().SupportChain(entryCfg.Chain)
+	support, rpcType := nodemuxcore.GetDelegatorFactory().SupportChain(entryCfg.Chain)
 	if !support {
 		log.Warnf("entry point for chain %s not supported", entryCfg.Chain)
 		return
 	}
-	chain := multiplex.ChainRef{Name: entryCfg.Chain, Network: entryCfg.Network}
+	chain := nodemuxcore.ChainRef{Name: entryCfg.Chain, Network: entryCfg.Network}
 	var handler http.Handler
-	if rpcType == multiplex.ApiJSONRPC {
-		rpc1 := NewRPCRelayer(rootCtx)
+	if rpcType == nodemuxcore.ApiJSONRPC {
+		rpc1 := NewJSONRPCRelayer(rootCtx)
 		rpc1.chain = chain
 		handler = rpc1
-	} else if rpcType == multiplex.ApiREST {
+	} else if rpcType == nodemuxcore.ApiJSONRPCWS {
+		rpc1 := NewJSONRPCWSRelayer(rootCtx)
+		rpc1.chain = chain
+		handler = rpc1
+	} else if rpcType == nodemuxcore.ApiREST {
 		rest1 := NewRESTRelayer(rootCtx)
 		rest1.chain = chain
 		handler = rest1
 	} else {
-		// rpcType == multiplex.ApiGraphQL
+		// rpcType == nodemuxcore.ApiGraphQL
 		graph1 := NewGraphQLRelayer(rootCtx)
 		graph1.chain = chain
 		handler = graph1
@@ -93,7 +97,10 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		promhttp.Handler()))
 	serverMux.Handle("/jsonrpc/", NewHttpAuthHandler(
 		serverCfg.Auth,
-		NewRPCRelayer(rootCtx)))
+		NewJSONRPCRelayer(rootCtx)))
+	serverMux.Handle("/jsonrpc-ws/", NewHttpAuthHandler(
+		serverCfg.Auth,
+		NewJSONRPCWSRelayer(rootCtx)))
 	serverMux.Handle("/rest/", NewHttpAuthHandler(
 		serverCfg.Auth,
 		NewRESTRelayer(rootCtx)))

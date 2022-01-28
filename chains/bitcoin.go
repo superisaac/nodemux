@@ -6,7 +6,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodemux/multiplex"
+	"github.com/superisaac/nodemux/core"
 )
 
 type bitcoinChaintip struct {
@@ -22,7 +22,7 @@ func NewBitcoinChain() *BitcoinChain {
 	return &BitcoinChain{}
 }
 
-func (self *BitcoinChain) GetTip(context context.Context, b *multiplex.Multiplexer, ep *multiplex.Endpoint) (*multiplex.Block, error) {
+func (self *BitcoinChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqMsg := jsonrpc.NewRequestMessage(
 		1, "getchaintips", []interface{}{})
 	resMsg, err := ep.CallRPC(context, reqMsg)
@@ -40,7 +40,7 @@ func (self *BitcoinChain) GetTip(context context.Context, b *multiplex.Multiplex
 			if ct.Status != "active" {
 				continue
 			}
-			block := &multiplex.Block{
+			block := &nodemuxcore.Block{
 				Height: ct.Height,
 				Hash:   ct.Hash,
 			}
@@ -54,7 +54,7 @@ func (self *BitcoinChain) GetTip(context context.Context, b *multiplex.Multiplex
 
 }
 
-func (self *BitcoinChain) DelegateRPC(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+func (self *BitcoinChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -2)
 }

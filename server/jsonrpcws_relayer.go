@@ -10,20 +10,20 @@ import (
 )
 
 // JSONRPC Handler
-type JSONRPCRelayer struct {
+type JSONRPCWSRelayer struct {
 	rootCtx   context.Context
 	regex     *regexp.Regexp
 	chain     nodemuxcore.ChainRef
-	rpcServer *jsonrpchttp.Server
+	rpcServer *jsonrpchttp.WSServer
 }
 
-func NewJSONRPCRelayer(rootCtx context.Context) *JSONRPCRelayer {
-	relayer := &JSONRPCRelayer{
+func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
+	relayer := &JSONRPCWSRelayer{
 		rootCtx: rootCtx,
-		regex:   regexp.MustCompile(`^/jsonrpc/([^/]+)/([^/]+)/?$`),
+		regex:   regexp.MustCompile(`^/jsonrpc\-ws/([^/]+)/([^/]+)/?$`),
 	}
 
-	rpcServer := jsonrpchttp.NewServer(nil)
+	rpcServer := jsonrpchttp.NewWSServer(nil)
 	rpcServer.Router.OnMissing(func(req *jsonrpchttp.RPCRequest) (interface{}, error) {
 		return relayer.delegateRPC(req)
 	})
@@ -31,7 +31,7 @@ func NewJSONRPCRelayer(rootCtx context.Context) *JSONRPCRelayer {
 	return relayer
 }
 
-func (self *JSONRPCRelayer) delegateRPC(req *jsonrpchttp.RPCRequest) (interface{}, error) {
+func (self *JSONRPCWSRelayer) delegateRPC(req *jsonrpchttp.RPCRequest) (interface{}, error) {
 	r := req.HttpRequest()
 	msg := req.Msg()
 	chain := self.chain
@@ -45,7 +45,10 @@ func (self *JSONRPCRelayer) delegateRPC(req *jsonrpchttp.RPCRequest) (interface{
 		}
 		chainName := matches[1]
 		network := matches[2]
-		chain = nodemuxcore.ChainRef{Name: chainName, Network: network}
+		chain = nodemuxcore.ChainRef{
+			Name:    chainName,
+			Network: network,
+		}
 	}
 
 	if !msg.IsRequest() {
@@ -70,6 +73,6 @@ func (self *JSONRPCRelayer) delegateRPC(req *jsonrpchttp.RPCRequest) (interface{
 	return resmsg, err
 }
 
-func (self *JSONRPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (self *JSONRPCWSRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	self.rpcServer.ServeHTTP(w, r)
-} // JSONRPCRelayer.ServeHTTP
+} // JSONRPCWSRelayer.ServeHTTP

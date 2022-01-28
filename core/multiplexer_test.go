@@ -1,4 +1,4 @@
-package multiplex
+package nodemuxcore
 
 import (
 	log "github.com/sirupsen/logrus"

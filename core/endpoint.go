@@ -1,23 +1,19 @@
-package multiplex
+package nodemuxcore
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
+	"github.com/superisaac/jsonrpc/http"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
 )
-
-func (self AbnormalResponse) Error() string {
-	return fmt.Sprintf("Abnormal response %d", self.Response.StatusCode)
-}
 
 // EndpointSet
 func (self *EndpointSet) ResetMaxTipHeight() {
@@ -192,7 +188,7 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 
 	if resp.StatusCode != 200 {
 		self.Log().Warnf("invalid response status %d", resp.StatusCode)
-		abnResp := &AbnormalResponse{
+		abnResp := &jsonrpchttp.UpstreamResponse{
 			Response: resp,
 		}
 		return errors.Wrap(abnResp, "abnormal response")

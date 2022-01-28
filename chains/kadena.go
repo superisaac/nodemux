@@ -2,7 +2,7 @@ package chains
 
 import (
 	"context"
-	"github.com/superisaac/nodemux/multiplex"
+	"github.com/superisaac/nodemux/core"
 	"net/http"
 )
 
@@ -23,7 +23,7 @@ func NewKadenaChain() *KadenaChain {
 	return &KadenaChain{}
 }
 
-func (self *KadenaChain) GetTip(context context.Context, b *multiplex.Multiplexer, ep *multiplex.Endpoint) (*multiplex.Block, error) {
+func (self *KadenaChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res kadenaCut
 	err := ep.GetJson(context,
 		"/chainweb/0.0/mainnet01/cut",
@@ -41,14 +41,14 @@ func (self *KadenaChain) GetTip(context context.Context, b *multiplex.Multiplexe
 		}
 	}
 
-	block := &multiplex.Block{
+	block := &nodemuxcore.Block{
 		Height: maxHeight,
 		//Hash: maxHash,
 	}
 	return block, nil
 }
 
-func (self *KadenaChain) DelegateREST(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+func (self *KadenaChain) DelegateREST(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
 	return b.DefaultPipeREST(rootCtx, chain, path, w, r, -30)
 }

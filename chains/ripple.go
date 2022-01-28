@@ -2,7 +2,7 @@ package chains
 
 import (
 	"context"
-	"github.com/superisaac/nodemux/multiplex"
+	"github.com/superisaac/nodemux/core"
 	"net/http"
 )
 
@@ -33,7 +33,7 @@ func NewRippleChain() *RippleChain {
 	return &RippleChain{}
 }
 
-func (self *RippleChain) GetTip(context context.Context, b *multiplex.Multiplexer, ep *multiplex.Endpoint) (*multiplex.Block, error) {
+func (self *RippleChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	filter := rippleLedgerFilter{
 		LedgerIndex:  "validated",
 		Accounts:     false,
@@ -51,7 +51,7 @@ func (self *RippleChain) GetTip(context context.Context, b *multiplex.Multiplexe
 	if err != nil {
 		return nil, err
 	}
-	block := &multiplex.Block{
+	block := &nodemuxcore.Block{
 		Height: res.Result.LedgerIndex,
 		//Hash:   ct.Hash,
 	}
@@ -59,7 +59,7 @@ func (self *RippleChain) GetTip(context context.Context, b *multiplex.Multiplexe
 
 }
 
-func (self *RippleChain) DelegateREST(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+func (self *RippleChain) DelegateREST(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
 	return b.DefaultPipeREST(rootCtx, chain, path, w, r, -10)
 }

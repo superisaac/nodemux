@@ -1,10 +1,10 @@
 package chains
 
 import (
-	"github.com/superisaac/nodemux/multiplex"
+	"github.com/superisaac/nodemux/core"
 )
 
-func InstallAdaptors(factory *multiplex.DelegatorFactory) {
+func InstallAdaptors(factory *nodemuxcore.DelegatorFactory) {
 	// JSON-RPC handlers
 	factory.RegisterRPC(NewEthereumChain(),
 		"ethereum", "binance-chain", "polygon",
@@ -37,6 +37,6 @@ func InstallAdaptors(factory *multiplex.DelegatorFactory) {
 }
 
 // func init() {
-// 	factory := multiplex.GetDelegatorFactory()
+// 	factory := nodemuxcore.GetDelegatorFactory()
 // 	InstallAdaptors(factory)
 // }

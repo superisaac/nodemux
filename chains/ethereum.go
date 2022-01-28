@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonrpc"
-	"github.com/superisaac/nodemux/multiplex"
+	"github.com/superisaac/nodemux/core"
 )
 
 type ethereumBlock struct {
@@ -36,16 +36,16 @@ type ethereumTxIndex struct {
 }
 
 type EthereumChain struct {
-	txIndexes map[multiplex.ChainRef](*ethereumTxIndex)
+	txIndexes map[nodemuxcore.ChainRef](*ethereumTxIndex)
 }
 
 func NewEthereumChain() *EthereumChain {
 	return &EthereumChain{
-		txIndexes: make(map[multiplex.ChainRef]*ethereumTxIndex),
+		txIndexes: make(map[nodemuxcore.ChainRef]*ethereumTxIndex),
 	}
 }
 
-func (self *EthereumChain) updateTxCache(chain multiplex.ChainRef, block *ethereumBlock, epName string) {
+func (self *EthereumChain) updateTxCache(chain nodemuxcore.ChainRef, block *ethereumBlock, epName string) {
 	idx, ok := self.txIndexes[chain]
 	if !ok {
 		cache, err := lru.New(1024)
@@ -62,7 +62,7 @@ func (self *EthereumChain) updateTxCache(chain multiplex.ChainRef, block *ethere
 	}
 }
 
-func (self *EthereumChain) endpointFromCache(chain multiplex.ChainRef, b *multiplex.Multiplexer, txHash string) (*multiplex.Endpoint, bool) {
+func (self *EthereumChain) endpointFromCache(chain nodemuxcore.ChainRef, b *nodemuxcore.Multiplexer, txHash string) (ep *nodemuxcore.Endpoint, hit bool) {
 	if idx, ok := self.txIndexes[chain]; ok {
 		if v, ok := idx.lruCache.Get(txHash); ok {
 			epName, ok := v.(string)
@@ -80,7 +80,7 @@ func (self *EthereumChain) endpointFromCache(chain multiplex.ChainRef, b *multip
 
 }
 
-func (self *EthereumChain) GetTip(context context.Context, b *multiplex.Multiplexer, ep *multiplex.Endpoint) (*multiplex.Block, error) {
+func (self *EthereumChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqMsg := jsonrpc.NewRequestMessage(
 		1, "eth_getBlockByNumber",
 		[]interface{}{"latest", false})
@@ -95,7 +95,7 @@ func (self *EthereumChain) GetTip(context context.Context, b *multiplex.Multiple
 			return nil, errors.Wrap(err, "decode rpcblock")
 		}
 
-		block := &multiplex.Block{
+		block := &nodemuxcore.Block{
 			Height: bt.Height(),
 			Hash:   bt.Hash,
 		}
@@ -111,7 +111,7 @@ func (self *EthereumChain) GetTip(context context.Context, b *multiplex.Multiple
 
 }
 
-func (self *EthereumChain) DelegateRPC(rootCtx context.Context, b *multiplex.Multiplexer, chain multiplex.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
+func (self *EthereumChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonrpc.RequestMessage) (jsonrpc.IMessage, error) {
 	// Custom relay methods can be defined here
 	if (reqmsg.Method == "eth_getTransactionByHash" ||
 		reqmsg.Method == "eth_getTransactionReceipt") &&

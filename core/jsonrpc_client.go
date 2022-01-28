@@ -1,4 +1,4 @@
-package multiplex
+package nodemuxcore
 
 // JSONRPC client from http or websocket
 import (

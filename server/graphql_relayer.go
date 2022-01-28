@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/nodemux/multiplex"
+	"github.com/superisaac/nodemux/core"
 	"net/http"
 	"regexp"
 )
@@ -12,7 +12,7 @@ import (
 type GraphQLRelayer struct {
 	rootCtx context.Context
 	regex   *regexp.Regexp
-	chain   multiplex.ChainRef
+	chain   nodemuxcore.ChainRef
 }
 
 func NewGraphQLRelayer(rootCtx context.Context) *GraphQLRelayer {
@@ -36,11 +36,11 @@ func (self *GraphQLRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		chainName := matches[1]
 		network := matches[2]
 		path = matches[3]
-		chain = multiplex.ChainRef{Name: chainName, Network: network}
+		chain = nodemuxcore.ChainRef{Name: chainName, Network: network}
 	}
 
-	m := multiplex.GetMultiplexer()
-	delegator := multiplex.GetDelegatorFactory().GetGraphQLDelegator(chain.Name)
+	m := nodemuxcore.GetMultiplexer()
+	delegator := nodemuxcore.GetDelegatorFactory().GetGraphQLDelegator(chain.Name)
 	if delegator == nil {
 		w.WriteHeader(404)
 		w.Write([]byte("backend not found"))
