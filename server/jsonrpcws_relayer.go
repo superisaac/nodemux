@@ -51,10 +51,11 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 	if data == nil {
 		return nil, errors.New("request data is nil")
 	}
-	ws, ok := data.(*websocket.Conn)
+	srcWs, ok := data.(*websocket.Conn)
 	if !ok {
-		return nil, errors.New("requst data is not websocket conn")
+		return nil, errors.New("request data is not websocket conn")
 	}
+
 	if chain.Empty() {
 		matches := self.regex.FindStringSubmatch(r.URL.Path)
 		if len(matches) < 3 {
@@ -73,28 +74,27 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 
 	m := nodemuxcore.GetMultiplexer()
 
-	if !msg.IsRequest() {
-		if wsClient, ok := self.pairs[r]; ok {
-			err := wsClient.Send(self.rootCtx, msg)
-			return nil, err
-		} else if ep, found := m.SelectWebsocketEndpoint(chain, "", -2); found {
-			wsClient := jsonzhttp.NewWSClient(ep.Config.Url)
-			wsClient.OnMessage(func(m jsonz.Message) {
-				err := self.rpcServer.SendMessage(ws, m)
-				if err != nil {
-					m.Log().Warnf("send message error %s", err)
-				}
-			})
-			self.pairs[r] = wsClient
-			err := wsClient.Send(self.rootCtx, msg)
-			return nil, err
-		} else {
-			return nil, jsonzhttp.SimpleHttpResponse{
-				Code: 400,
-				Body: []byte("no websocket upstreams"),
+	if destWs, ok := self.pairs[r]; ok {
+		// a existing dest ws conn found, relay the message to it
+		err := destWs.Send(self.rootCtx, msg)
+		return nil, err
+	} else if ep, found := m.SelectWebsocketEndpoint(chain, "", -2); found {
+		// the first time a websocket connection connects
+		// select an available dest websocket connection
+		// make a pair (srcWs, destWs)
+		destWs := jsonzhttp.NewWSClient(ep.Config.Url)
+		destWs.OnMessage(func(m jsonz.Message) {
+			err := self.rpcServer.SendMessage(srcWs, m)
+			if err != nil {
+				m.Log().Warnf("send message error %s", err)
 			}
-		}
-	} else {
+		})
+		self.pairs[r] = destWs
+		err := destWs.Send(self.rootCtx, msg)
+		return nil, err
+	} else if msg.IsRequest() {
+		// if no dest websocket connection is available and msg is a request message
+		// it's still ok to deliver the message to http endpoints
 		delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(chain.Name)
 		reqmsg, _ := msg.(*jsonz.RequestMessage)
 		if delegator == nil {
@@ -106,6 +106,12 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 
 		resmsg, err := delegator.DelegateRPC(self.rootCtx, m, chain, reqmsg)
 		return resmsg, err
+	} else {
+		// the last way, return back
+		return nil, jsonzhttp.SimpleHttpResponse{
+			Code: 400,
+			Body: []byte("no websocket upstreams"),
+		}
 	}
 }
 

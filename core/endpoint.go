@@ -140,7 +140,7 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 	return nil
 }
 
-// Perform a GET requst and process the response as JSON
+// Perform a GET request and process the response as JSON
 func (self *Endpoint) GetJson(rootCtx context.Context, path string, headers map[string]string, output interface{}) error {
 	return self.RequestJson(rootCtx, "GET", path, nil, headers, output)
 }
