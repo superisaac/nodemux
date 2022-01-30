@@ -1,5 +1,9 @@
 package chains
 
+// Presence cache maintains a map txid -> set[endpoint]. It means
+// what endpoints have the txid so that RPC requests can be directed
+// to the right node without not found error
+
 import (
 	"context"
 	"fmt"
@@ -9,18 +13,18 @@ import (
 	"time"
 )
 
-func txCacheKey(chain nodemuxcore.ChainRef, txHash string) string {
-	return fmt.Sprintf("Q:%s/%s", chain, txHash)
+func presenceCacheKey(chain nodemuxcore.ChainRef, txHash string) string {
+	return fmt.Sprintf("P:%s/%s", chain, txHash)
 }
 
-func updateTxCache(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, block *ethereumBlock, epName string, expireAfter time.Duration) {
+func presenceCacheUpdate(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, block *ethereumBlock, epName string, expireAfter time.Duration) {
 	c, ok := m.RedisClient()
 	if !ok {
 		// no redis connection
 		return
 	}
 	for _, txHash := range block.Transactions {
-		key := txCacheKey(chain, txHash)
+		key := presenceCacheKey(chain, txHash)
 		err := c.SAdd(ctx, key, epName).Err()
 		if err != nil {
 			log.Warnf("error while set %s: %s", key, err)
@@ -35,8 +39,8 @@ func updateTxCache(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemu
 }
 
 // try find from healthy endpoint from redis cache
-func endpointFromTxCache(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, txHash string) (ep *nodemuxcore.Endpoint, hit bool) {
-	key := txCacheKey(chain, txHash)
+func presenceCacheGetEndpoint(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, txHash string) (ep *nodemuxcore.Endpoint, hit bool) {
+	key := presenceCacheKey(chain, txHash)
 	c, ok := m.RedisClient()
 	if !ok {
 		// no redis connection

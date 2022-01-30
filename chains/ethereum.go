@@ -59,7 +59,7 @@ func (self *EthereumChain) GetTip(context context.Context, m *nodemuxcore.Multip
 		}
 
 		if ep.Tip == nil || ep.Tip.Height != bt.Height() {
-			go updateTxCache(context, m, ep.Chain, &bt, ep.Name, time.Second*600) // expire after 10 mins
+			go presenceCacheUpdate(context, m, ep.Chain, &bt, ep.Name, time.Second*600) // expire after 10 mins
 		}
 		return block, nil
 	} else {
@@ -75,7 +75,7 @@ func (self *EthereumChain) DelegateRPC(rootCtx context.Context, m *nodemuxcore.M
 		reqmsg.Method == "eth_getTransactionReceipt") &&
 		len(reqmsg.Params) > 0 {
 		if txHash, ok := reqmsg.Params[0].(string); ok {
-			if ep, ok := endpointFromTxCache(rootCtx, m, chain, txHash); ok {
+			if ep, ok := presenceCacheGetEndpoint(rootCtx, m, chain, txHash); ok {
 				resmsg, err := ep.CallRPC(rootCtx, reqmsg)
 				return resmsg, err
 			}
