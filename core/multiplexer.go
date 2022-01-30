@@ -11,13 +11,9 @@ import (
 
 var (
 	_instance *Multiplexer
-	//once      sync.Once
 )
 
 func GetMultiplexer() *Multiplexer {
-	//once.Do(func() {
-	//	_instance = NewMultiplexer()
-	//})
 	if _instance == nil {
 		log.Panicf("Multiplexer instance is nil")
 	}
@@ -170,7 +166,8 @@ func (self *Multiplexer) SelectWebsocketEndpoint(chain ChainRef, method string, 
 func MultiplexerFromConfig(nbcfg *NodemuxConfig) *Multiplexer {
 	b := NewMultiplexer()
 	b.LoadFromConfig(nbcfg)
-	if nbcfg.Store.Url != "" {
+
+	if nbcfg.Store.Scheme() == "redis" {
 		// sync source must be a redis URL
 		log.Infof("using redis store")
 		chainHub, err := NewRedisChainhub(nbcfg.Store.Url)

@@ -4,6 +4,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"testing"
 )
@@ -43,4 +44,20 @@ func TestMultiplexer(t *testing.T) {
 	ep1, ok := b.SelectOverHeight(chain, "", -1)
 	assert.True(ok)
 	assert.Equal(ep.Config.Url, ep1.Config.Url)
+}
+
+func TestUrlParse(t *testing.T) {
+	assert := assert.New(t)
+
+	u, err := url.Parse("memory")
+	assert.Nil(err)
+	assert.Equal("", u.Scheme)
+
+	u, err = url.Parse("memory:")
+	assert.Nil(err)
+	assert.Equal("memory", u.Scheme)
+
+	u, err = url.Parse("redis://localhost")
+	assert.Nil(err)
+	assert.Equal("redis", u.Scheme)
 }

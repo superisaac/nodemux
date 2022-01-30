@@ -20,6 +20,12 @@ type EndpointConfig struct {
 
 type StoreConfig struct {
 	Url string `yaml:"url"`
+
+	scheme string
+}
+
+func (self StoreConfig) Scheme() string {
+	return self.scheme
 }
 
 type NodemuxConfig struct {
@@ -29,7 +35,6 @@ type NodemuxConfig struct {
 }
 
 // methods
-
 func NewConfig() *NodemuxConfig {
 	cfg := &NodemuxConfig{}
 	cfg.validateValues()
@@ -49,15 +54,21 @@ func (self *NodemuxConfig) validateValues() error {
 	if self.Version == "" {
 		self.Version = "1.0"
 	}
-	if self.Store.Url != "" {
-		u, err := url.Parse(self.Store.Url)
-		if err != nil {
-			return err
-		}
-		if u.Scheme != "redis" {
-			return errors.New("sync source currently only support redis")
-		}
+	if self.Store.Url == "" {
+		self.Store.Url = "redis://127.0.0.1:6379/0"
 	}
+
+	// currently nodemux store uses redis
+	u, err := url.Parse(self.Store.Url)
+	if err != nil {
+		return err
+	}
+
+	if u.Scheme != "redis" && u.Scheme != "memory" {
+		return errors.New("sync source currently only support redis and memory")
+	}
+	self.Store.scheme = u.Scheme
+
 	for _, epcfg := range self.Endpoints {
 		if epcfg.Chain == "" {
 			return errors.New("empty chain")

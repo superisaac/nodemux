@@ -2,13 +2,14 @@ package chains
 
 import (
 	"context"
+	"fmt"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/hashicorp/golang-lru"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonz"
 	"github.com/superisaac/nodemux/core"
+	"time"
 )
 
 type ethereumBlock struct {
@@ -31,56 +32,61 @@ func (self *ethereumBlock) Height() int {
 	return self.height
 }
 
-type ethereumTxIndex struct {
-	lruCache *lru.Cache
-}
-
 type EthereumChain struct {
-	txIndexes map[nodemuxcore.ChainRef](*ethereumTxIndex)
 }
 
 func NewEthereumChain() *EthereumChain {
-	return &EthereumChain{
-		txIndexes: make(map[nodemuxcore.ChainRef]*ethereumTxIndex),
-	}
+	return &EthereumChain{}
 }
 
-func (self *EthereumChain) updateTxCache(chain nodemuxcore.ChainRef, block *ethereumBlock, epName string) {
-	idx, ok := self.txIndexes[chain]
+func (self EthereumChain) cacheKey(chain nodemuxcore.ChainRef, txHash string) string {
+	return fmt.Sprintf("Q:%s/%s", chain, txHash)
+}
+
+func (self *EthereumChain) updateTxCache(m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, block *ethereumBlock, epName string) {
+	c, ok := m.RedisClient()
 	if !ok {
-		cache, err := lru.New(1024)
-		if err != nil {
-			panic(err)
-		}
-		idx = &ethereumTxIndex{
-			lruCache: cache,
-		}
-		self.txIndexes[chain] = idx
+		// no redis connection
+		return
 	}
+	ctx := context.Background()
 	for _, txHash := range block.Transactions {
-		idx.lruCache.Add(txHash, epName)
+		key := self.cacheKey(chain, txHash)
+		err := c.SAdd(ctx, key, epName).Err()
+		if err != nil {
+			log.Warnf("error while set %s: %s", key, err)
+			return
+		}
+		err = c.Expire(ctx, key, time.Second*600).Err() // expire after 10 mins
+		if err != nil {
+			log.Warnf("error while expiring key %s: %s", key, err)
+			return
+		}
 	}
 }
+func (self *EthereumChain) endpointFromCache(m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, txHash string) (ep *nodemuxcore.Endpoint, hit bool) {
+	key := self.cacheKey(chain, txHash)
+	c, ok := m.RedisClient()
+	if !ok {
+		// no redis connection
+		return
+	}
+	epNames, err := c.SMembers(context.Background(), key).Result()
+	if err != nil {
+		log.Warnf("error getting smembers of %s: %s", key, err)
+		return nil, false
+	}
 
-func (self *EthereumChain) endpointFromCache(chain nodemuxcore.ChainRef, b *nodemuxcore.Multiplexer, txHash string) (ep *nodemuxcore.Endpoint, hit bool) {
-	if idx, ok := self.txIndexes[chain]; ok {
-		if v, ok := idx.lruCache.Get(txHash); ok {
-			epName, ok := v.(string)
-			if !ok {
-				log.Panicf("epName for txHash %s is not string", txHash)
-				return nil, false
-			}
-
-			if ep, ok := b.Get(epName); ok && ep.Healthy {
-				return ep, ok
-			}
+	for _, epName := range epNames {
+		if ep, ok := m.Get(epName); ok && ep.Healthy {
+			return ep, ok
 		}
 	}
 	return nil, false
 
 }
 
-func (self *EthereumChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *EthereumChain) GetTip(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqMsg := jsonz.NewRequestMessage(
 		1, "eth_getBlockByNumber",
 		[]interface{}{"latest", false})
@@ -101,7 +107,7 @@ func (self *EthereumChain) GetTip(context context.Context, b *nodemuxcore.Multip
 		}
 
 		if ep.Tip == nil || ep.Tip.Height != bt.Height() {
-			go self.updateTxCache(ep.Chain, &bt, ep.Name)
+			go self.updateTxCache(m, ep.Chain, &bt, ep.Name)
 		}
 		return block, nil
 	} else {
@@ -111,17 +117,17 @@ func (self *EthereumChain) GetTip(context context.Context, b *nodemuxcore.Multip
 
 }
 
-func (self *EthereumChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
+func (self *EthereumChain) DelegateRPC(rootCtx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
 	// Custom relay methods can be defined here
 	if (reqmsg.Method == "eth_getTransactionByHash" ||
 		reqmsg.Method == "eth_getTransactionReceipt") &&
 		len(reqmsg.Params) > 0 {
 		if txHash, ok := reqmsg.Params[0].(string); ok {
-			if ep, ok := self.endpointFromCache(chain, b, txHash); ok {
+			if ep, ok := self.endpointFromCache(m, chain, txHash); ok {
 				resmsg, err := ep.CallRPC(rootCtx, reqmsg)
 				return resmsg, err
 			}
 		}
 	}
-	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -5)
+	return m.DefaultRelayMessage(rootCtx, chain, reqmsg, -5)
 }

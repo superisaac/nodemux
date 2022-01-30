@@ -8,9 +8,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"net"
-	"net/url"
 	"reflect"
-	"strconv"
 	"time"
 )
 
@@ -30,26 +28,9 @@ type RedisChainhub struct {
 }
 
 func NewRedisChainhub(redisUrl string) (*RedisChainhub, error) {
-	u, err := url.Parse(redisUrl)
+	opt, err := GetRedisOptions(redisUrl)
 	if err != nil {
 		return nil, err
-	}
-	sdb := u.Path[1:]
-	db := 0
-	if sdb != "" {
-		db, err = strconv.Atoi(sdb)
-		if err != nil {
-			return nil, err
-		}
-	}
-	pwd, ok := u.User.Password()
-	if !ok {
-		pwd = ""
-	}
-	opt := &redis.Options{
-		Addr:     u.Host,
-		Password: pwd,
-		DB:       db,
 	}
 	return &RedisChainhub{
 		pub:          make(chan ChainStatus, 100),

@@ -2,6 +2,7 @@ package nodemuxcore
 
 import (
 	"context"
+	"github.com/go-redis/redis/v8"
 	"github.com/superisaac/jsonz"
 	"github.com/superisaac/jsonz/http"
 	"net/http"
@@ -66,6 +67,8 @@ type Multiplexer struct {
 	cancelSync func()
 
 	chainHub Chainhub
+
+	redisClient *redis.Client
 }
 
 // Delegators
