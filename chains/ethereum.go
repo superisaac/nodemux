@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonz"
 	"github.com/superisaac/nodemux/core"
+	"math/rand"
 	"time"
 )
 
@@ -64,12 +65,14 @@ func (self *EthereumChain) updateTxCache(m *nodemuxcore.Multiplexer, chain nodem
 		}
 	}
 }
+
+// try find from healthy endpoint from redis cache
 func (self *EthereumChain) endpointFromCache(m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, txHash string) (ep *nodemuxcore.Endpoint, hit bool) {
 	key := self.cacheKey(chain, txHash)
 	c, ok := m.RedisClient()
 	if !ok {
 		// no redis connection
-		return
+		return nil, false
 	}
 	epNames, err := c.SMembers(context.Background(), key).Result()
 	if err != nil {
@@ -77,9 +80,18 @@ func (self *EthereumChain) endpointFromCache(m *nodemuxcore.Multiplexer, chain n
 		return nil, false
 	}
 
-	for _, epName := range epNames {
+	if len(epNames) > 0 {
+		// randomly select an endpoint
+		epName := epNames[rand.Intn(len(epNames))]
 		if ep, ok := m.Get(epName); ok && ep.Healthy {
 			return ep, ok
+		}
+
+		// sequancially select endpoints
+		for _, epName := range epNames {
+			if ep, ok := m.Get(epName); ok && ep.Healthy {
+				return ep, ok
+			}
 		}
 	}
 	return nil, false
