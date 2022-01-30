@@ -2,15 +2,13 @@ package chains
 
 import (
 	"context"
-	"fmt"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonz"
 	"github.com/superisaac/nodemux/core"
-	"math/rand"
 	"time"
+	//log "github.com/sirupsen/logrus"
 )
 
 type ethereumBlock struct {
@@ -40,64 +38,6 @@ func NewEthereumChain() *EthereumChain {
 	return &EthereumChain{}
 }
 
-func (self EthereumChain) cacheKey(chain nodemuxcore.ChainRef, txHash string) string {
-	return fmt.Sprintf("Q:%s/%s", chain, txHash)
-}
-
-func (self *EthereumChain) updateTxCache(m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, block *ethereumBlock, epName string) {
-	c, ok := m.RedisClient()
-	if !ok {
-		// no redis connection
-		return
-	}
-	ctx := context.Background()
-	for _, txHash := range block.Transactions {
-		key := self.cacheKey(chain, txHash)
-		err := c.SAdd(ctx, key, epName).Err()
-		if err != nil {
-			log.Warnf("error while set %s: %s", key, err)
-			return
-		}
-		err = c.Expire(ctx, key, time.Second*600).Err() // expire after 10 mins
-		if err != nil {
-			log.Warnf("error while expiring key %s: %s", key, err)
-			return
-		}
-	}
-}
-
-// try find from healthy endpoint from redis cache
-func (self *EthereumChain) endpointFromCache(m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, txHash string) (ep *nodemuxcore.Endpoint, hit bool) {
-	key := self.cacheKey(chain, txHash)
-	c, ok := m.RedisClient()
-	if !ok {
-		// no redis connection
-		return nil, false
-	}
-	epNames, err := c.SMembers(context.Background(), key).Result()
-	if err != nil {
-		log.Warnf("error getting smembers of %s: %s", key, err)
-		return nil, false
-	}
-
-	if len(epNames) > 0 {
-		// randomly select an endpoint
-		epName := epNames[rand.Intn(len(epNames))]
-		if ep, ok := m.Get(epName); ok && ep.Healthy {
-			return ep, ok
-		}
-
-		// sequancially select endpoints
-		for _, epName := range epNames {
-			if ep, ok := m.Get(epName); ok && ep.Healthy {
-				return ep, ok
-			}
-		}
-	}
-	return nil, false
-
-}
-
 func (self *EthereumChain) GetTip(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqMsg := jsonz.NewRequestMessage(
 		1, "eth_getBlockByNumber",
@@ -119,7 +59,7 @@ func (self *EthereumChain) GetTip(context context.Context, m *nodemuxcore.Multip
 		}
 
 		if ep.Tip == nil || ep.Tip.Height != bt.Height() {
-			go self.updateTxCache(m, ep.Chain, &bt, ep.Name)
+			go updateTxCache(context, m, ep.Chain, &bt, ep.Name, time.Second*600) // expire after 10 mins
 		}
 		return block, nil
 	} else {
@@ -135,7 +75,7 @@ func (self *EthereumChain) DelegateRPC(rootCtx context.Context, m *nodemuxcore.M
 		reqmsg.Method == "eth_getTransactionReceipt") &&
 		len(reqmsg.Params) > 0 {
 		if txHash, ok := reqmsg.Params[0].(string); ok {
-			if ep, ok := self.endpointFromCache(m, chain, txHash); ok {
+			if ep, ok := endpointFromTxCache(rootCtx, m, chain, txHash); ok {
 				resmsg, err := ep.CallRPC(rootCtx, reqmsg)
 				return resmsg, err
 			}
