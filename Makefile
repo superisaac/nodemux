@@ -1,18 +1,18 @@
-
-gofiles := $(shell find . -name '*.go')
-goflag := -gcflags=-G=3
+GOFILES := $(shell find . -name '*.go')
+GOFLAG := -gcflags=-G=3
+GOBUILD := GO111MODULE=on go build -v
 
 build: bin/nodemux
 
 all: test build
 
-bin/nodemux: ${gofiles}
-	go build ${goflag} -o $@ nodemux.go
+bin/nodemux: ${GOFILES}
+	${GOBUILD} ${GOFLAG} -o $@ nodemux.go
 
 test:
-	go test ${goflag} -v github.com/superisaac/nodemux/core
-	go test ${goflag} -v github.com/superisaac/nodemux/chains
-	go test ${goflag} -v github.com/superisaac/nodemux/server
+	go test ${GOFLAG} -v github.com/superisaac/nodemux/core
+	go test ${GOFLAG} -v github.com/superisaac/nodemux/chains
+	go test ${GOFLAG} -v github.com/superisaac/nodemux/server
 
 clean:
 	rm -rf build dist bin/nodemux

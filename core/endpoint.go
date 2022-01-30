@@ -140,9 +140,14 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 	return nil
 }
 
+// Perform a GET requst and process the response as JSON
 func (self *Endpoint) GetJson(rootCtx context.Context, path string, headers map[string]string, output interface{}) error {
 	return self.RequestJson(rootCtx, "GET", path, nil, headers, output)
 }
+
+// encode types of body to bytes
+// case body is []byte then return it intactly
+// case body is struct then return JSON marshalling
 func (self Endpoint) encodeBody(body interface{}) ([]byte, string, error) {
 	if body == nil {
 		return nil, "", nil
@@ -158,6 +163,8 @@ func (self Endpoint) encodeBody(body interface{}) ([]byte, string, error) {
 	// TODO: handle http form
 }
 
+// Post body and parse JSON result, the request body can be in form of
+// bytes, map and golang struct
 func (self *Endpoint) PostJson(rootCtx context.Context, path string, body interface{}, headers map[string]string, output interface{}) error {
 	data, ctype, err := self.encodeBody(body)
 	if err != nil {
@@ -172,6 +179,7 @@ func (self *Endpoint) PostJson(rootCtx context.Context, path string, body interf
 	return self.RequestJson(rootCtx, "POST", path, data, headers, output)
 }
 
+// Generic way of performing a HTTP request and shift the response as JSON
 func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path string, data []byte, headers map[string]string, output interface{}) error {
 	self.Connect()
 
