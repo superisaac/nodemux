@@ -13,5 +13,5 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(metricsWSPairsCount)	
+	prometheus.MustRegister(metricsWSPairsCount)
 }

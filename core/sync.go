@@ -56,6 +56,11 @@ func (self *Multiplexer) updateStatus(bs ChainStatus) error {
 	}
 	ep.Healthy = bs.Healthy
 
+	var healthiness float64 = 0
+	if ep.Healthy {
+		healthiness = 1
+	}
+	metricsEndpointHealthy.With(ep.prometheusLabels()).Set(healthiness)
 	logger := ep.Log()
 	block := bs.Tip
 	if block == nil {

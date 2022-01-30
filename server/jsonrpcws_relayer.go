@@ -11,7 +11,6 @@ import (
 	"regexp"
 )
 
-
 // JSONRPC Handler
 type JSONRPCWSRelayer struct {
 	rootCtx   context.Context
@@ -41,10 +40,10 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 }
 
 func (self *JSONRPCWSRelayer) onClose(r *http.Request) {
-	// FIXME: since map doesn't return if the deletion is success
-	// just deecrementing a value may not be accurate.
+	// FIXME: since map doesn't return if or not the deletion is
+	// success, just decrementing a value may not be accurate.
 	delete(self.pairs, r)
-	metricsWSPairsCount.Dec()
+	metricsWSPairsCount.Set(float64(len(self.pairs)))
 }
 
 func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{}, error) {
@@ -94,7 +93,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 			}
 		})
 		self.pairs[r] = destWs
-		metricsWSPairsCount.Inc()
+		metricsWSPairsCount.Set(float64(len(self.pairs)))
 		err := destWs.Send(self.rootCtx, msg)
 		return nil, err
 	} else if msg.IsRequest() {
