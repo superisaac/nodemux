@@ -2,8 +2,8 @@ package nodemuxcore
 
 import (
 	"context"
-	"github.com/superisaac/jsoz"
-	"github.com/superisaac/jsoz/http"
+	"github.com/superisaac/jsonz"
+	"github.com/superisaac/jsonz/http"
 	"net/http"
 )
 
@@ -45,7 +45,7 @@ type Endpoint struct {
 
 	connected bool
 	client    *http.Client
-	rpcClient jsozhttp.Client
+	rpcClient jsonzhttp.Client
 }
 
 type EndpointSet struct {
@@ -75,7 +75,7 @@ type TipDelegator interface {
 
 type RPCDelegator interface {
 	TipDelegator
-	DelegateRPC(ctx context.Context, b *Multiplexer, chain ChainRef, reqmsg *jsoz.RequestMessage) (jsoz.Message, error)
+	DelegateRPC(ctx context.Context, b *Multiplexer, chain ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error)
 }
 
 type RESTDelegator interface {

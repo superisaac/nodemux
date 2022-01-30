@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
-	"github.com/superisaac/jsoz"
+	"github.com/superisaac/jsonz"
 	"github.com/superisaac/nodemux/core"
 )
 
@@ -16,7 +16,7 @@ func NewConfluxChain() *ConfluxChain {
 }
 
 func (self *ConfluxChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	reqMsg := jsoz.NewRequestMessage(
+	reqMsg := jsonz.NewRequestMessage(
 		1, "cfx_epochNumber",
 		[]interface{}{"latest_mined"})
 	resMsg, err := ep.CallRPC(context, reqMsg)
@@ -42,7 +42,7 @@ func (self *ConfluxChain) GetTip(context context.Context, b *nodemuxcore.Multipl
 
 }
 
-func (self *ConfluxChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoz.RequestMessage) (jsoz.Message, error) {
+func (self *ConfluxChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -5)
 }

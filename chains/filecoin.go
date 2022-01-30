@@ -5,7 +5,7 @@ import (
 	//"fmt"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
-	"github.com/superisaac/jsoz"
+	"github.com/superisaac/jsonz"
 	"github.com/superisaac/nodemux/core"
 )
 
@@ -22,7 +22,7 @@ func NewFilecoinChain() *FilecoinChain {
 }
 
 func (self *FilecoinChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	reqMsg := jsoz.NewRequestMessage(
+	reqMsg := jsonz.NewRequestMessage(
 		1, "Filecoin.ChainHead", []interface{}{})
 	resMsg, err := ep.CallRPC(context, reqMsg)
 	if err != nil {
@@ -47,7 +47,7 @@ func (self *FilecoinChain) GetTip(context context.Context, b *nodemuxcore.Multip
 
 }
 
-func (self *FilecoinChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoz.RequestMessage) (jsoz.Message, error) {
+func (self *FilecoinChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -3)
 }

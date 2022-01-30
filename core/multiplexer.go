@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/jsoz"
+	"github.com/superisaac/jsonz"
 	"net/http"
 	//"sync"
 )
@@ -197,10 +197,10 @@ func (self *Multiplexer) LoadFromConfig(nbcfg *NodemuxConfig) {
 	}
 }
 
-func (self *Multiplexer) DefaultRelayMessage(rootCtx context.Context, chain ChainRef, reqmsg *jsoz.RequestMessage, overHeight int) (jsoz.Message, error) {
+func (self *Multiplexer) DefaultRelayMessage(rootCtx context.Context, chain ChainRef, reqmsg *jsonz.RequestMessage, overHeight int) (jsonz.Message, error) {
 	ep, found := self.SelectOverHeight(chain, reqmsg.Method, overHeight)
 	if !found {
-		return jsoz.ErrMethodNotFound.ToMessage(reqmsg), nil
+		return jsonz.ErrMethodNotFound.ToMessage(reqmsg), nil
 	}
 	resmsg, err := ep.CallRPC(rootCtx, reqmsg)
 	return resmsg, err
@@ -209,7 +209,7 @@ func (self *Multiplexer) DefaultRelayMessage(rootCtx context.Context, chain Chai
 func (self *Multiplexer) DefaultPipeREST(rootCtx context.Context, chain ChainRef, path string, w http.ResponseWriter, r *http.Request, overHeight int) error {
 	ep, found := self.SelectOverHeight(chain, path, overHeight)
 	if !found {
-		//return jsoz.ErrMethodNotFound.ToMessage(reqmsg), nil
+		//return jsonz.ErrMethodNotFound.ToMessage(reqmsg), nil
 		w.WriteHeader(404)
 		w.Write([]byte("not found"))
 		return nil

@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
-	"github.com/superisaac/jsoz"
-	"github.com/superisaac/jsoz/http"
+	"github.com/superisaac/jsonz"
+	"github.com/superisaac/jsonz/http"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 	"regexp"
@@ -16,23 +16,23 @@ type JSONRPCWSRelayer struct {
 	rootCtx   context.Context
 	regex     *regexp.Regexp
 	chain     nodemuxcore.ChainRef
-	rpcServer *jsozhttp.WSServer
+	rpcServer *jsonzhttp.WSServer
 
-	pairs map[*http.Request]*jsozhttp.WSClient
+	pairs map[*http.Request]*jsonzhttp.WSClient
 }
 
 func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 	relayer := &JSONRPCWSRelayer{
 		rootCtx: rootCtx,
 		regex:   regexp.MustCompile(`^/jsonrpc\-ws/([^/]+)/([^/]+)/?$`),
-		pairs:   make(map[*http.Request]*jsozhttp.WSClient),
+		pairs:   make(map[*http.Request]*jsonzhttp.WSClient),
 	}
 
-	rpcServer := jsozhttp.NewWSServer(nil)
+	rpcServer := jsonzhttp.NewWSServer(nil)
 	rpcServer.Router.OnClose(func(r *http.Request) {
 		relayer.onClose(r)
 	})
-	rpcServer.Router.OnMissing(func(req *jsozhttp.RPCRequest) (interface{}, error) {
+	rpcServer.Router.OnMissing(func(req *jsonzhttp.RPCRequest) (interface{}, error) {
 		return relayer.delegateRPC(req)
 	})
 	relayer.rpcServer = rpcServer
@@ -43,7 +43,7 @@ func (self *JSONRPCWSRelayer) onClose(r *http.Request) {
 	delete(self.pairs, r)
 }
 
-func (self *JSONRPCWSRelayer) delegateRPC(req *jsozhttp.RPCRequest) (interface{}, error) {
+func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{}, error) {
 	r := req.HttpRequest()
 	msg := req.Msg()
 	chain := self.chain
@@ -58,7 +58,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsozhttp.RPCRequest) (interface{}
 	if chain.Empty() {
 		matches := self.regex.FindStringSubmatch(r.URL.Path)
 		if len(matches) < 3 {
-			return nil, jsozhttp.SimpleHttpResponse{
+			return nil, jsonzhttp.SimpleHttpResponse{
 				Code: 404,
 				Body: []byte("not found"),
 			}
@@ -78,8 +78,8 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsozhttp.RPCRequest) (interface{}
 			err := wsClient.Send(self.rootCtx, msg)
 			return nil, err
 		} else if ep, found := m.SelectWebsocketEndpoint(chain, "", -2); found {
-			wsClient := jsozhttp.NewWSClient(ep.Config.Url)
-			wsClient.OnMessage(func(m jsoz.Message) {
+			wsClient := jsonzhttp.NewWSClient(ep.Config.Url)
+			wsClient.OnMessage(func(m jsonz.Message) {
 				err := self.rpcServer.SendMessage(ws, m)
 				if err != nil {
 					m.Log().Warnf("send message error %s", err)
@@ -89,16 +89,16 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsozhttp.RPCRequest) (interface{}
 			err := wsClient.Send(self.rootCtx, msg)
 			return nil, err
 		} else {
-			return nil, jsozhttp.SimpleHttpResponse{
+			return nil, jsonzhttp.SimpleHttpResponse{
 				Code: 400,
 				Body: []byte("no websocket upstreams"),
 			}
 		}
 	} else {
 		delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(chain.Name)
-		reqmsg, _ := msg.(*jsoz.RequestMessage)
+		reqmsg, _ := msg.(*jsonz.RequestMessage)
 		if delegator == nil {
-			return nil, jsozhttp.SimpleHttpResponse{
+			return nil, jsonzhttp.SimpleHttpResponse{
 				Code: 404,
 				Body: []byte("backend not found"),
 			}

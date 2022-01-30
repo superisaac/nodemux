@@ -2,8 +2,8 @@ package server
 
 import (
 	"context"
-	"github.com/superisaac/jsoz"
-	"github.com/superisaac/jsoz/http"
+	"github.com/superisaac/jsonz"
+	"github.com/superisaac/jsonz/http"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 	"regexp"
@@ -14,7 +14,7 @@ type JSONRPCRelayer struct {
 	rootCtx   context.Context
 	regex     *regexp.Regexp
 	chain     nodemuxcore.ChainRef
-	rpcServer *jsozhttp.Server
+	rpcServer *jsonzhttp.Server
 }
 
 func NewJSONRPCRelayer(rootCtx context.Context) *JSONRPCRelayer {
@@ -23,22 +23,22 @@ func NewJSONRPCRelayer(rootCtx context.Context) *JSONRPCRelayer {
 		regex:   regexp.MustCompile(`^/jsonrpc/([^/]+)/([^/]+)/?$`),
 	}
 
-	rpcServer := jsozhttp.NewServer(nil)
-	rpcServer.Router.OnMissing(func(req *jsozhttp.RPCRequest) (interface{}, error) {
+	rpcServer := jsonzhttp.NewServer(nil)
+	rpcServer.Router.OnMissing(func(req *jsonzhttp.RPCRequest) (interface{}, error) {
 		return relayer.delegateRPC(req)
 	})
 	relayer.rpcServer = rpcServer
 	return relayer
 }
 
-func (self *JSONRPCRelayer) delegateRPC(req *jsozhttp.RPCRequest) (interface{}, error) {
+func (self *JSONRPCRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{}, error) {
 	r := req.HttpRequest()
 	msg := req.Msg()
 	chain := self.chain
 	if chain.Empty() {
 		matches := self.regex.FindStringSubmatch(r.URL.Path)
 		if len(matches) < 3 {
-			return nil, jsozhttp.SimpleHttpResponse{
+			return nil, jsonzhttp.SimpleHttpResponse{
 				Code: 404,
 				Body: []byte("not found"),
 			}
@@ -49,18 +49,18 @@ func (self *JSONRPCRelayer) delegateRPC(req *jsozhttp.RPCRequest) (interface{}, 
 	}
 
 	if !msg.IsRequest() {
-		return nil, jsozhttp.SimpleHttpResponse{
+		return nil, jsonzhttp.SimpleHttpResponse{
 			Code: 400,
 			Body: []byte("bad request"),
 		}
 	}
 
-	reqmsg, _ := msg.(*jsoz.RequestMessage)
+	reqmsg, _ := msg.(*jsonz.RequestMessage)
 	m := nodemuxcore.GetMultiplexer()
 
 	delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(chain.Name)
 	if delegator == nil {
-		return nil, jsozhttp.SimpleHttpResponse{
+		return nil, jsonzhttp.SimpleHttpResponse{
 			Code: 404,
 			Body: []byte("backend not found"),
 		}
