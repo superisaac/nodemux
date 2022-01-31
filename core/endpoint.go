@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
@@ -229,4 +230,45 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 		return errors.Wrap(err, "json.Unmarshal")
 	}
 	return nil
+}
+
+// graphql
+type gqlRequest struct {
+	Query     string
+	Variables map[string]interface{} `json:"variables,omitempty"`
+}
+
+type gqlResponse struct {
+	Data   *json.RawMessage `json:"data,omitempty"`
+	Errors interface{}      `json:"errors,omitempty"`
+}
+
+type GqlErrors struct {
+	Errors interface{}
+}
+
+func (self GqlErrors) Error() string {
+	return fmt.Sprintf("%#v\n", self.Errors)
+}
+
+func (self *Endpoint) GraphQLRequest(ctx context.Context, query string, variables map[string]interface{}, headers map[string]string, output interface{}) error {
+	req := gqlRequest{
+		Query:     query,
+		Variables: variables,
+	}
+	var resp gqlResponse
+	err := self.PostJson(ctx, "", req, headers, &resp)
+	if err != nil {
+		return err
+	}
+	if resp.Errors != nil {
+		return &GqlErrors{Errors: resp.Errors}
+	} else if resp.Data != nil {
+		err := json.Unmarshal(*resp.Data, output)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+
 }

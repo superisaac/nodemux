@@ -26,13 +26,7 @@ func (self *fantomBlock) Height() int {
 }
 
 type fantomTipResult struct {
-	Data struct {
-		Block fantomBlock
-	}
-}
-
-type fantomTipRequest struct {
-	Query string
+	Block fantomBlock
 }
 
 type FantomChain struct {
@@ -44,16 +38,15 @@ func NewFantomChain() *FantomChain {
 
 func (self *FantomChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	q := "{block(){number hash}}"
-	req := fantomTipRequest{Query: q}
 	var res fantomTipResult
-	err := ep.PostJson(context, "", req, nil, &res)
+	err := ep.GraphQLRequest(context, q, nil, nil, &res)
 	if err != nil {
 		return nil, err
 	}
 
 	block := &nodemuxcore.Block{
-		Height: res.Data.Block.Height(),
-		Hash:   res.Data.Block.Hash,
+		Height: res.Block.Height(),
+		Hash:   res.Block.Hash,
 	}
 	return block, nil
 }
