@@ -206,7 +206,6 @@ func (self *Multiplexer) DefaultRelayMessage(rootCtx context.Context, chain Chai
 func (self *Multiplexer) DefaultPipeREST(rootCtx context.Context, chain ChainRef, path string, w http.ResponseWriter, r *http.Request, overHeight int) error {
 	ep, found := self.SelectOverHeight(chain, path, overHeight)
 	if !found {
-		//return jsonz.ErrMethodNotFound.ToMessage(reqmsg), nil
 		w.WriteHeader(404)
 		w.Write([]byte("not found"))
 		return nil

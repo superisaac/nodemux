@@ -22,15 +22,15 @@ func NewPolkadotChain() *PolkadotChain {
 }
 
 func (self *PolkadotChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	reqMsg := jsonz.NewRequestMessage(
+	reqmsg := jsonz.NewRequestMessage(
 		1, "chain_getHeader", []interface{}{})
-	resMsg, err := ep.CallRPC(context, reqMsg)
+	resmsg, err := ep.CallRPC(context, reqmsg)
 	if err != nil {
 		return nil, err
 	}
-	if resMsg.IsResult() {
+	if resmsg.IsResult() {
 		bt := polkadotBlock{}
-		err := mapstructure.Decode(resMsg.MustResult(), &bt)
+		err := mapstructure.Decode(resmsg.MustResult(), &bt)
 		if err != nil {
 			return nil, errors.Wrap(err, "decode rpcblock")
 		}
@@ -41,7 +41,7 @@ func (self *PolkadotChain) GetTip(context context.Context, b *nodemuxcore.Multip
 		}
 		return block, nil
 	} else {
-		errBody := resMsg.MustError()
+		errBody := resmsg.MustError()
 		return nil, errBody
 	}
 
