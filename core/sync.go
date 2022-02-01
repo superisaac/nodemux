@@ -29,7 +29,12 @@ func (self *Multiplexer) StartSync(rootCtx context.Context, fetch bool) {
 	}()
 
 	// start updater
-	go self.RunUpdater(ctx)
+	go self.RunUpdator(ctx)
+
+	// get client version
+	for _, ep := range self.nameIndex {
+		go ep.GetClientVersion(ctx)
+	}
 
 	// start syncer
 	if fetch {
@@ -49,12 +54,15 @@ func (self *Multiplexer) StopSync() {
 }
 
 // updater
-func (self *Multiplexer) updateStatus(bs ChainStatus) error {
-	ep, ok := self.nameIndex[bs.EndpointName]
+func (self *Multiplexer) updateStatus(cs ChainStatus) error {
+	ep, ok := self.Get(cs.EndpointName)
 	if !ok {
 		return nil
 	}
-	ep.Healthy = bs.Healthy
+	if ep.Chain != cs.Chain {
+		ep.Log().Warnf("chain status mismatch, %s", cs)
+	}
+	ep.Healthy = cs.Healthy
 
 	var healthiness float64 = 0
 	if ep.Healthy {
@@ -62,7 +70,7 @@ func (self *Multiplexer) updateStatus(bs ChainStatus) error {
 	}
 	metricsEndpointHealthy.With(ep.prometheusLabels()).Set(healthiness)
 	logger := ep.Log()
-	block := bs.Tip
+	block := cs.Tip
 	if block == nil {
 		return nil
 	}
@@ -96,7 +104,7 @@ func (self *Multiplexer) updateStatus(bs ChainStatus) error {
 	return nil
 }
 
-func (self *Multiplexer) RunUpdater(rootCtx context.Context) {
+func (self *Multiplexer) RunUpdator(rootCtx context.Context) {
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
@@ -108,11 +116,11 @@ func (self *Multiplexer) RunUpdater(rootCtx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case bs, ok := <-upd:
+		case cs, ok := <-upd:
 			if !ok {
 				return
 			}
-			self.updateStatus(bs)
+			self.updateStatus(cs)
 		}
 	}
 }

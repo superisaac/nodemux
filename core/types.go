@@ -32,21 +32,23 @@ type ChainRef struct {
 
 type Endpoint struct {
 	// configured items
-	Config EndpointConfig
-	Name   string
-	Chain  ChainRef
-	//ServerUrl string
-	//Headers   map[string]string
-	//HeightPadding int
+	Config      EndpointConfig
+	Name        string
+	Chain       ChainRef
 	SkipMethods map[string]bool
+
+	// fetched
+	ClientVersion string
 
 	// dynamic items
 	Healthy bool
 	Tip     *Block
 
-	connected bool
 	client    *http.Client
 	rpcClient jsonzhttp.Client
+
+	// sync status
+	connected bool
 }
 
 type EndpointSet struct {
@@ -74,6 +76,7 @@ type Multiplexer struct {
 // Delegators
 type TipDelegator interface {
 	GetTip(ctx context.Context, b *Multiplexer, ep *Endpoint) (*Block, error)
+	GetClientVersion(ctx context.Context, ep *Endpoint) (string, error)
 }
 
 type RPCDelegator interface {

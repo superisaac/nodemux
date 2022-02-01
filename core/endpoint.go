@@ -272,3 +272,14 @@ func (self *Endpoint) GraphQLRequest(ctx context.Context, query string, variable
 	return nil
 
 }
+
+func (self *Endpoint) GetClientVersion(ctx context.Context) {
+	delegator := GetDelegatorFactory().GetTipDelegator(self.Chain.Name)
+	version, err := delegator.GetClientVersion(ctx, self)
+	if err != nil {
+		self.Log().Warnf("error while getting client version %s", err)
+	} else if version != "" {
+		self.Log().Infof("client version set to %s", version)
+		self.ClientVersion = version
+	}
+}

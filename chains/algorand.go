@@ -19,6 +19,10 @@ func NewAlgorandChain() *AlgorandChain {
 	return &AlgorandChain{}
 }
 
+func (self AlgorandChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+	return "", nil
+}
+
 func (self *AlgorandChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res algorandChainStatus
 	err := ep.GetJson(context, "/v1/status", nil, &res)

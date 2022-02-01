@@ -24,6 +24,10 @@ func NewTronChain() *TronChain {
 	return &TronChain{}
 }
 
+func (self TronChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+	return "", nil
+}
+
 func (self *TronChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res tronBlock
 	err := ep.PostJson(context,

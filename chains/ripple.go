@@ -33,6 +33,10 @@ func NewRippleChain() *RippleChain {
 	return &RippleChain{}
 }
 
+func (self RippleChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+	return "", nil
+}
+
 func (self *RippleChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	filter := rippleLedgerFilter{
 		LedgerIndex:  "validated",

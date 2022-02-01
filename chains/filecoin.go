@@ -21,6 +21,10 @@ func NewFilecoinChain() *FilecoinChain {
 	return &FilecoinChain{}
 }
 
+func (self FilecoinChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+	return "", nil
+}
+
 func (self *FilecoinChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		1, "Filecoin.ChainHead", []interface{}{})

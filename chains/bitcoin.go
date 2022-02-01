@@ -22,6 +22,10 @@ func NewBitcoinChain() *BitcoinChain {
 	return &BitcoinChain{}
 }
 
+func (self BitcoinChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+	return "", nil
+}
+
 func (self *BitcoinChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		1, "getchaintips", []interface{}{})

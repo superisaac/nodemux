@@ -32,7 +32,6 @@ func startServer(bind string, handler http.Handler, tlsConfigs ...*TLSConfig) er
 func startMetricsServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	bind := serverCfg.Metrics.Bind
 	if bind == "" {
-		//bind = "0.0.0.0:9996"
 		log.Panicf("metrics bind is empty")
 		return
 	}
