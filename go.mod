@@ -6,11 +6,13 @@ require (
 	github.com/ethereum/go-ethereum v1.10.14
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/go-redis/redis/v8 v8.11.4
+	github.com/google/uuid v1.3.0
+	github.com/gorilla/websocket v1.4.2
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/superisaac/jsonz v0.0.14
+	github.com/superisaac/jsonz v0.0.15
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -21,8 +23,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/uuid v1.3.0 // indirect
-	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
@@ -32,4 +32,9 @@ require (
 	golang.org/x/sys v0.0.0-20210816183151-1e6c022a8912 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
+)
+
+replace (
+	github.com/superisaac/jsonz => ./vendors/jsonz/
+	github.com/superisaac/jsonz/http => ./vendors/jsonz/http/
 )

@@ -60,7 +60,7 @@ func (self *Multiplexer) updateStatus(cs ChainStatus) error {
 		return nil
 	}
 	if ep.Chain != cs.Chain {
-		ep.Log().Warnf("chain status mismatch, %s", cs)
+		ep.Log().Warnf("chain status mismatch, %#v", cs)
 	}
 	ep.Healthy = cs.Healthy
 

@@ -387,6 +387,8 @@ github.com/superisaac/jsonrpc v0.0.9 h1:q04L8FtQc4C4ZiT400R24lKqu15SyBMDiZq7mLcq
 github.com/superisaac/jsonrpc v0.0.9/go.mod h1:Ze6fN1KHNNYfJAg5xtFFKZMM720wrXDDUtwSu+N17P0=
 github.com/superisaac/jsonz v0.0.14 h1:OifE1diJEqBbgc3MbAjhSyqfCpsm70nKhPOD+R8VgtE=
 github.com/superisaac/jsonz v0.0.14/go.mod h1:xqYhR0gzR253NPOGXi5TSbgvZtKQEgD7ug6DDu/5Y5M=
+github.com/superisaac/jsonz v0.0.15 h1:dPi8CydW2CzjPXD/+diZFhAwjWvvWsl2tnjn21hiv2A=
+github.com/superisaac/jsonz v0.0.15/go.mod h1:xqYhR0gzR253NPOGXi5TSbgvZtKQEgD7ug6DDu/5Y5M=
 github.com/superisaac/jsoz v0.0.10 h1:+cRMTZcp+hTPuWyjBcbg3LA3bwa+gNCwT53iR8hPs5w=
 github.com/superisaac/jsoz v0.0.10/go.mod h1:YUeVmNbob9nSNG8XsL6LLQbVh1jSQuJnj0x5IfKELRQ=
 github.com/superisaac/jsoz v0.0.12 h1:PpsuM7SxNiMWg0w/R5CSqW5k+S3lvamoUzab4WL3bBo=
