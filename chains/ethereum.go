@@ -3,12 +3,10 @@ package chains
 import (
 	"context"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/google/uuid"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/superisaac/jsonz"
 	"github.com/superisaac/nodemux/core"
-	"strings"
 	"time"
 )
 
@@ -40,9 +38,8 @@ func NewEthereumChain() *EthereumChain {
 }
 
 func (self EthereumChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
-	reqId := strings.ReplaceAll(uuid.New().String(), "-", "")
 	reqmsg := jsonz.NewRequestMessage(
-		reqId, "web3_clientVersion",
+		1, "web3_clientVersion",
 		[]interface{}{})
 	resmsg, err := ep.CallRPC(context, reqmsg)
 	if err != nil {
@@ -64,9 +61,8 @@ func (self EthereumChain) GetClientVersion(context context.Context, ep *nodemuxc
 }
 
 func (self *EthereumChain) GetTip(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	reqId := strings.ReplaceAll(uuid.New().String(), "-", "")
 	reqmsg := jsonz.NewRequestMessage(
-		reqId, "eth_getBlockByNumber",
+		jsonz.NewUuid(), "eth_getBlockByNumber",
 		[]interface{}{"latest", false})
 	resmsg, err := ep.CallRPC(context, reqmsg)
 	if err != nil {
