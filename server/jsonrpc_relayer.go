@@ -9,10 +9,13 @@ import (
 	"regexp"
 )
 
+var (
+	rpcRegex = regexp.MustCompile(`^/jsonrpc/([^/]+)/([^/]+)/?$`)
+)
+
 // JSONRPC Handler
 type JSONRPCRelayer struct {
 	rootCtx   context.Context
-	regex     *regexp.Regexp
 	chain     nodemuxcore.ChainRef
 	rpcServer *jsonzhttp.Server
 }
@@ -20,7 +23,6 @@ type JSONRPCRelayer struct {
 func NewJSONRPCRelayer(rootCtx context.Context) *JSONRPCRelayer {
 	relayer := &JSONRPCRelayer{
 		rootCtx: rootCtx,
-		regex:   regexp.MustCompile(`^/jsonrpc/([^/]+)/([^/]+)/?$`),
 	}
 
 	rpcServer := jsonzhttp.NewServer(nil)
@@ -36,9 +38,9 @@ func (self *JSONRPCRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{},
 	msg := req.Msg()
 	chain := self.chain
 	if chain.Empty() {
-		matches := self.regex.FindStringSubmatch(r.URL.Path)
+		matches := rpcRegex.FindStringSubmatch(r.URL.Path)
 		if len(matches) < 3 {
-			return nil, jsonzhttp.SimpleHttpResponse{
+			return nil, jsonzhttp.SimpleResponse{
 				Code: 404,
 				Body: []byte("not found"),
 			}
@@ -49,7 +51,7 @@ func (self *JSONRPCRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{},
 	}
 
 	if !msg.IsRequest() {
-		return nil, jsonzhttp.SimpleHttpResponse{
+		return nil, jsonzhttp.SimpleResponse{
 			Code: 400,
 			Body: []byte("bad request"),
 		}
@@ -60,7 +62,7 @@ func (self *JSONRPCRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{},
 
 	delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(chain.Name)
 	if delegator == nil {
-		return nil, jsonzhttp.SimpleHttpResponse{
+		return nil, jsonzhttp.SimpleResponse{
 			Code: 404,
 			Body: []byte("backend not found"),
 		}

@@ -80,11 +80,13 @@ func (self *EthereumChain) GetTip(context context.Context, m *nodemuxcore.Multip
 		}
 
 		if ep.Tip == nil || ep.Tip.Height != bt.Height() {
-			go presenceCacheUpdate(
-				context, m,
-				ep.Chain,
-				bt.Transactions, ep.Name,
-				time.Second*600) // expire after 10 mins
+			if c, ok := m.RedisClient(); ok {
+				go presenceCacheUpdate(
+					context, c,
+					ep.Chain,
+					bt.Transactions, ep.Name,
+					time.Second*600) // expire after 10 mins
+			}
 		}
 		return block, nil
 	} else {

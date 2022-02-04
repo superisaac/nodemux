@@ -11,21 +11,22 @@ import (
 	"regexp"
 )
 
+var (
+	wsPairs = make(map[*http.Request]*jsonzhttp.WSClient)
+
+	wsRegex = regexp.MustCompile(`^/jsonrpc\-ws/([^/]+)/([^/]+)/?$`)
+)
+
 // JSONRPC Handler
 type JSONRPCWSRelayer struct {
 	rootCtx   context.Context
-	regex     *regexp.Regexp
 	chain     nodemuxcore.ChainRef
 	rpcServer *jsonzhttp.WSServer
-
-	pairs map[*http.Request]*jsonzhttp.WSClient
 }
 
 func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 	relayer := &JSONRPCWSRelayer{
 		rootCtx: rootCtx,
-		regex:   regexp.MustCompile(`^/jsonrpc\-ws/([^/]+)/([^/]+)/?$`),
-		pairs:   make(map[*http.Request]*jsonzhttp.WSClient),
 	}
 
 	rpcServer := jsonzhttp.NewWSServer(nil)
@@ -40,10 +41,8 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 }
 
 func (self *JSONRPCWSRelayer) onClose(r *http.Request) {
-	// FIXME: since map doesn't return if or not the deletion is
-	// success, just decrementing a value may not be accurate.
-	delete(self.pairs, r)
-	metricsWSPairsCount.Set(float64(len(self.pairs)))
+	delete(wsPairs, r)
+	metricsWSPairsCount.Set(float64(len(wsPairs)))
 }
 
 func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{}, error) {
@@ -60,9 +59,9 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 	}
 
 	if chain.Empty() {
-		matches := self.regex.FindStringSubmatch(r.URL.Path)
+		matches := wsRegex.FindStringSubmatch(r.URL.Path)
 		if len(matches) < 3 {
-			return nil, jsonzhttp.SimpleHttpResponse{
+			return nil, jsonzhttp.SimpleResponse{
 				Code: 404,
 				Body: []byte("not found"),
 			}
@@ -77,7 +76,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 
 	m := nodemuxcore.GetMultiplexer()
 
-	if destWs, ok := self.pairs[r]; ok {
+	if destWs, ok := wsPairs[r]; ok {
 		// a existing dest ws conn found, relay the message to it
 		err := destWs.Send(self.rootCtx, msg)
 		return nil, err
@@ -92,8 +91,8 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 				m.Log().Warnf("send message error %s", err)
 			}
 		})
-		self.pairs[r] = destWs
-		metricsWSPairsCount.Set(float64(len(self.pairs)))
+		wsPairs[r] = destWs
+		metricsWSPairsCount.Set(float64(len(wsPairs)))
 		err := destWs.Send(self.rootCtx, msg)
 		return nil, err
 	} else if msg.IsRequest() {
@@ -102,7 +101,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 		delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(chain.Name)
 		reqmsg, _ := msg.(*jsonz.RequestMessage)
 		if delegator == nil {
-			return nil, jsonzhttp.SimpleHttpResponse{
+			return nil, jsonzhttp.SimpleResponse{
 				Code: 404,
 				Body: []byte("backend not found"),
 			}
@@ -112,7 +111,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 		return resmsg, err
 	} else {
 		// the last way, return back
-		return nil, jsonzhttp.SimpleHttpResponse{
+		return nil, jsonzhttp.SimpleResponse{
 			Code: 400,
 			Body: []byte("no websocket upstreams"),
 		}

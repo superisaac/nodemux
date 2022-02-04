@@ -214,7 +214,7 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 
 	if resp.StatusCode != 200 {
 		self.Log().Warnf("invalid response status %d", resp.StatusCode)
-		abnResp := &jsonzhttp.UpstreamResponse{
+		abnResp := &jsonzhttp.WrappedResponse{
 			Response: resp,
 		}
 		return errors.Wrap(abnResp, "abnormal response")

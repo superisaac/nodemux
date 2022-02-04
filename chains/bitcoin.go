@@ -54,7 +54,43 @@ func (self BitcoinChain) GetClientVersion(ctx context.Context, ep *nodemuxcore.E
 	}
 }
 
-func (self *BitcoinChain) updatePresenceCache(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint, blockHash string) {
+// update txid cache from mempool
+func (self BitcoinChain) updateMempoolPresenceCache(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
+	c, ok := m.RedisClient()
+	if !ok {
+		return
+	}
+	reqmsg := jsonz.NewRequestMessage(
+		1, "getrawmempool", nil)
+
+	resmsg, err := ep.CallRPC(ctx, reqmsg)
+	if err != nil {
+		ep.Log().Warnf("getrawmempool error, %s", err)
+		return
+	}
+	if resmsg.IsResult() {
+		var txids []string
+		err := mapstructure.Decode(resmsg.MustResult(), &txids)
+		if err != nil {
+			ep.Log().Warnf("decode raw mempool, %s", err)
+			return
+		}
+		presenceCacheUpdate(
+			ctx, c,
+			ep.Chain,
+			txids,
+			ep.Name,
+			time.Second*1800) // expire after 30 mins
+	} else {
+		ep.Log().Warnf("get block error msg, %s", resmsg.MustError())
+	}
+}
+
+func (self BitcoinChain) updateBlockPresenceCache(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint, blockHash string) {
+	c, ok := m.RedisClient()
+	if !ok {
+		return
+	}
 	reqmsg := jsonz.NewRequestMessage(
 		1, "getblock", []interface{}{blockHash})
 
@@ -70,15 +106,15 @@ func (self *BitcoinChain) updatePresenceCache(ctx context.Context, m *nodemuxcor
 			ep.Log().Warnf("decode block error, blockhash %s, %s", blockHash, err)
 			return
 		}
-		go presenceCacheUpdate(
-			ctx, m,
+		presenceCacheUpdate(
+			ctx, c,
 			ep.Chain,
-			blk.Tx, ep.Name,
+			blk.Tx,
+			ep.Name,
 			time.Second*1800) // expire after 30 mins
 	} else {
 		ep.Log().Warnf("get block error msg, blockhash %s, %s", blockHash, resmsg.MustError())
 	}
-
 }
 
 func (self *BitcoinChain) GetTip(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
@@ -105,8 +141,9 @@ func (self *BitcoinChain) GetTip(ctx context.Context, m *nodemuxcore.Multiplexer
 			}
 
 			if ep.Tip == nil || ep.Tip.Height != ct.Height {
-				go self.updatePresenceCache(ctx, m, ep, ct.Hash)
+				go self.updateBlockPresenceCache(ctx, m, ep, ct.Hash)
 			}
+			go self.updateMempoolPresenceCache(ctx, m, ep)
 			return block, nil
 		}
 		return nil, nil

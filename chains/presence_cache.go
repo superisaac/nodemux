@@ -7,6 +7,7 @@ package chains
 import (
 	"context"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonz"
 	"github.com/superisaac/nodemux/core"
@@ -18,12 +19,7 @@ func presenceCacheKey(chain nodemuxcore.ChainRef, txid string) string {
 	return fmt.Sprintf("P:%s/%s", chain, txid)
 }
 
-func presenceCacheUpdate(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, txids []string, epName string, expireAfter time.Duration) {
-	c, ok := m.RedisClient()
-	if !ok {
-		// no redis connection
-		return
-	}
+func presenceCacheUpdate(ctx context.Context, c *redis.Client, chain nodemuxcore.ChainRef, txids []string, epName string, expireAfter time.Duration) {
 	for _, txid := range txids {
 		key := presenceCacheKey(chain, txid)
 		err := c.SAdd(ctx, key, epName).Err()
@@ -41,12 +37,12 @@ func presenceCacheUpdate(ctx context.Context, m *nodemuxcore.Multiplexer, chain 
 
 // try find from healthy endpoint from redis cache
 func presenceCacheGetEndpoint(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, txid string) (ep *nodemuxcore.Endpoint, hit bool) {
-	key := presenceCacheKey(chain, txid)
 	c, ok := m.RedisClient()
 	if !ok {
 		// no redis connection
 		return nil, false
 	}
+	key := presenceCacheKey(chain, txid)
 	epNames, err := c.SMembers(ctx, key).Result()
 	if err != nil {
 		log.Warnf("error getting smembers of %s: %s", key, err)
