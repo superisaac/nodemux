@@ -15,7 +15,7 @@ type EndpointConfig struct {
 	Url         string            `yaml:"url"`
 	Headers     map[string]string `yaml:"headers,omitempty"`
 	SkipMethods []string          `yaml:"skip_methods,omitempty"`
-	//HeightPadding int               `yaml:"height_padding,omitempty"`
+	Options     map[string]string `yaml:"options,omitempty"`
 }
 
 type StoreConfig struct {

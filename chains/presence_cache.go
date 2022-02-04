@@ -13,18 +13,18 @@ import (
 	"time"
 )
 
-func presenceCacheKey(chain nodemuxcore.ChainRef, txHash string) string {
-	return fmt.Sprintf("P:%s/%s", chain, txHash)
+func presenceCacheKey(chain nodemuxcore.ChainRef, txid string) string {
+	return fmt.Sprintf("P:%s/%s", chain, txid)
 }
 
-func presenceCacheUpdate(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, block *ethereumBlock, epName string, expireAfter time.Duration) {
+func presenceCacheUpdate(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, txids []string, epName string, expireAfter time.Duration) {
 	c, ok := m.RedisClient()
 	if !ok {
 		// no redis connection
 		return
 	}
-	for _, txHash := range block.Transactions {
-		key := presenceCacheKey(chain, txHash)
+	for _, txid := range txids {
+		key := presenceCacheKey(chain, txid)
 		err := c.SAdd(ctx, key, epName).Err()
 		if err != nil {
 			log.Warnf("error while set %s: %s", key, err)
@@ -39,8 +39,8 @@ func presenceCacheUpdate(ctx context.Context, m *nodemuxcore.Multiplexer, chain 
 }
 
 // try find from healthy endpoint from redis cache
-func presenceCacheGetEndpoint(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, txHash string) (ep *nodemuxcore.Endpoint, hit bool) {
-	key := presenceCacheKey(chain, txHash)
+func presenceCacheGetEndpoint(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, txid string) (ep *nodemuxcore.Endpoint, hit bool) {
+	key := presenceCacheKey(chain, txid)
 	c, ok := m.RedisClient()
 	if !ok {
 		// no redis connection
