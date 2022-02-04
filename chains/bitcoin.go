@@ -117,7 +117,12 @@ func (self *BitcoinChain) GetTip(ctx context.Context, m *nodemuxcore.Multiplexer
 
 }
 
-func (self *BitcoinChain) DelegateRPC(ctx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
-	// Custom relay methods
-	return b.DefaultRelayMessage(ctx, chain, reqmsg, -2)
+func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
+	if ep, ok := presenceCacheMatchRequest(
+		ctx, m, chain, reqmsg, 0,
+		"gettransaction",
+		"getrawtransaction"); ok {
+		return ep.CallRPC(ctx, reqmsg)
+	}
+	return m.DefaultRelayMessage(ctx, chain, reqmsg, -2)
 }

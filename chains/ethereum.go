@@ -94,17 +94,12 @@ func (self *EthereumChain) GetTip(context context.Context, m *nodemuxcore.Multip
 
 }
 
-func (self *EthereumChain) DelegateRPC(rootCtx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
-	// Custom relay methods can be defined here
-	if (reqmsg.Method == "eth_getTransactionByHash" ||
-		reqmsg.Method == "eth_getTransactionReceipt") &&
-		len(reqmsg.Params) > 0 {
-		if txid, ok := reqmsg.Params[0].(string); ok {
-			if ep, ok := presenceCacheGetEndpoint(rootCtx, m, chain, txid); ok {
-				resmsg, err := ep.CallRPC(rootCtx, reqmsg)
-				return resmsg, err
-			}
-		}
+func (self *EthereumChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
+	if ep, ok := presenceCacheMatchRequest(
+		ctx, m, chain, reqmsg, 0,
+		"eth_getTransactionByHash",
+		"eth_getTransactionReceipt"); ok {
+		return ep.CallRPC(ctx, reqmsg)
 	}
-	return m.DefaultRelayMessage(rootCtx, chain, reqmsg, -5)
+	return m.DefaultRelayMessage(ctx, chain, reqmsg, -5)
 }

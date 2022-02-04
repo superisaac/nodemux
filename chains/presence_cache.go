@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"github.com/superisaac/jsonz"
 	"github.com/superisaac/nodemux/core"
 	"math/rand"
 	"time"
@@ -68,4 +69,27 @@ func presenceCacheGetEndpoint(ctx context.Context, m *nodemuxcore.Multiplexer, c
 	}
 	return nil, false
 
+}
+
+// match a request message against a given methods list, if matched
+// and the nparam'th param is txid then query the cache for an
+// endpoint that has the txid.
+func presenceCacheMatchRequest(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage, nparams int, methods ...string) (*nodemuxcore.Endpoint, bool) {
+	found := false
+	for _, mth := range methods {
+		if reqmsg.Method == mth {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, false
+	}
+	if len(reqmsg.Params) <= nparams {
+		return nil, false
+	}
+	if txid, ok := reqmsg.Params[nparams].(string); ok {
+		return presenceCacheGetEndpoint(ctx, m, chain, txid)
+	}
+	return nil, false
 }
