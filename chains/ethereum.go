@@ -39,8 +39,7 @@ func NewEthereumChain() *EthereumChain {
 
 func (self EthereumChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	reqmsg := jsonz.NewRequestMessage(
-		1, "web3_clientVersion",
-		[]interface{}{})
+		1, "web3_clientVersion", nil)
 	resmsg, err := ep.CallRPC(context, reqmsg)
 	if err != nil {
 		ep.Log().Warnf("error call rpc web3_clientVersion %s", err)
