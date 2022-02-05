@@ -2,16 +2,12 @@ package chains
 
 import (
 	"context"
-	//"fmt"
-	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 	"github.com/superisaac/jsonz"
 	"github.com/superisaac/nodemux/core"
 )
 
 type filecoinBlock struct {
-	Height int `mapstructure:"Height"`
-	//Hash   string `mapstructure:"hash"`
+	Height int `json:"Height"`
 }
 
 type FilecoinChain struct {
@@ -28,27 +24,18 @@ func (self FilecoinChain) GetClientVersion(context context.Context, ep *nodemuxc
 func (self *FilecoinChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		1, "Filecoin.ChainHead", []interface{}{})
-	resmsg, err := ep.CallRPC(context, reqmsg)
+
+	var bt filecoinBlock
+	err := ep.UnwrapCallRPC(context, reqmsg, &bt)
 	if err != nil {
 		return nil, err
 	}
-	if resmsg.IsResult() {
-		bt := filecoinBlock{}
-		err := mapstructure.Decode(resmsg.MustResult(), &bt)
-		if err != nil {
-			return nil, errors.Wrap(err, "decode rpcblock")
-		}
-		// TODO: get block hash, currently tip.hash is not necessary
-		block := &nodemuxcore.Block{
-			Height: bt.Height,
-			//Hash:   bt.Hash,
-		}
-		return block, nil
-	} else {
-		errBody := resmsg.MustError()
-		return nil, errBody
-	}
 
+	block := &nodemuxcore.Block{
+		Height: bt.Height,
+		//Hash:   bt.Hash,
+	}
+	return block, nil
 }
 
 func (self *FilecoinChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {

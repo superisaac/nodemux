@@ -2,8 +2,6 @@ package chains
 
 import (
 	"context"
-	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 	"github.com/superisaac/jsonz"
 	"github.com/superisaac/nodemux/core"
 )
@@ -23,27 +21,16 @@ func (self *ConfluxChain) GetTip(context context.Context, b *nodemuxcore.Multipl
 	reqmsg := jsonz.NewRequestMessage(
 		1, "cfx_epochNumber",
 		[]interface{}{"latest_mined"})
-	resmsg, err := ep.CallRPC(context, reqmsg)
+	var height int
+	err := ep.UnwrapCallRPC(context, reqmsg, &height)
 	if err != nil {
 		return nil, err
 	}
-	if resmsg.IsResult() {
-		var height int
-		err := mapstructure.Decode(resmsg.MustResult(), &height)
-		if err != nil {
-			return nil, errors.Wrap(err, "decode rpcblock")
-		}
-
-		block := &nodemuxcore.Block{
-			Height: height,
-			//Hash:   ""
-		}
-		return block, nil
-	} else {
-		errBody := resmsg.MustError()
-		return nil, errBody
+	block := &nodemuxcore.Block{
+		Height: height,
+		//Hash:   ""
 	}
-
+	return block, nil
 }
 
 func (self *ConfluxChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {

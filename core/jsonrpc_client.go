@@ -28,6 +28,12 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsonz.RequestMess
 	return self.rpcClient.Call(rootCtx, reqmsg)
 } // CallRPC
 
+func (self *Endpoint) UnwrapCallRPC(rootCtx context.Context, reqmsg *jsonz.RequestMessage, output interface{}) error {
+	//self.Connect()
+	self.connectRPC()
+	return self.rpcClient.UnwrapCall(rootCtx, reqmsg, output)
+} // UnwrapCallRPC
+
 func (self Endpoint) IsWebsocket() bool {
 	return strings.HasPrefix(self.Config.Url, "wss://") || strings.HasPrefix(self.Config.Url, "ws://")
 }

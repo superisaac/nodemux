@@ -3,8 +3,6 @@ package chains
 import (
 	"context"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 	"github.com/superisaac/jsonz"
 	"github.com/superisaac/nodemux/core"
 	"time"
@@ -40,60 +38,41 @@ func NewEthereumChain() *EthereumChain {
 func (self EthereumChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		1, "web3_clientVersion", nil)
-	resmsg, err := ep.CallRPC(context, reqmsg)
+	var v string
+	err := ep.UnwrapCallRPC(context, reqmsg, &v)
 	if err != nil {
 		ep.Log().Warnf("error call rpc web3_clientVersion %s", err)
 		return "", err
 	}
-	if resmsg.IsResult() {
-		var v string
-		err := mapstructure.Decode(resmsg.MustResult(), &v)
-		if err != nil {
-			return "", errors.Wrap(err, "decode client version")
-		} else {
-			return v, nil
-		}
-	} else {
-		return "", resmsg.MustError()
-	}
-
+	return v, nil
 }
 
 func (self *EthereumChain) GetTip(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		jsonz.NewUuid(), "eth_getBlockByNumber",
 		[]interface{}{"latest", false})
-	resmsg, err := ep.CallRPC(context, reqmsg)
+
+	var bt ethereumBlock
+	err := ep.UnwrapCallRPC(context, reqmsg, &bt)
 	if err != nil {
 		return nil, err
 	}
-	if resmsg.IsResult() {
-		var bt ethereumBlock
-		err := mapstructure.Decode(resmsg.MustResult(), &bt)
-		if err != nil {
-			return nil, errors.Wrap(err, "decode rpcblock")
-		}
 
-		block := &nodemuxcore.Block{
-			Height: bt.Height(),
-			Hash:   bt.Hash,
-		}
-
-		if ep.Tip == nil || ep.Tip.Height != bt.Height() {
-			if c, ok := m.RedisClient(); ok {
-				go presenceCacheUpdate(
-					context, c,
-					ep.Chain,
-					bt.Transactions, ep.Name,
-					time.Second*600) // expire after 10 mins
-			}
-		}
-		return block, nil
-	} else {
-		errBody := resmsg.MustError()
-		return nil, errBody
+	block := &nodemuxcore.Block{
+		Height: bt.Height(),
+		Hash:   bt.Hash,
 	}
 
+	if ep.Tip == nil || ep.Tip.Height != bt.Height() {
+		if c, ok := m.RedisClient(); ok {
+			go presenceCacheUpdate(
+				context, c,
+				ep.Chain,
+				bt.Transactions, ep.Name,
+				time.Second*600) // expire after 10 mins
+		}
+	}
+	return block, nil
 }
 
 func (self *EthereumChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {

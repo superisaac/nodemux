@@ -3,21 +3,19 @@ package chains
 import (
 	"context"
 	//"fmt"
-	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 	"github.com/superisaac/jsonz"
 	"github.com/superisaac/nodemux/core"
 )
 
 type solanaBlock struct {
 	Value struct {
-		Blockhash            string `mapstructure:"blockhash"`
-		LastValidBlockHeight int    `mapstructure:"lastValidBlockHeight"`
-	} `mapstructure:"value"`
+		Blockhash            string
+		LastValidBlockHeight int `json:"lastValidBlockHeight"`
+	}
 
 	Context struct {
-		Slot int `mapstructure:"slot"`
-	} `mapstructure:"context"`
+		Slot int
+	}
 }
 
 type SolanaChain struct {
@@ -34,26 +32,17 @@ func (self SolanaChain) GetClientVersion(context context.Context, ep *nodemuxcor
 func (self *SolanaChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		1, "getLatestBlockhash", []interface{}{})
-	resmsg, err := ep.CallRPC(context, reqmsg)
+
+	var bt solanaBlock
+	err := ep.UnwrapCallRPC(context, reqmsg, &bt)
 	if err != nil {
 		return nil, err
 	}
-	if resmsg.IsResult() {
-		bt := solanaBlock{}
-		err := mapstructure.Decode(resmsg.MustResult(), &bt)
-		if err != nil {
-			return nil, errors.Wrap(err, "decode rpcblock")
-		}
-		block := &nodemuxcore.Block{
-			Height: bt.Value.LastValidBlockHeight,
-			Hash:   bt.Value.Blockhash,
-		}
-		return block, nil
-	} else {
-		errBody := resmsg.MustError()
-		return nil, errBody
+	block := &nodemuxcore.Block{
+		Height: bt.Value.LastValidBlockHeight,
+		Hash:   bt.Value.Blockhash,
 	}
-
+	return block, nil
 }
 
 func (self *SolanaChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {

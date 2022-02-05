@@ -8,7 +8,7 @@ import (
 
 type rippleLedgerResult struct {
 	Result struct {
-		LedgerIndex int `mapstructure:"ledger_index json:"ledger_index"`
+		LedgerIndex int `json:"ledger_index"`
 	}
 }
 

@@ -2,8 +2,6 @@ package chains
 
 import (
 	"context"
-	//"github.com/mitchellh/mapstructure"
-	//"github.com/pkg/errors"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 )

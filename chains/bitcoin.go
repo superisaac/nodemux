@@ -3,8 +3,6 @@ package chains
 import (
 	"context"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 	"github.com/superisaac/jsonz"
 	"github.com/superisaac/nodemux/core"
 	"time"
@@ -36,22 +34,13 @@ func NewBitcoinChain() *BitcoinChain {
 
 func (self BitcoinChain) GetClientVersion(ctx context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	reqmsg := jsonz.NewRequestMessage(1, "getnetworkinfo", nil)
-	resmsg, err := ep.CallRPC(ctx, reqmsg)
+	var info bitcoinNetworkInfo
+	err := ep.UnwrapCallRPC(ctx, reqmsg, &info)
 	if err != nil {
 		return "", err
 	}
-	if resmsg.IsResult() {
-		var info bitcoinNetworkInfo
-		err := mapstructure.Decode(resmsg.MustResult(), &info)
-		if err != nil {
-			return "", errors.Wrap(err, "decode network info")
-		} else {
-			v := fmt.Sprintf("%d", info.Version)
-			return v, nil
-		}
-	} else {
-		return "", resmsg.MustError()
-	}
+	v := fmt.Sprintf("%d", info.Version)
+	return v, nil
 }
 
 // update txid cache from mempool
@@ -63,27 +52,18 @@ func (self BitcoinChain) updateMempoolPresenceCache(ctx context.Context, m *node
 	reqmsg := jsonz.NewRequestMessage(
 		1, "getrawmempool", nil)
 
-	resmsg, err := ep.CallRPC(ctx, reqmsg)
+	var txids []string
+	err := ep.UnwrapCallRPC(ctx, reqmsg, &txids)
 	if err != nil {
 		ep.Log().Warnf("getrawmempool error, %s", err)
 		return
 	}
-	if resmsg.IsResult() {
-		var txids []string
-		err := mapstructure.Decode(resmsg.MustResult(), &txids)
-		if err != nil {
-			ep.Log().Warnf("decode raw mempool, %s", err)
-			return
-		}
-		presenceCacheUpdate(
-			ctx, c,
-			ep.Chain,
-			txids,
-			ep.Name,
-			time.Second*1800) // expire after 30 mins
-	} else {
-		ep.Log().Warnf("get block error msg, %s", resmsg.MustError())
-	}
+	presenceCacheUpdate(
+		ctx, c,
+		ep.Chain,
+		txids,
+		ep.Name,
+		time.Second*1800) // expire after 30 mins
 }
 
 func (self BitcoinChain) updateBlockPresenceCache(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint, blockHash string) {
@@ -94,64 +74,45 @@ func (self BitcoinChain) updateBlockPresenceCache(ctx context.Context, m *nodemu
 	reqmsg := jsonz.NewRequestMessage(
 		1, "getblock", []interface{}{blockHash})
 
-	resmsg, err := ep.CallRPC(ctx, reqmsg)
+	var blk bitcoinBlock
+	err := ep.UnwrapCallRPC(ctx, reqmsg, &blk)
 	if err != nil {
 		ep.Log().Warnf("get block error, blockhash %s, %s", blockHash, err)
 		return
 	}
-	if resmsg.IsResult() {
-		var blk bitcoinBlock
-		err := mapstructure.Decode(resmsg.MustResult(), &blk)
-		if err != nil {
-			ep.Log().Warnf("decode block error, blockhash %s, %s", blockHash, err)
-			return
-		}
-		presenceCacheUpdate(
-			ctx, c,
-			ep.Chain,
-			blk.Tx,
-			ep.Name,
-			time.Second*1800) // expire after 30 mins
-	} else {
-		ep.Log().Warnf("get block error msg, blockhash %s, %s", blockHash, resmsg.MustError())
-	}
+	presenceCacheUpdate(
+		ctx, c,
+		ep.Chain,
+		blk.Tx,
+		ep.Name,
+		time.Second*1800) // expire after 30 mins
 }
 
 func (self *BitcoinChain) GetTip(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		1, "getchaintips", nil)
-	resmsg, err := ep.CallRPC(ctx, reqmsg)
+
+	var chaintips []bitcoinChaintip
+	err := ep.UnwrapCallRPC(ctx, reqmsg, &chaintips)
 	if err != nil {
 		return nil, err
 	}
-	if resmsg.IsResult() {
-		var chaintips []bitcoinChaintip
-		err := mapstructure.Decode(resmsg.MustResult(), &chaintips)
-		if err != nil {
-			return nil, errors.Wrap(err, "decode rpcblock")
+	for _, ct := range chaintips {
+		if ct.Status != "active" {
+			continue
+		}
+		block := &nodemuxcore.Block{
+			Height: ct.Height,
+			Hash:   ct.Hash,
 		}
 
-		for _, ct := range chaintips {
-			if ct.Status != "active" {
-				continue
-			}
-			block := &nodemuxcore.Block{
-				Height: ct.Height,
-				Hash:   ct.Hash,
-			}
-
-			if ep.Tip == nil || ep.Tip.Height != ct.Height {
-				go self.updateBlockPresenceCache(ctx, m, ep, ct.Hash)
-			}
-			go self.updateMempoolPresenceCache(ctx, m, ep)
-			return block, nil
+		if ep.Tip == nil || ep.Tip.Height != ct.Height {
+			go self.updateBlockPresenceCache(ctx, m, ep, ct.Hash)
 		}
-		return nil, nil
-	} else {
-		errBody := resmsg.MustError()
-		return nil, errBody
+		go self.updateMempoolPresenceCache(ctx, m, ep)
+		return block, nil
 	}
-
+	return nil, nil
 }
 
 func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
