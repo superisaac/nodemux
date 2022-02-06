@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/superisaac/jsonz"
 	"github.com/superisaac/jsonz/http"
@@ -53,7 +52,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonz.RPCRequest) (interface{}, e
 	if data == nil {
 		return nil, errors.New("request data is nil")
 	}
-	srcWs, ok := data.(*websocket.Conn)
+	session, ok := data.(*jsonzhttp.WSSession)
 	if !ok {
 		return nil, errors.New("request data is not websocket conn")
 	}
@@ -83,13 +82,10 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonz.RPCRequest) (interface{}, e
 	} else if ep, found := m.SelectWebsocketEndpoint(chain, "", -2); found {
 		// the first time a websocket connection connects
 		// select an available dest websocket connection
-		// make a pair (srcWs, destWs)
+		// make a pair (session, destWs)
 		destWs := jsonzhttp.NewWSClient(ep.Config.Url)
 		destWs.OnMessage(func(m jsonz.Message) {
-			err := self.rpcServer.SendMessage(srcWs, m)
-			if err != nil {
-				m.Log().Warnf("send message error %s", err)
-			}
+			session.Send(m)
 		})
 		wsPairs[r] = destWs
 		metricsWSPairsCount.Set(float64(len(wsPairs)))
