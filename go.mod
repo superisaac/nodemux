@@ -12,7 +12,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/superisaac/jsonz v0.0.18
+	github.com/superisaac/jsonz v0.0.20fix
 	gopkg.in/yaml.v2 v2.4.0
 )
 
