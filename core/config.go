@@ -20,12 +20,14 @@ type EndpointConfig struct {
 
 type StoreConfig struct {
 	Url string `yaml:"url"`
-
-	scheme string
 }
 
 func (self StoreConfig) Scheme() string {
-	return self.scheme
+	u, err := url.Parse(self.Url)
+	if err != nil {
+		panic(err)
+	}
+	return u.Scheme
 }
 
 type NodemuxConfig struct {
@@ -58,11 +60,10 @@ func (self *NodemuxConfig) validateValues() error {
 
 	// currently nodemux store uses redis
 	for _, store := range self.Stores {
-		u, err := url.Parse(store.Url)
+		_, err := url.Parse(store.Url)
 		if err != nil {
 			return err
 		}
-		store.scheme = u.Scheme
 	}
 
 	for _, epcfg := range self.Endpoints {

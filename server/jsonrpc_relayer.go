@@ -26,14 +26,14 @@ func NewJSONRPCRelayer(rootCtx context.Context) *JSONRPCRelayer {
 	}
 
 	rpcServer := jsonzhttp.NewServer()
-	rpcServer.Handler.OnMissing(func(req *jsonz.RPCRequest) (interface{}, error) {
+	rpcServer.Handler.OnMissing(func(req *jsonzhttp.RPCRequest) (interface{}, error) {
 		return relayer.delegateRPC(req)
 	})
 	relayer.rpcServer = rpcServer
 	return relayer
 }
 
-func (self *JSONRPCRelayer) delegateRPC(req *jsonz.RPCRequest) (interface{}, error) {
+func (self *JSONRPCRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{}, error) {
 	r := req.HttpRequest()
 	msg := req.Msg()
 	chain := self.chain

@@ -32,7 +32,7 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 	rpcServer.Handler.OnClose(func(r *http.Request) {
 		relayer.onClose(r)
 	})
-	rpcServer.Handler.OnMissing(func(req *jsonz.RPCRequest) (interface{}, error) {
+	rpcServer.Handler.OnMissing(func(req *jsonzhttp.RPCRequest) (interface{}, error) {
 		return relayer.delegateRPC(req)
 	})
 	relayer.rpcServer = rpcServer
@@ -44,7 +44,7 @@ func (self *JSONRPCWSRelayer) onClose(r *http.Request) {
 	metricsWSPairsCount.Set(float64(len(wsPairs)))
 }
 
-func (self *JSONRPCWSRelayer) delegateRPC(req *jsonz.RPCRequest) (interface{}, error) {
+func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{}, error) {
 	r := req.HttpRequest()
 	msg := req.Msg()
 	chain := self.chain
