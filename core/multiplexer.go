@@ -30,7 +30,7 @@ func SetMultiplexer(b *Multiplexer) {
 
 func NewMultiplexer() *Multiplexer {
 	m := new(Multiplexer)
-	m.chainHub = NewLocalChainhub()
+	m.chainHub = NewMemoryChainhub()
 	m.Reset()
 	return m
 }
