@@ -3,6 +3,7 @@ package nodemuxcore
 import (
 	"context"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonz"
 	"net/http"
@@ -28,15 +29,16 @@ func SetMultiplexer(b *Multiplexer) {
 }
 
 func NewMultiplexer() *Multiplexer {
-	b := new(Multiplexer)
-	b.chainHub = NewLocalChainhub()
-	b.Reset()
-	return b
+	m := new(Multiplexer)
+	m.chainHub = NewLocalChainhub()
+	m.Reset()
+	return m
 }
 
 func (self *Multiplexer) Reset() {
 	self.nameIndex = make(map[string]*Endpoint)
 	self.chainIndex = make(map[ChainRef]*EndpointSet)
+	self.redisClients = make(map[string]*redis.Client)
 }
 
 func (self Multiplexer) Get(epName string) (*Endpoint, bool) {
@@ -164,21 +166,21 @@ func (self *Multiplexer) SelectWebsocketEndpoint(chain ChainRef, method string, 
 }
 
 func MultiplexerFromConfig(nbcfg *NodemuxConfig) *Multiplexer {
-	b := NewMultiplexer()
-	b.LoadFromConfig(nbcfg)
+	m := NewMultiplexer()
+	m.LoadFromConfig(nbcfg)
 
-	if nbcfg.Store.Scheme() == "redis" {
+	if store, ok := nbcfg.Stores["default"]; ok && store.Scheme() == "redis" {
 		// sync source must be a redis URL
 		log.Infof("using redis store")
-		chainHub, err := NewRedisChainhub(nbcfg.Store.Url)
+		chainHub, err := NewRedisChainhub(store.Url)
 		if err != nil {
 			panic(err)
 		}
-		b.chainHub = chainHub
+		m.chainHub = chainHub
 	} else {
 		log.Info("using memory store")
 	}
-	return b
+	return m
 }
 
 func (self *Multiplexer) LoadFromConfig(nbcfg *NodemuxConfig) {

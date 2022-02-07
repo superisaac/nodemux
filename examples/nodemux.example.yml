@@ -1,0 +1,71 @@
+---
+# collection of some public block chain nodes
+
+version: "1.0"
+stores:
+  pcache-bitcoin-testnet:
+    url: redis://localhost:6379/1
+  default:
+    url: redis://localhost:6379/2
+endpoints:
+  # bsc01:
+  #   chain: "binance-chain"
+  #   network: mainnet
+  #   url: https://bsc-dataseed1.defibit.io
+  #   # headers:
+  #   #   Authorization: Bearer token911
+
+  # bsc02:
+  #   chain: "binance-chain"
+  #   network: mainnet
+  #   url: https://bsc-dataseed2.defibit.io
+
+  stc01:
+    chain: starcoin
+    network: main
+    url: https://main-seed.starcoin.org
+
+  # tron01:
+  #   chain: tron-grid
+  #   network: mainnet
+  #   url: https://api.shasta.trongrid.io
+
+  # eosio01:
+  #   chain: eosio
+  #   network: mainnet
+  #   url: https://api.eosn.io
+
+  # algorand01:
+  #   chain: algorand
+  #   network: mainnet
+  #   url: https://api.algoexplorer.io
+
+  # kadena01:
+  #   chain: kadena
+  #   network: mainnet
+  #   url: https://fr2.chainweb.com
+
+  # fantom01:
+  #   chain: fantom
+  #   network: mainnet
+  #   url: https://xapi.fantom.network/
+
+  # fantom02:
+  #   chain: fantom-web3
+  #   network: mainnet
+  #   url: https://rpc.fantom.network/
+
+  # fantomws01:
+  #   chain: fantom-web3
+  #   network: mainnet
+  #   url: wss://wsapi.fantom.network
+    
+  # ethereum01:
+  #   chain: ethereum
+  #   network: mainnet
+  #   url: https://mainnet.infura.io/
+
+  eth01:
+    chain: ethereum
+    network: mainnet
+    url: wss://eth-mainnet.ws.alchemyapi.io/ws/demo

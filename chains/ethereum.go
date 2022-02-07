@@ -64,7 +64,7 @@ func (self *EthereumChain) GetTip(context context.Context, m *nodemuxcore.Multip
 	}
 
 	if ep.Tip == nil || ep.Tip.Height != bt.Height() {
-		if c, ok := m.RedisClient(); ok {
+		if c, ok := m.RedisClient(presenceCacheRedisKey(ep.Chain)); ok {
 			go presenceCacheUpdate(
 				context, c,
 				ep.Chain,

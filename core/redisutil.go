@@ -32,16 +32,25 @@ func GetRedisOptions(redisUrl string) (*redis.Options, error) {
 	return opt, nil
 }
 
-func (self Multiplexer) RedisClient() (c *redis.Client, ok bool) {
-	if self.cfg.Store.Scheme() != "redis" {
+func (self *Multiplexer) RedisClient(key string) (c *redis.Client, ok bool) {
+	if c, ok := self.redisClients[key]; ok {
+		return c, ok
+	}
+
+	if store, ok := self.cfg.Stores[key]; ok && store.Scheme() == "redis" {
+		opts, err := GetRedisOptions(store.Url)
+		if err != nil {
+			log.Panicf("parse redis option error, url=%s, %s", store.Url, err)
+			return nil, false
+		}
+		c := redis.NewClient(opts)
+		self.redisClients[key] = c
+		return c, true
+	}
+
+	if key != "default" {
+		return self.RedisClient("default")
+	} else {
 		return nil, false
 	}
-	if self.redisClient == nil {
-		opts, err := GetRedisOptions(self.cfg.Store.Url)
-		if err != nil {
-			log.Panicf("parse redis option error, %s", err)
-		}
-		self.redisClient = redis.NewClient(opts)
-	}
-	return self.redisClient, true
 }

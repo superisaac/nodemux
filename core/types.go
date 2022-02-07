@@ -66,7 +66,7 @@ type Multiplexer struct {
 
 	chainHub Chainhub
 
-	redisClient *redis.Client
+	redisClients map[string]*redis.Client
 }
 
 // Delegators
