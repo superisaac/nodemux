@@ -86,5 +86,4 @@ func (self *MemoryChainhub) Run(rootCtx context.Context) error {
 			}
 		}
 	}
-	return nil
 }

@@ -18,7 +18,7 @@ type rippleLedgerFilter struct {
 	Full         bool
 	Transactions bool
 	Expand       bool
-	OwnerFunds   bool `json: "owner_funds"`
+	OwnerFunds   bool `json:"owner_funds"`
 }
 
 type rippleLedgerRequest struct {

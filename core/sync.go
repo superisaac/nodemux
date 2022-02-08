@@ -62,11 +62,11 @@ func (self *Multiplexer) updateStatus(cs ChainStatus) error {
 	if ep.Chain != cs.Chain {
 		ep.Log().Warnf("chain status mismatch, %#v", cs)
 	}
-	ep.Healthy = cs.Healthy
+	ep.Unhealthy = cs.Unhealthy
 
-	var healthiness float64 = 0
-	if ep.Healthy {
-		healthiness = 1
+	var healthiness float64 = 1
+	if ep.Unhealthy {
+		healthiness = 0
 	}
 	metricsEndpointHealthy.With(ep.prometheusLabels()).Set(healthiness)
 	logger := ep.Log()

@@ -40,13 +40,13 @@ type MetricsConfig struct {
 type EntrypointConfig struct {
 	Chain   string      `yaml:"chain"`
 	Network string      `yaml:"network"`
-	Bind    string      `yaml:version,omitempty`
+	Bind    string      `yaml:"version,omitempty"`
 	Auth    *AuthConfig `yaml:"auth,omitempty"`
 	TLS     *TLSConfig  `yaml:"tls:omitempty"`
 }
 
 type ServerConfig struct {
-	Bind        string              `yaml:version,omitempty`
+	Bind        string              `yaml:"version,omitempty"`
 	TLS         *TLSConfig          `yaml:"tls,omitempty"`
 	Metrics     *MetricsConfig      `yaml:"metrics,omitempty"`
 	Auth        *AuthConfig         `yaml:"auth,omitempty"`

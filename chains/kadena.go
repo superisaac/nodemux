@@ -7,13 +7,13 @@ import (
 )
 
 type kadenaCutBlock struct {
-	Height int    `json,"height"`
-	Hash   string `json,"hash"`
+	Height int
+	Hash   string
 }
 
 type kadenaCut struct {
-	Weight string                    `json,"weight"`
-	Hashes map[string]kadenaCutBlock `json,"hashes"`
+	Weight string
+	Hashes map[string]kadenaCutBlock
 }
 
 type KadenaChain struct {

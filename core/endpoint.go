@@ -44,7 +44,7 @@ func NewEndpoint(name string, epcfg EndpointConfig) *Endpoint {
 		Config:    epcfg,
 		Name:      name,
 		Chain:     chain,
-		Healthy:   true,
+		Unhealthy: false,
 		connected: true}
 
 	if epcfg.SkipMethods != nil {

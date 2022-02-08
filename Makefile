@@ -10,17 +10,15 @@ bin/nodemux: ${GOFILES}
 	${GOBUILD} ${GOFLAG} -o $@ nodemux.go
 
 test:
-	go test ${GOFLAG} -v github.com/superisaac/nodemux/core
-	go test ${GOFLAG} -v github.com/superisaac/nodemux/chains
-	go test ${GOFLAG} -v github.com/superisaac/nodemux/server
+	go test -v ./...
 
 clean:
 	rm -rf build dist bin/nodemux
 
-gofmt:
-	go fmt core/*.go
-	go fmt chains/*.go
-	go fmt server/*.go
-	go fmt nodemux.go
+govet:
+	go vet ./...
 
-.PHONY: build all test gofmt dist
+gofmt:
+	go fmt ./...
+
+.PHONY: build all test govet gofmt dist

@@ -165,7 +165,6 @@ func (self *RedisChainhub) Run(rootCtx context.Context) error {
 			}
 		}
 	}
-	return nil
 }
 
 func (self RedisChainhub) publishChainStatus(ctx context.Context, rdb *redis.Client, chainSt ChainStatus) error {

@@ -37,8 +37,8 @@ type Endpoint struct {
 	ClientVersion string
 
 	// dynamic items
-	Healthy  bool
-	Chaintip *Block
+	Unhealthy bool
+	Chaintip  *Block
 
 	client    *http.Client
 	rpcClient jsonzhttp.Client
@@ -101,7 +101,7 @@ type ChainStatus struct {
 	EndpointName string `json:"endpoint_name"`
 	Chain        ChainRef
 	Chaintip     *Block
-	Healthy      bool
+	Unhealthy    bool
 }
 
 type Chainhub interface {

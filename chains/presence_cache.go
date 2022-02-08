@@ -51,13 +51,13 @@ func presenceCacheGetEndpoint(ctx context.Context, m *nodemuxcore.Multiplexer, c
 	if len(epNames) > 0 {
 		// randomly select an endpoint
 		epName := epNames[rand.Intn(len(epNames))]
-		if ep, ok := m.Get(epName); ok && ep.Healthy {
+		if ep, ok := m.Get(epName); ok && !ep.Unhealthy {
 			return ep, ok
 		}
 
 		// sequancially select endpoints
 		for _, epName := range epNames {
-			if ep, ok := m.Get(epName); ok && ep.Healthy {
+			if ep, ok := m.Get(epName); ok && !ep.Unhealthy {
 				return ep, ok
 			}
 		}

@@ -12,7 +12,7 @@ func blockIsEqual(a, b *Block) bool {
 	return a.Height == b.Height && a.Hash == b.Hash
 }
 
-func (self *Multiplexer) fetchTip(rootCtx context.Context, ep *Endpoint, lastBlock *Block) (*Block, error) {
+func (self *Multiplexer) fetchChaintip(rootCtx context.Context, ep *Endpoint, lastBlock *Block) (*Block, error) {
 	logger := ep.Log()
 	delegator := GetDelegatorFactory().GetChaintipDelegator(ep.Chain.Name)
 	block, err := delegator.GetChaintip(rootCtx, self, ep)
@@ -23,7 +23,7 @@ func (self *Multiplexer) fetchTip(rootCtx context.Context, ep *Endpoint, lastBlo
 			EndpointName: ep.Name,
 			Chain:        ep.Chain,
 			Chaintip:     nil,
-			Healthy:      false,
+			Unhealthy:    true,
 		}
 		self.chainHub.Pub() <- bs
 		return nil, err
@@ -35,7 +35,7 @@ func (self *Multiplexer) fetchTip(rootCtx context.Context, ep *Endpoint, lastBlo
 				EndpointName: ep.Name,
 				Chain:        ep.Chain,
 				Chaintip:     block,
-				Healthy:      true,
+				Unhealthy:    false,
 			}
 			self.chainHub.Pub() <- bs
 		}
@@ -55,7 +55,7 @@ func (self *Multiplexer) fetchEndpoint(rootCtx context.Context, ep *Endpoint) {
 			break
 		}
 		sleepTime := 1 * time.Second
-		blk, err := self.fetchTip(ctx, ep, lastBlock)
+		blk, err := self.fetchChaintip(ctx, ep, lastBlock)
 		if err != nil {
 			// unhealthy
 			sleepTime = 15 * time.Second
