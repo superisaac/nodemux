@@ -21,7 +21,7 @@ func (self AlgorandChain) GetClientVersion(context context.Context, ep *nodemuxc
 	return "", nil
 }
 
-func (self *AlgorandChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *AlgorandChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res algorandChainStatus
 	err := ep.GetJson(context, "/v1/status", nil, &res)
 	if err != nil {

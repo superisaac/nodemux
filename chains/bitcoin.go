@@ -88,7 +88,7 @@ func (self BitcoinChain) updateBlockPresenceCache(ctx context.Context, m *nodemu
 		time.Second*1800) // expire after 30 mins
 }
 
-func (self *BitcoinChain) GetTip(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *BitcoinChain) GetChaintip(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		1, "getchaintips", nil)
 
@@ -106,7 +106,7 @@ func (self *BitcoinChain) GetTip(ctx context.Context, m *nodemuxcore.Multiplexer
 			Hash:   ct.Hash,
 		}
 
-		if ep.Tip == nil || ep.Tip.Height != ct.Height {
+		if ep.Chaintip == nil || ep.Chaintip.Height != ct.Height {
 			go self.updateBlockPresenceCache(ctx, m, ep, ct.Hash)
 		}
 		go self.updateMempoolPresenceCache(ctx, m, ep)

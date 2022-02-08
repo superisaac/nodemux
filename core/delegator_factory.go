@@ -39,7 +39,7 @@ func (self DelegatorFactory) SupportChain(chain string) (bool, int) {
 	return false, 0
 }
 
-func (self DelegatorFactory) GetTipDelegator(chain string) TipDelegator {
+func (self DelegatorFactory) GetChaintipDelegator(chain string) ChaintipDelegator {
 	if delg, ok := self.rpcDelegators[chain]; ok {
 		return delg
 	} else if delg, ok := self.restDelegators[chain]; ok {

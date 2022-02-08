@@ -47,6 +47,7 @@ endpoints:
 
   # fantom01:
   #   chain: fantom
+  #   description: fantom graphql server
   #   network: mainnet
   #   url: https://xapi.fantom.network/
 
@@ -55,17 +56,17 @@ endpoints:
   #   network: mainnet
   #   url: https://rpc.fantom.network/
 
-  # fantomws01:
+  # fantom03:
   #   chain: fantom-web3
   #   network: mainnet
   #   url: wss://wsapi.fantom.network
     
-  # ethereum01:
-  #   chain: ethereum
-  #   network: mainnet
-  #   url: https://mainnet.infura.io/
-
   eth01:
     chain: ethereum
     network: mainnet
-    url: wss://eth-mainnet.ws.alchemyapi.io/ws/demo
+    url: https://mainnet.infura.io/
+
+  # eth02:
+  #   chain: ethereum
+  #   network: mainnet
+  #   url: wss://eth-mainnet.ws.alchemyapi.io/ws/demo

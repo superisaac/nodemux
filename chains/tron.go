@@ -28,7 +28,7 @@ func (self TronChain) GetClientVersion(context context.Context, ep *nodemuxcore.
 	return "", nil
 }
 
-func (self *TronChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *TronChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res tronBlock
 	err := ep.PostJson(context,
 		"/walletsolidity/getnowblock",

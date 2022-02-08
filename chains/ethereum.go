@@ -47,7 +47,7 @@ func (self EthereumChain) GetClientVersion(context context.Context, ep *nodemuxc
 	return v, nil
 }
 
-func (self *EthereumChain) GetTip(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *EthereumChain) GetChaintip(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		jsonz.NewUuid(), "eth_getBlockByNumber",
 		[]interface{}{"latest", false})
@@ -63,7 +63,7 @@ func (self *EthereumChain) GetTip(context context.Context, m *nodemuxcore.Multip
 		Hash:   bt.Hash,
 	}
 
-	if ep.Tip == nil || ep.Tip.Height != bt.Height() {
+	if ep.Chaintip == nil || ep.Chaintip.Height != bt.Height() {
 		if c, ok := m.RedisClient(presenceCacheRedisKey(ep.Chain)); ok {
 			go presenceCacheUpdate(
 				context, c,

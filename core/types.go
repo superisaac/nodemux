@@ -22,8 +22,8 @@ type Block struct {
 }
 
 type ChainRef struct {
-	Name    string `json:"name"`
-	Network string `json:"network"`
+	Name    string
+	Network string
 }
 
 type Endpoint struct {
@@ -37,8 +37,8 @@ type Endpoint struct {
 	ClientVersion string
 
 	// dynamic items
-	Healthy bool
-	Tip     *Block
+	Healthy  bool
+	Chaintip *Block
 
 	client    *http.Client
 	rpcClient jsonzhttp.Client
@@ -70,23 +70,23 @@ type Multiplexer struct {
 }
 
 // Delegators
-type TipDelegator interface {
-	GetTip(ctx context.Context, b *Multiplexer, ep *Endpoint) (*Block, error)
+type ChaintipDelegator interface {
+	GetChaintip(ctx context.Context, b *Multiplexer, ep *Endpoint) (*Block, error)
 	GetClientVersion(ctx context.Context, ep *Endpoint) (string, error)
 }
 
 type RPCDelegator interface {
-	TipDelegator
+	ChaintipDelegator
 	DelegateRPC(ctx context.Context, b *Multiplexer, chain ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error)
 }
 
 type RESTDelegator interface {
-	TipDelegator
+	ChaintipDelegator
 	DelegateREST(ctx context.Context, b *Multiplexer, chain ChainRef, path string, w http.ResponseWriter, r *http.Request) error
 }
 
 type GraphQLDelegator interface {
-	TipDelegator
+	ChaintipDelegator
 	DelegateGraphQL(ctx context.Context, b *Multiplexer, chain ChainRef, path string, w http.ResponseWriter, r *http.Request) error
 }
 
@@ -98,10 +98,10 @@ type DelegatorFactory struct {
 
 // chain stream
 type ChainStatus struct {
-	EndpointName string   `json:"endpoint_name"`
-	Chain        ChainRef `json:"chain"`
-	Tip          *Block   `json:"tip"`
-	Healthy      bool     `json:"healthy"`
+	EndpointName string `json:"endpoint_name"`
+	Chain        ChainRef
+	Chaintip     *Block
+	Healthy      bool
 }
 
 type Chainhub interface {

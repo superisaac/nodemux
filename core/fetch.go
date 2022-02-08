@@ -14,15 +14,15 @@ func blockIsEqual(a, b *Block) bool {
 
 func (self *Multiplexer) fetchTip(rootCtx context.Context, ep *Endpoint, lastBlock *Block) (*Block, error) {
 	logger := ep.Log()
-	delegator := GetDelegatorFactory().GetTipDelegator(ep.Chain.Name)
-	block, err := delegator.GetTip(rootCtx, self, ep)
+	delegator := GetDelegatorFactory().GetChaintipDelegator(ep.Chain.Name)
+	block, err := delegator.GetChaintip(rootCtx, self, ep)
 	if err != nil {
 		logger.Warnf("mark unhealthy due to tip height error %s", err)
 		ep.connected = false
 		bs := ChainStatus{
 			EndpointName: ep.Name,
 			Chain:        ep.Chain,
-			Tip:          nil,
+			Chaintip:     nil,
 			Healthy:      false,
 		}
 		self.chainHub.Pub() <- bs
@@ -34,7 +34,7 @@ func (self *Multiplexer) fetchTip(rootCtx context.Context, ep *Endpoint, lastBlo
 			bs := ChainStatus{
 				EndpointName: ep.Name,
 				Chain:        ep.Chain,
-				Tip:          block,
+				Chaintip:     block,
 				Healthy:      true,
 			}
 			self.chainHub.Pub() <- bs

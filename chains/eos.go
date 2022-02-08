@@ -22,7 +22,7 @@ func (self EosChain) GetClientVersion(context context.Context, ep *nodemuxcore.E
 	return "", nil
 }
 
-func (self *EosChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *EosChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res eosChainInfo
 	err := ep.PostJson(context,
 		"/v1/chain/get_info",

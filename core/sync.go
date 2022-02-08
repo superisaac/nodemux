@@ -70,23 +70,23 @@ func (self *Multiplexer) updateStatus(cs ChainStatus) error {
 	}
 	metricsEndpointHealthy.With(ep.prometheusLabels()).Set(healthiness)
 	logger := ep.Log()
-	block := cs.Tip
+	block := cs.Chaintip
 	if block == nil {
 		return nil
 	}
 
 	heightChanged := false
 
-	if ep.Tip != nil {
-		if ep.Tip.Height > block.Height {
-			logger.Warnf("new tip height %d < old tip height %d", block.Height, ep.Tip.Height)
+	if ep.Chaintip != nil {
+		if ep.Chaintip.Height > block.Height {
+			logger.Warnf("new tip height %d < old tip height %d", block.Height, ep.Chaintip.Height)
 			heightChanged = true
-		} else if ep.Tip.Height == block.Height &&
-			ep.Tip.Hash != block.Hash {
-			logger.Warnf("tip hash changed from %s to %s", ep.Tip.Hash, block.Hash)
+		} else if ep.Chaintip.Height == block.Height &&
+			ep.Chaintip.Hash != block.Hash {
+			logger.Warnf("tip hash changed from %s to %s", ep.Chaintip.Hash, block.Hash)
 		}
 	}
-	ep.Tip = block
+	ep.Chaintip = block
 	metricsEndpointBlockTip.With(ep.prometheusLabels()).Set(float64(block.Height))
 	if epset, ok := self.chainIndex[ep.Chain]; ok {
 		if heightChanged {

@@ -32,7 +32,7 @@ func (self CardanoChain) GetClientVersion(context context.Context, ep *nodemuxco
 	return "", nil
 }
 
-func (self *CardanoChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *CardanoChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	q := "{blocks(limit:1, order_by:[{number: \"desc\"}]){number hash}}"
 	req := cardanoTipRequest{Query: q}
 	var res cardanoTipResult

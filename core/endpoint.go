@@ -20,8 +20,8 @@ import (
 func (self *EndpointSet) ResetMaxTipHeight() {
 	maxHeight := 0
 	for _, epItem := range self.items {
-		if epItem.Tip != nil && epItem.Tip.Height > maxHeight {
-			maxHeight = epItem.Tip.Height
+		if epItem.Chaintip != nil && epItem.Chaintip.Height > maxHeight {
+			maxHeight = epItem.Chaintip.Height
 		}
 	}
 	self.maxTipHeight = maxHeight
@@ -274,7 +274,7 @@ func (self *Endpoint) GraphQLRequest(ctx context.Context, query string, variable
 }
 
 func (self *Endpoint) GetClientVersion(ctx context.Context) {
-	delegator := GetDelegatorFactory().GetTipDelegator(self.Chain.Name)
+	delegator := GetDelegatorFactory().GetChaintipDelegator(self.Chain.Name)
 	version, err := delegator.GetClientVersion(ctx, self)
 	if err != nil {
 		self.Log().Warnf("error while getting client version %s", err)

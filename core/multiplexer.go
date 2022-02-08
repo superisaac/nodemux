@@ -107,7 +107,7 @@ func (self *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightS
 			}
 
 			if height >= 0 {
-				if ep.Tip == nil || ep.Tip.Height < height {
+				if ep.Chaintip == nil || ep.Chaintip.Height < height {
 					continue
 				}
 			}
@@ -147,7 +147,7 @@ func (self *Multiplexer) SelectWebsocketEndpoint(chain ChainRef, method string, 
 			}
 
 			if height >= 0 {
-				if ep.Tip == nil || ep.Tip.Height < height {
+				if ep.Chaintip == nil || ep.Chaintip.Height < height {
 					continue
 				}
 			}

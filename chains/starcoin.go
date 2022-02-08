@@ -26,7 +26,7 @@ func (self StarcoinChain) GetClientVersion(context context.Context, ep *nodemuxc
 	return "", nil
 }
 
-func (self *StarcoinChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *StarcoinChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		1, "chain.info", nil)
 

@@ -37,7 +37,7 @@ func (self RippleChain) GetClientVersion(context context.Context, ep *nodemuxcor
 	return "", nil
 }
 
-func (self *RippleChain) GetTip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *RippleChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	filter := rippleLedgerFilter{
 		LedgerIndex:  "validated",
 		Accounts:     false,
