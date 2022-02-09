@@ -28,6 +28,7 @@ func InstallAdaptors(factory *nodemuxcore.DelegatorFactory) {
 	factory.RegisterREST(NewRippleChain(), "ripple")
 	factory.RegisterREST(NewTronChain(), "tron-full", "tron-grid")
 	factory.RegisterREST(NewEosChain(), "eosio", "enu")
+	factory.RegisterREST(NewLunaChain(), "luna")
 	factory.RegisterREST(NewAlgorandChain(), "algorand")
 	factory.RegisterREST(NewKadenaChain(), "kadena")
 

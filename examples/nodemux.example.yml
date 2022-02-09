@@ -20,10 +20,16 @@ endpoints:
   #   network: mainnet
   #   url: https://bsc-dataseed2.defibit.io
 
-  stc01:
-    chain: starcoin
-    network: main
-    url: https://main-seed.starcoin.org
+  luna01:
+    chain: luna
+    network: mainnet
+    url: https://blockdaemon-terra-lcd.api.bdnodes.net:1317
+    # https://docs.terra.money/docs/develop/how-to/endpoints.html
+
+  # stc01:
+  #   chain: starcoin
+  #   network: main
+  #   url: https://main-seed.starcoin.org
 
   # tron01:
   #   chain: tron-grid
@@ -60,11 +66,11 @@ endpoints:
   #   chain: fantom-web3
   #   network: mainnet
   #   url: wss://wsapi.fantom.network
-    
-  eth01:
-    chain: ethereum
-    network: mainnet
-    url: https://mainnet.infura.io/
+
+  # eth01:
+  #   chain: ethereum
+  #   network: mainnet
+  #   url: https://mainnet.infura.io/
 
   # eth02:
   #   chain: ethereum
