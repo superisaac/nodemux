@@ -1,5 +1,7 @@
 package chains
 
+// list of blockchains: https://www.technoduet.com/a-comprehensive-list-of-blockchain-platforms/
+
 import (
 	"github.com/superisaac/nodemux/core"
 )
@@ -19,6 +21,7 @@ func InstallAdaptors(factory *nodemuxcore.DelegatorFactory) {
 		"dashcoin", "zcash")
 
 	factory.RegisterRPC(NewFilecoinChain(), "filecoin")
+	factory.RegisterRPC(NewCasperChain(), "casper")
 	factory.RegisterRPC(NewSolanaChain(), "solana")
 	factory.RegisterRPC(NewStarcoinChain(), "starcoin")
 	factory.RegisterRPC(NewConfluxChain(), "conflux")

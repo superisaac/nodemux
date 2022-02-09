@@ -23,7 +23,7 @@ func (self FilecoinChain) GetClientVersion(context context.Context, ep *nodemuxc
 
 func (self *FilecoinChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
-		1, "Filecoin.ChainHead", []interface{}{})
+		1, "Filecoin.ChainHead", nil)
 
 	var bt filecoinBlock
 	err := ep.UnwrapCallRPC(context, reqmsg, &bt)
