@@ -18,7 +18,7 @@ const (
 // data structures
 type Block struct {
 	Height int
-	Hash   string
+	Hash   string `json:"hash,omitempty"`
 }
 
 type ChainRef struct {
