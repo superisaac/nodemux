@@ -43,7 +43,7 @@ func (self FantomChain) GetClientVersion(context context.Context, ep *nodemuxcor
 func (self *FantomChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	q := "{block(){number hash}}"
 	var res fantomTipResult
-	err := ep.GraphQLRequest(context, q, nil, nil, &res)
+	err := ep.RequestGraphQL(context, q, nil, nil, &res)
 	if err != nil {
 		return nil, err
 	}

@@ -12,13 +12,7 @@ type cardanoBlock struct {
 }
 
 type cardanoTipResult struct {
-	Data struct {
-		Blocks []cardanoBlock
-	}
-}
-
-type cardanoTipRequest struct {
-	Query string
+	Blocks []cardanoBlock
 }
 
 type CardanoChain struct {
@@ -34,17 +28,16 @@ func (self CardanoChain) GetClientVersion(context context.Context, ep *nodemuxco
 
 func (self *CardanoChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	q := "{blocks(limit:1, order_by:[{number: \"desc\"}]){number hash}}"
-	req := cardanoTipRequest{Query: q}
 	var res cardanoTipResult
-	err := ep.PostJson(context, "", req, nil, &res)
+	err := ep.RequestGraphQL(context, q, nil, nil, &res)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(res.Data.Blocks) > 0 {
+	if len(res.Blocks) > 0 {
 		block := &nodemuxcore.Block{
-			Height: res.Data.Blocks[0].Number,
-			Hash:   res.Data.Blocks[0].Hash,
+			Height: res.Blocks[0].Number,
+			Hash:   res.Blocks[0].Hash,
 		}
 		return block, nil
 	} else {

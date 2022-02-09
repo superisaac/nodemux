@@ -251,7 +251,7 @@ func (self GqlErrors) Error() string {
 	return fmt.Sprintf("%#v\n", self.Errors)
 }
 
-func (self *Endpoint) GraphQLRequest(ctx context.Context, query string, variables map[string]interface{}, headers map[string]string, output interface{}) error {
+func (self *Endpoint) RequestGraphQL(ctx context.Context, query string, variables map[string]interface{}, headers map[string]string, output interface{}) error {
 	req := gqlRequest{
 		Query:     query,
 		Variables: variables,
