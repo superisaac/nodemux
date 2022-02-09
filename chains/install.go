@@ -38,6 +38,7 @@ func InstallAdaptors(factory *nodemuxcore.DelegatorFactory) {
 	// GraphQL handlers
 	factory.RegisterGraphQL(NewFantomChain(), "fantom")
 	factory.RegisterGraphQL(NewCardanoChain(), "cardano")
+	factory.RegisterGraphQL(NewMinaChain(), "mina")
 }
 
 // func init() {

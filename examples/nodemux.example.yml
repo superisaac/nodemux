@@ -23,8 +23,13 @@ endpoints:
   luna01:
     chain: luna
     network: mainnet
+    # from https://docs.terra.money/docs/develop/how-to/endpoints.html
     url: https://blockdaemon-terra-lcd.api.bdnodes.net:1317
-    # https://docs.terra.money/docs/develop/how-to/endpoints.html
+
+  # mina01:
+  #   chain: mina
+  #   network: mainnet
+  #   #url: https://graphql.minaexplorer.com
 
   # stc01:
   #   chain: starcoin
