@@ -32,17 +32,17 @@ type AuthConfig struct {
 }
 
 type MetricsConfig struct {
-	Bind string      `yaml:"bind"`
+	Bind string
 	Auth *AuthConfig `yaml:"auth,omitempty"`
 	TLS  *TLSConfig  `yaml:"tls:omitempty"`
 }
 
 type EntrypointConfig struct {
-	Chain   string      `yaml:"chain"`
-	Network string      `yaml:"network"`
-	Bind    string      `yaml:"version,omitempty"`
+	Chain   string
+	Network string
+	Bind    string
 	Auth    *AuthConfig `yaml:"auth,omitempty"`
-	TLS     *TLSConfig  `yaml:"tls:omitempty"`
+	TLS     *TLSConfig  `yaml:"tls,omitempty"`
 }
 
 type ServerConfig struct {
