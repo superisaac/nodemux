@@ -37,7 +37,7 @@ func (self EndpointSet) prometheusLabels(chain string, network string) prometheu
 /// Create an endpoint instance
 func NewEndpoint(name string, epcfg EndpointConfig) *Endpoint {
 	chain := ChainRef{
-		Name:    epcfg.Chain,
+		Brand:   epcfg.Chain,
 		Network: epcfg.Network}
 
 	ep := &Endpoint{
@@ -58,7 +58,7 @@ func NewEndpoint(name string, epcfg EndpointConfig) *Endpoint {
 
 func (self Endpoint) Log() *log.Entry {
 	return log.WithFields(log.Fields{
-		"chain":   self.Chain.Name,
+		"chain":   self.Chain.Brand,
 		"network": self.Chain.Network,
 		"name":    self.Name,
 	})
@@ -66,7 +66,7 @@ func (self Endpoint) Log() *log.Entry {
 
 func (self Endpoint) prometheusLabels() prometheus.Labels {
 	return prometheus.Labels{
-		"chain":    self.Chain.Name,
+		"chain":    self.Chain.Brand,
 		"network":  self.Chain.Network,
 		"endpoint": self.Name,
 	}
@@ -274,7 +274,7 @@ func (self *Endpoint) RequestGraphQL(ctx context.Context, query string, variable
 }
 
 func (self *Endpoint) GetClientVersion(ctx context.Context) {
-	delegator := GetDelegatorFactory().GetChaintipDelegator(self.Chain.Name)
+	delegator := GetDelegatorFactory().GetChaintipDelegator(self.Chain.Brand)
 	version, err := delegator.GetClientVersion(ctx, self)
 	if err != nil {
 		self.Log().Warnf("error while getting client version %s", err)

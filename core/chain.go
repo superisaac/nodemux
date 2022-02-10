@@ -6,16 +6,16 @@ import (
 )
 
 func (self ChainRef) String() string {
-	return fmt.Sprintf("%s/%s", self.Name, self.Network)
+	return fmt.Sprintf("%s/%s", self.Brand, self.Network)
 }
 
 func (self ChainRef) Empty() bool {
-	return self.Name == "" || self.Network == ""
+	return self.Brand == "" || self.Network == ""
 }
 
 func (self ChainRef) Log() *log.Entry {
 	return log.WithFields(log.Fields{
-		"chain":   self.Name,
+		"chain":   self.Brand,
 		"network": self.Network,
 	})
 }

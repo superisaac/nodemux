@@ -92,11 +92,11 @@ func (self *Multiplexer) updateStatus(cs ChainStatus) error {
 		if heightChanged {
 			epset.ResetMaxTipHeight()
 			ep.Chain.Log().Infof("height changed, max tip height set to %d", epset.maxTipHeight)
-			metricsBlockTip.With(epset.prometheusLabels(ep.Chain.Name, ep.Chain.Network)).Set(float64(epset.maxTipHeight))
+			metricsBlockTip.With(epset.prometheusLabels(ep.Chain.Brand, ep.Chain.Network)).Set(float64(epset.maxTipHeight))
 		} else if epset.maxTipHeight < block.Height {
 			epset.maxTipHeight = block.Height
 			ep.Chain.Log().Infof("max tip height set to %d %s", epset.maxTipHeight, block.Hash)
-			metricsBlockTip.With(epset.prometheusLabels(ep.Chain.Name, ep.Chain.Network)).Set(float64(epset.maxTipHeight))
+			metricsBlockTip.With(epset.prometheusLabels(ep.Chain.Brand, ep.Chain.Network)).Set(float64(epset.maxTipHeight))
 		}
 	} else {
 		logger.Panicf("cnnot get epset by chain %s", ep.Chain)

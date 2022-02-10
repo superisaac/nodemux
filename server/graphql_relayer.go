@@ -33,14 +33,17 @@ func (self *GraphQLRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("not found"))
 			return
 		}
-		chainName := matches[1]
+		brand := matches[1]
 		network := matches[2]
 		path = matches[3]
-		chain = nodemuxcore.ChainRef{Name: chainName, Network: network}
+		chain = nodemuxcore.ChainRef{
+			Brand:   brand,
+			Network: network,
+		}
 	}
 
 	m := nodemuxcore.GetMultiplexer()
-	delegator := nodemuxcore.GetDelegatorFactory().GetGraphQLDelegator(chain.Name)
+	delegator := nodemuxcore.GetDelegatorFactory().GetGraphQLDelegator(chain.Brand)
 	if delegator == nil {
 		w.WriteHeader(404)
 		w.Write([]byte("backend not found"))

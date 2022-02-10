@@ -90,5 +90,5 @@ func presenceCacheMatchRequest(ctx context.Context, m *nodemuxcore.Multiplexer, 
 }
 
 func presenceCacheRedisKey(chain nodemuxcore.ChainRef) string {
-	return fmt.Sprintf("pcache-%s-%s", chain.Name, chain.Network)
+	return fmt.Sprintf("pcache-%s-%s", chain.Brand, chain.Network)
 }

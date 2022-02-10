@@ -65,10 +65,10 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 				Body: []byte("not found"),
 			}
 		}
-		chainName := matches[1]
+		brand := matches[1]
 		network := matches[2]
 		chain = nodemuxcore.ChainRef{
-			Name:    chainName,
+			Brand:   brand,
 			Network: network,
 		}
 	}
@@ -94,7 +94,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 	} else if msg.IsRequest() {
 		// if no dest websocket connection is available and msg is a request message
 		// it's still ok to deliver the message to http endpoints
-		delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(chain.Name)
+		delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(chain.Brand)
 		reqmsg, _ := msg.(*jsonz.RequestMessage)
 		if delegator == nil {
 			return nil, jsonzhttp.SimpleResponse{

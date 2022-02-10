@@ -53,7 +53,10 @@ func startEntrypointServer(rootCtx context.Context, entryCfg *EntrypointConfig, 
 		log.Warnf("entry point for chain %s not supported", entryCfg.Chain)
 		return
 	}
-	chain := nodemuxcore.ChainRef{Name: entryCfg.Chain, Network: entryCfg.Network}
+	chain := nodemuxcore.ChainRef{
+		Brand:   entryCfg.Chain,
+		Network: entryCfg.Network,
+	}
 	var handler http.Handler
 	if rpcType == nodemuxcore.ApiJSONRPC {
 		rpc1 := NewJSONRPCRelayer(rootCtx)

@@ -22,7 +22,7 @@ type Block struct {
 }
 
 type ChainRef struct {
-	Name    string
+	Brand   string
 	Network string
 }
 

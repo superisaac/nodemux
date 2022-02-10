@@ -45,9 +45,12 @@ func (self *JSONRPCRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{},
 				Body: []byte("not found"),
 			}
 		}
-		chainName := matches[1]
+		brand := matches[1]
 		network := matches[2]
-		chain = nodemuxcore.ChainRef{Name: chainName, Network: network}
+		chain = nodemuxcore.ChainRef{
+			Brand:   brand,
+			Network: network,
+		}
 	}
 
 	if !msg.IsRequest() {
@@ -60,7 +63,7 @@ func (self *JSONRPCRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{},
 	reqmsg, _ := msg.(*jsonz.RequestMessage)
 	m := nodemuxcore.GetMultiplexer()
 
-	delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(chain.Name)
+	delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(chain.Brand)
 	if delegator == nil {
 		return nil, jsonzhttp.SimpleResponse{
 			Code: 404,
