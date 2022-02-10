@@ -6,6 +6,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/nodemux/core"
+	"github.com/superisaac/nodemux/ratelimit"
 	"net/http"
 )
 
@@ -17,15 +18,18 @@ func startServer(bind string, handler http.Handler, tlsConfigs ...*TLSConfig) er
 			break
 		}
 	}
+	ratelimitHandler := NewRatelimitHandler(handler)
 
 	if tlsConfig != nil {
 		return http.ListenAndServeTLS(
 			bind,
 			tlsConfig.Certfile,
 			tlsConfig.Keyfile,
-			handler)
+			ratelimitHandler)
 	} else {
-		return http.ListenAndServe(bind, handler)
+		return http.ListenAndServe(
+			bind,
+			ratelimitHandler)
 	}
 }
 
@@ -125,6 +129,7 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	}
 }
 
+// Auth handler
 type HttpAuthHandler struct {
 	authConfig *AuthConfig
 	next       http.Handler
@@ -167,4 +172,39 @@ func (self *HttpAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	self.next.ServeHTTP(w, r)
+}
+
+// handle ratelimit
+type RatelimitHandler struct {
+	next http.Handler
+}
+
+func NewRatelimitHandler(next http.Handler) *RatelimitHandler {
+	return &RatelimitHandler{
+		next: next,
+	}
+}
+
+func (self *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ok, err := checkIPRatelimit(r)
+	if err != nil {
+		log.Errorf("error while checking ratelimit %s", err)
+		w.WriteHeader(500)
+		w.Write([]byte("server error"))
+	} else if !ok {
+		w.WriteHeader(403)
+		w.Write([]byte("rate limit exceeded!"))
+	} else {
+		self.next.ServeHTTP(w, r)
+	}
+}
+
+func checkIPRatelimit(r *http.Request) (bool, error) {
+	m := nodemuxcore.GetMultiplexer()
+	if c, ok := m.RedisClient("ratelimit"); ok {
+		return ratelimit.IncrHourly(
+			r.Context(),
+			c, r.RemoteAddr, 3600)
+	}
+	return true, nil
 }

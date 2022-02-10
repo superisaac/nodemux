@@ -33,6 +33,15 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 		relayer.onClose(r)
 	})
 	rpcServer.Handler.OnMissing(func(req *jsonzhttp.RPCRequest) (interface{}, error) {
+		ok, err := checkIPRatelimit(req.HttpRequest())
+		if err != nil {
+			return nil, err
+		} else if !ok {
+			return nil, jsonzhttp.SimpleResponse{
+				Code: 403,
+				Body: []byte("rate limit exceeded!"),
+			}
+		}
 		return relayer.delegateRPC(req)
 	})
 	relayer.rpcServer = rpcServer
