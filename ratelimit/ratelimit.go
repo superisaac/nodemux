@@ -8,26 +8,27 @@ import (
 )
 
 const (
-	valueBase = int64(1000)
+	valueBase = 1000
 )
 
-func IncrHourly(context context.Context, c *redis.Client, field string, limit int64) (ok bool, e error) {
+func IncrHourly(context context.Context, c *redis.Client, field string, limit int) (ok bool, e error) {
 	span, _ := time.ParseDuration("1m")
 	return incr(context, c, field, limit, "hour", span)
 }
 
-func IncrMinutely(context context.Context, c *redis.Client, field string, limit int64) (ok bool, e error) {
+func IncrMinutely(context context.Context, c *redis.Client, field string, limit int) (ok bool, e error) {
 	span, _ := time.ParseDuration("1m")
 	return incr(context, c, field, limit, "min", span)
 }
 
-func incr(context context.Context, c *redis.Client, field string, limit int64, prefix string, timeSpan time.Duration) (ok bool, e error) {
-	var ts int64 = (time.Now().Unix()) / int64(timeSpan.Seconds())
+func incr(context context.Context, c *redis.Client, field string, limit int, prefix string, timeSpan time.Duration) (ok bool, e error) {
+	var ts int = int(time.Now().Unix()) / int(timeSpan.Seconds())
 	key := fmt.Sprintf("rtlm:%s:%d", prefix, ts)
-	newValue, err := c.HIncrBy(context, key, field, 1).Result()
+	i64value, err := c.HIncrBy(context, key, field, 1).Result()
 	if err != nil {
 		return false, err
 	}
+	newValue := int(i64value)
 	if newValue >= valueBase+limit {
 		// out of limit, return false
 		return false, nil

@@ -5,32 +5,26 @@ import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
+	"github.com/superisaac/jsonz/http"
 	"github.com/superisaac/nodemux/core"
 	"github.com/superisaac/nodemux/ratelimit"
 	"net/http"
 )
 
-func startServer(bind string, handler http.Handler, tlsConfigs ...*TLSConfig) error {
-	var tlsConfig *TLSConfig
+func startServer(rootCtx context.Context, bind string, handler http.Handler, tlsConfigs ...*jsonzhttp.TLSConfig) error {
+	var tlsConfig *jsonzhttp.TLSConfig
 	for _, cfg := range tlsConfigs {
 		if cfg != nil {
 			tlsConfig = cfg
 			break
 		}
 	}
-	ratelimitHandler := NewRatelimitHandler(handler)
+	ratelimitHandler := NewRatelimitHandler(rootCtx, handler)
 
-	if tlsConfig != nil {
-		return http.ListenAndServeTLS(
-			bind,
-			tlsConfig.Certfile,
-			tlsConfig.Keyfile,
-			ratelimitHandler)
-	} else {
-		return http.ListenAndServe(
-			bind,
-			ratelimitHandler)
-	}
+	return jsonzhttp.ListenAndServe(
+		rootCtx, bind,
+		ratelimitHandler,
+		tlsConfig)
 }
 
 func startMetricsServer(rootCtx context.Context, serverCfg *ServerConfig) {
@@ -43,7 +37,8 @@ func startMetricsServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	handler := NewHttpAuthHandler(
 		serverCfg.Metrics.Auth,
 		promhttp.Handler())
-	err := startServer(bind, handler,
+	err := startServer(
+		rootCtx, bind, handler,
 		serverCfg.Metrics.TLS,
 		serverCfg.TLS)
 	if err != nil {
@@ -75,13 +70,13 @@ func startEntrypointServer(rootCtx context.Context, entryCfg *EntrypointConfig, 
 		rest1.chain = chain
 		handler = rest1
 	} else {
-		// rpcType == nodemuxcore.ApiGraphQL
 		graph1 := NewGraphQLRelayer(rootCtx)
 		graph1.chain = chain
 		handler = graph1
 	}
 	log.Infof("entrypoint server %s listens at %s", chain, entryCfg.Bind)
-	err := startServer(entryCfg.Bind,
+
+	err := startServer(rootCtx, entryCfg.Bind,
 		NewHttpAuthHandler(
 			serverCfg.Auth, handler),
 		entryCfg.TLS, serverCfg.TLS)
@@ -97,6 +92,8 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		bind = "127.0.0.1:9000"
 	}
 	log.Infof("start http proxy at %s", bind)
+
+	rootCtx = serverCfg.AddTo(rootCtx)
 	serverMux := http.NewServeMux()
 	serverMux.Handle("/metrics", NewHttpAuthHandler(
 		serverCfg.Metrics.Auth,
@@ -122,7 +119,7 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		go startMetricsServer(rootCtx, serverCfg)
 	}
 
-	err := startServer(bind, serverMux, serverCfg.TLS)
+	err := startServer(rootCtx, bind, serverMux, serverCfg.TLS)
 	if err != nil {
 		log.Println("HTTP Server Error - ", err)
 		//panic(err)
@@ -176,17 +173,20 @@ func (self *HttpAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // handle ratelimit
 type RatelimitHandler struct {
-	next http.Handler
+	rootCtx context.Context
+	next    http.Handler
 }
 
-func NewRatelimitHandler(next http.Handler) *RatelimitHandler {
+func NewRatelimitHandler(rootCtx context.Context, next http.Handler) *RatelimitHandler {
 	return &RatelimitHandler{
-		next: next,
+		rootCtx: rootCtx,
+		next:    next,
 	}
 }
 
 func (self *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ok, err := checkIPRatelimit(r)
+	serverCfg := ServerConfigFromContext(self.rootCtx)
+	ok, err := checkIPRatelimit(r, serverCfg.Ratelimit.IP)
 	if err != nil {
 		log.Errorf("error while checking ratelimit %s", err)
 		w.WriteHeader(500)
@@ -199,12 +199,12 @@ func (self *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func checkIPRatelimit(r *http.Request) (bool, error) {
+func checkIPRatelimit(r *http.Request, limit int) (bool, error) {
 	m := nodemuxcore.GetMultiplexer()
 	if c, ok := m.RedisClient("ratelimit"); ok {
 		return ratelimit.IncrHourly(
 			r.Context(),
-			c, r.RemoteAddr, 3600)
+			c, r.RemoteAddr, limit)
 	}
 	return true, nil
 }

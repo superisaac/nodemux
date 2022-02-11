@@ -1,21 +1,18 @@
 package server
 
 import (
-	//"fmt"
+	"context"
 	"github.com/pkg/errors"
+	"github.com/superisaac/jsonz/http"
 	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 )
 
-type validConfig interface {
-	validateValues() error
-}
-
-type TLSConfig struct {
-	Certfile string `yaml:"cert"`
-	Keyfile  string `yaml:"key"`
-}
+// type TLSConfig struct {
+// 	Certfile string `yaml:"cert"`
+// 	Keyfile  string `yaml:"key"`
+// }
 
 type BasicAuthConfig struct {
 	Username string `yaml:"username"`
@@ -33,30 +30,45 @@ type AuthConfig struct {
 
 type MetricsConfig struct {
 	Bind string
-	Auth *AuthConfig `yaml:"auth,omitempty"`
-	TLS  *TLSConfig  `yaml:"tls:omitempty"`
+	Auth *AuthConfig          `yaml:"auth,omitempty"`
+	TLS  *jsonzhttp.TLSConfig `yaml:"tls:omitempty"`
 }
 
 type EntrypointConfig struct {
 	Chain   string
 	Network string
 	Bind    string
-	Auth    *AuthConfig `yaml:"auth,omitempty"`
-	TLS     *TLSConfig  `yaml:"tls,omitempty"`
+	Auth    *AuthConfig          `yaml:"auth,omitempty"`
+	TLS     *jsonzhttp.TLSConfig `yaml:"tls,omitempty"`
+}
+
+type RatelimitConfig struct {
+	IP int `yaml:"ip"`
 }
 
 type ServerConfig struct {
-	Bind        string              `yaml:"version,omitempty"`
-	TLS         *TLSConfig          `yaml:"tls,omitempty"`
-	Metrics     *MetricsConfig      `yaml:"metrics,omitempty"`
-	Auth        *AuthConfig         `yaml:"auth,omitempty"`
-	Entrypoints []*EntrypointConfig `yaml:"entrypoints,omitempty"`
+	Bind        string               `yaml:"version,omitempty"`
+	TLS         *jsonzhttp.TLSConfig `yaml:"tls,omitempty"`
+	Metrics     *MetricsConfig       `yaml:"metrics,omitempty"`
+	Auth        *AuthConfig          `yaml:"auth,omitempty"`
+	Entrypoints []*EntrypointConfig  `yaml:"entrypoints,omitempty"`
+	Ratelimit   RatelimitConfig      `yaml:"ratelimit,omitempty"`
 }
 
 func NewServerConfig() *ServerConfig {
 	cfg := &ServerConfig{}
 	cfg.Metrics = &MetricsConfig{}
 	return cfg
+}
+
+func ServerConfigFromContext(ctx context.Context) *ServerConfig {
+	if v := ctx.Value("serverConfig"); v != nil {
+		if serverCfg, ok := v.(*ServerConfig); ok {
+			return serverCfg
+		}
+		panic("context value serverConfig is not a serverConfig instance")
+	}
+	panic("context does not have serverConfig")
 }
 
 func ServerConfigFromFile(yamlPath string) (*ServerConfig, error) {
@@ -66,6 +78,10 @@ func ServerConfigFromFile(yamlPath string) (*ServerConfig, error) {
 		return nil, err
 	}
 	return cfg, nil
+}
+
+func (self *ServerConfig) AddTo(ctx context.Context) context.Context {
+	return context.WithValue(ctx, "serverConfig", self)
 }
 
 func (self *ServerConfig) Load(yamlPath string) error {
@@ -95,13 +111,23 @@ func (self *ServerConfig) validateValues() error {
 	if self.Metrics == nil {
 		self.Metrics = &MetricsConfig{}
 	}
-	children := []validConfig{self.TLS, self.Auth, self.Metrics}
-	for _, childcfg := range children {
-		if childcfg != nil {
-			err := childcfg.validateValues()
-			if err != nil {
-				return err
-			}
+	if self.TLS != nil {
+		err := self.TLS.ValidateValues()
+		if err != nil {
+			return err
+		}
+	}
+	if self.Auth != nil {
+		err := self.Auth.validateValues()
+		if err != nil {
+			return err
+		}
+	}
+
+	if self.Metrics != nil {
+		err := self.Metrics.validateValues()
+		if err != nil {
+			return err
 		}
 	}
 
@@ -111,19 +137,9 @@ func (self *ServerConfig) validateValues() error {
 			return err
 		}
 	}
-	return nil
-}
 
-// validators
-func (self *TLSConfig) validateValues() error {
-	if self == nil {
-		return nil
-	}
-	if self.Certfile == "" {
-		return errors.New("ca file is empty")
-	}
-	if self.Keyfile == "" {
-		return errors.New("key file is empty")
+	if self.Ratelimit.IP <= 0 {
+		self.Ratelimit.IP = 3600
 	}
 	return nil
 }
@@ -155,13 +171,16 @@ func (self *EntrypointConfig) validateValues() error {
 	if self.Bind == "" {
 		return errors.New("entrypoint, bind address cannot be empty")
 	}
-	children := []validConfig{self.TLS, self.Auth}
-	for _, cfg := range children {
-		if cfg != nil {
-			err := cfg.validateValues()
-			if err != nil {
-				return err
-			}
+	if self.TLS != nil {
+		err := self.TLS.ValidateValues()
+		if err != nil {
+			return err
+		}
+	}
+	if self.Auth != nil {
+		err := self.Auth.validateValues()
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -171,13 +190,17 @@ func (self *MetricsConfig) validateValues() error {
 	if self == nil {
 		return nil
 	}
-	children := []validConfig{self.TLS, self.Auth}
-	for _, cfg := range children {
-		if cfg != nil {
-			err := cfg.validateValues()
-			if err != nil {
-				return err
-			}
+
+	if self.TLS != nil {
+		err := self.TLS.ValidateValues()
+		if err != nil {
+			return err
+		}
+	}
+	if self.Auth != nil {
+		err := self.Auth.validateValues()
+		if err != nil {
+			return err
 		}
 	}
 	return nil

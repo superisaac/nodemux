@@ -5,8 +5,8 @@ bind: 127.0.0.1:9990
 #   bearer:
 #     token: beartoken
 # tls:
-#   cert: localhost.crt
-#   key: localhost.key
+#   certfile: localhost.crt
+#   keyfile: localhost.key
 metrics:
   auth:
     basic:
@@ -19,5 +19,5 @@ entrypoints:
     network: mainnet
     bind: 0.0.0.0:9999
     # tls:
-    #   cert: localhost.crt
-    #   key: localhost.key
+    #   certfile: localhost.crt
+    #   keyfile: localhost.key
