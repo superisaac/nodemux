@@ -11,19 +11,37 @@ const (
 	valueBase = 1000
 )
 
-func IncrHourly(context context.Context, c *redis.Client, field string, limit int) (ok bool, e error) {
-	span, _ := time.ParseDuration("1m")
-	return incr(context, c, field, limit, "hour", span)
+type RatelimitOptions struct {
+	Time time.Time
+	Span time.Duration
 }
 
-func IncrMinutely(context context.Context, c *redis.Client, field string, limit int) (ok bool, e error) {
-	span, _ := time.ParseDuration("1m")
-	return incr(context, c, field, limit, "min", span)
-}
+func Incr(context context.Context, c *redis.Client, field string, limit int, optslist ...*RatelimitOptions) (ok bool, e error) {
+	span1h, _ := time.ParseDuration("1h")
+	opts := &RatelimitOptions{
+		Time: time.Now(),
+		Span: span1h,
+	}
+	for _, srcopt := range optslist {
+		if srcopt == nil {
+			continue
+		}
+		// copy the opt content
+		if !srcopt.Time.IsZero() {
+			opts.Time = srcopt.Time
+		}
+		if srcopt.Span != 0 {
+			opts.Span = srcopt.Span
+		}
+	}
 
-func incr(context context.Context, c *redis.Client, field string, limit int, prefix string, timeSpan time.Duration) (ok bool, e error) {
-	var ts int = int(time.Now().Unix()) / int(timeSpan.Seconds())
-	key := fmt.Sprintf("rtlm:%s:%d", prefix, ts)
+	spanSecs := int(opts.Span.Seconds())
+	if spanSecs <= 0 {
+		panic("negative time span")
+	}
+
+	var ts int = int(opts.Time.Unix()) / spanSecs
+	key := fmt.Sprintf("rtlm:%d:%d", spanSecs, ts)
 	i64value, err := c.HIncrBy(context, key, field, 1).Result()
 	if err != nil {
 		return false, err
@@ -37,7 +55,7 @@ func incr(context context.Context, c *redis.Client, field string, limit int, pre
 		if err := c.HSet(context, key, field, valueBase).Err(); err != nil {
 			return false, err
 		}
-		expiration := timeSpan * 2
+		expiration := opts.Span * 2
 		if err := c.ExpireNX(context, key, expiration).Err(); err != nil {
 			return false, err
 		}

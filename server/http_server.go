@@ -12,19 +12,11 @@ import (
 )
 
 func startServer(rootCtx context.Context, bind string, handler http.Handler, tlsConfigs ...*jsonzhttp.TLSConfig) error {
-	var tlsConfig *jsonzhttp.TLSConfig
-	for _, cfg := range tlsConfigs {
-		if cfg != nil {
-			tlsConfig = cfg
-			break
-		}
-	}
 	ratelimitHandler := NewRatelimitHandler(rootCtx, handler)
-
 	return jsonzhttp.ListenAndServe(
 		rootCtx, bind,
 		ratelimitHandler,
-		tlsConfig)
+		tlsConfigs...)
 }
 
 func startMetricsServer(rootCtx context.Context, serverCfg *ServerConfig) {
@@ -202,7 +194,7 @@ func (self *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 func checkIPRatelimit(r *http.Request, limit int) (bool, error) {
 	m := nodemuxcore.GetMultiplexer()
 	if c, ok := m.RedisClient("ratelimit"); ok {
-		return ratelimit.IncrHourly(
+		return ratelimit.Incr(
 			r.Context(),
 			c, r.RemoteAddr, limit)
 	}
