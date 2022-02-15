@@ -7,6 +7,9 @@ bind: 127.0.0.1:9990
 # tls:
 #   certfile: localhost.crt
 #   keyfile: localhost.key
+ratelimit:
+  ip: 36000  # 36000 visits per ip per hour, the default value is 3600
+
 metrics:
   auth:
     basic:
