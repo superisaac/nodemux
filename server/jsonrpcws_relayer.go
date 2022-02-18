@@ -34,7 +34,7 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 	})
 	rpcServer.Handler.OnMissing(func(req *jsonzhttp.RPCRequest) (interface{}, error) {
 		serverCfg := ServerConfigFromContext(rootCtx)
-		ok, err := checkIPRatelimit(req.HttpRequest(), serverCfg.Ratelimit.IP)
+		ok, err := checkRatelimit(req.HttpRequest(), serverCfg.Ratelimit)
 		if err != nil {
 			return nil, err
 		} else if !ok {

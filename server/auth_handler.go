@@ -43,7 +43,7 @@ func (self HttpAuthHandler) TryAuth(r *http.Request) (string, bool) {
 		authHeader := r.Header.Get("Authorization")
 		expect := fmt.Sprintf("Bearer %s", bearerAuth.Token)
 		if authHeader == expect {
-			return "", true
+			return "__bearer", true
 		}
 	}
 

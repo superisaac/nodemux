@@ -48,7 +48,8 @@ type EntrypointConfig struct {
 }
 
 type RatelimitConfig struct {
-	IP int `yaml:"ip"`
+	IP   int `yaml:"ip"`
+	User int `yaml:"user"`
 }
 
 type ServerConfig struct {
@@ -145,6 +146,10 @@ func (self *ServerConfig) validateValues() error {
 
 	if self.Ratelimit.IP <= 0 {
 		self.Ratelimit.IP = 3600
+	}
+
+	if self.Ratelimit.User <= 0 {
+		self.Ratelimit.User = 3600
 	}
 	return nil
 }

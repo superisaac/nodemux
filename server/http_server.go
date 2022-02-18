@@ -17,10 +17,11 @@ func requestLog(r *http.Request) *log.Entry {
 }
 
 func startServer(rootCtx context.Context, bind string, handler http.Handler, tlsConfigs ...*jsonzhttp.TLSConfig) error {
-	ratelimitHandler := NewRatelimitHandler(rootCtx, handler)
+	//ratelimitHandler := NewRatelimitHandler(rootCtx, handler)
 	return jsonzhttp.ListenAndServe(
 		rootCtx, bind,
-		ratelimitHandler,
+		//ratelimitHandler,
+		handler,
 		tlsConfigs...)
 }
 
@@ -74,13 +75,21 @@ func startEntrypointServer(rootCtx context.Context, entryCfg *EntrypointConfig, 
 	log.Infof("entrypoint server %s listens at %s", chain, entryCfg.Bind)
 
 	err := startServer(rootCtx, entryCfg.Bind,
-		NewHttpAuthHandler(
-			serverCfg.Auth, handler),
+		handlerChains(
+			rootCtx,
+			serverCfg.Auth,
+			handler),
 		entryCfg.TLS, serverCfg.TLS)
 
 	if err != nil {
 		log.Println("entry point error ---", err)
 	}
+}
+
+func handlerChains(rootCtx context.Context, authCfg *AuthConfig, next http.Handler) http.Handler {
+	h := NewRatelimitHandler(rootCtx, next)
+	h1 := NewHttpAuthHandler(authCfg, h)
+	return h1
 }
 
 func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
@@ -92,19 +101,26 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 
 	rootCtx = serverCfg.AddTo(rootCtx)
 	serverMux := http.NewServeMux()
-	serverMux.Handle("/metrics", NewHttpAuthHandler(
+	serverMux.Handle("/metrics", handlerChains(
+		rootCtx,
 		serverCfg.Metrics.Auth,
 		promhttp.Handler()))
-	serverMux.Handle("/jsonrpc/", NewHttpAuthHandler(
+	serverMux.Handle("/jsonrpc/", handlerChains(
+		rootCtx,
 		serverCfg.Auth,
 		NewJSONRPCRelayer(rootCtx)))
-	serverMux.Handle("/jsonrpc-ws/", NewHttpAuthHandler(
+
+	serverMux.Handle("/jsonrpc-ws/", handlerChains(
+		rootCtx,
 		serverCfg.Auth,
 		NewJSONRPCWSRelayer(rootCtx)))
-	serverMux.Handle("/rest/", NewHttpAuthHandler(
+
+	serverMux.Handle("/rest/", handlerChains(
+		rootCtx,
 		serverCfg.Auth,
 		NewRESTRelayer(rootCtx)))
-	serverMux.Handle("/graphql/", NewHttpAuthHandler(
+	serverMux.Handle("/graphql/", handlerChains(
+		rootCtx,
 		serverCfg.Auth,
 		NewGraphQLRelayer(rootCtx)))
 
@@ -138,7 +154,7 @@ func NewRatelimitHandler(rootCtx context.Context, next http.Handler) *RatelimitH
 
 func (self *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	serverCfg := ServerConfigFromContext(self.rootCtx)
-	ok, err := checkIPRatelimit(r, serverCfg.Ratelimit.IP)
+	ok, err := checkRatelimit(r, serverCfg.Ratelimit)
 	if err != nil {
 		requestLog(r).Errorf("error while checking ratelimit %s", err)
 		w.WriteHeader(500)
@@ -151,12 +167,23 @@ func (self *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func checkIPRatelimit(r *http.Request, limit int) (bool, error) {
+func checkRatelimit(r *http.Request, ratelimitCfg RatelimitConfig) (bool, error) {
 	m := nodemuxcore.GetMultiplexer()
 	if c, ok := m.RedisClient("ratelimit"); ok {
+		// per user based ratelimit
+		if v := r.Context().Value("username"); r != nil {
+			if username, ok := v.(string); ok && username != "" {
+				return ratelimit.Incr(
+					r.Context(),
+					c, "user-"+username,
+					ratelimitCfg.User)
+
+			}
+		}
+		// per IP based ratelimit
 		return ratelimit.Incr(
 			r.Context(),
-			c, r.RemoteAddr, limit)
+			c, r.RemoteAddr, ratelimitCfg.IP)
 	}
 	return true, nil
 }
