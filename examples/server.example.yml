@@ -4,6 +4,8 @@ bind: 127.0.0.1:9990
 # auth:
 #   bearer:
 #     token: beartoken
+#   jwt:
+#     secret: secretSecretToken
 # tls:
 #   certfile: localhost.crt
 #   keyfile: localhost.key

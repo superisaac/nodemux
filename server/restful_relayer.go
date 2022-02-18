@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 	"regexp"
@@ -28,7 +27,7 @@ func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if chain.Empty() {
 		matches := self.regex.FindStringSubmatch(r.URL.Path)
 		if len(matches) < 4 {
-			log.Warnf("http url pattern failed")
+			requestLog(r).Warnf("http url pattern failed")
 			w.WriteHeader(404)
 			w.Write([]byte("not found"))
 			return
@@ -52,7 +51,7 @@ func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	err := delegator.DelegateREST(self.rootCtx, m, chain, method, w, r)
 	if err != nil {
-		log.Warnf("error delegate rest %s", err)
+		requestLog(r).Warnf("error delegate rest %s", err)
 		w.WriteHeader(500)
 		w.Write([]byte("server error"))
 	}

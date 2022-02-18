@@ -15,17 +15,22 @@ import (
 // }
 
 type BasicAuthConfig struct {
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
+	Username string
+	Password string
 }
 
 type BearerAuthConfig struct {
-	Token string `yaml:"token"`
+	Token string
+}
+
+type JwtAuthConfig struct {
+	Secret string
 }
 
 type AuthConfig struct {
 	Basic  *BasicAuthConfig  `yaml:"basic,omitempty"`
 	Bearer *BearerAuthConfig `yaml:"bearer,omitempty"`
+	Jwt    *JwtAuthConfig
 }
 
 type MetricsConfig struct {
@@ -149,11 +154,17 @@ func (self *AuthConfig) validateValues() error {
 	if self == nil {
 		return nil
 	}
+
 	if self.Bearer != nil && self.Bearer.Token == "" {
 		return errors.New("bearer token cannot be empty")
 	}
+
 	if self.Basic != nil && (self.Basic.Username == "" || self.Basic.Password == "") {
 		return errors.New("basic username and password cannot be empty")
+	}
+
+	if self.Jwt != nil && self.Jwt.Secret != "" {
+		return errors.New("jwt has no secret")
 	}
 	return nil
 }

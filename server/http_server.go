@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonz/http"
@@ -10,6 +9,12 @@ import (
 	"github.com/superisaac/nodemux/ratelimit"
 	"net/http"
 )
+
+func requestLog(r *http.Request) *log.Entry {
+	return log.WithFields(log.Fields{
+		"remoteAddr": r.RemoteAddr,
+	})
+}
 
 func startServer(rootCtx context.Context, bind string, handler http.Handler, tlsConfigs ...*jsonzhttp.TLSConfig) error {
 	ratelimitHandler := NewRatelimitHandler(rootCtx, handler)
@@ -118,51 +123,6 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	}
 }
 
-// Auth handler
-type HttpAuthHandler struct {
-	authConfig *AuthConfig
-	next       http.Handler
-}
-
-func NewHttpAuthHandler(authConfig *AuthConfig, next http.Handler) *HttpAuthHandler {
-	return &HttpAuthHandler{authConfig: authConfig, next: next}
-}
-
-func (self HttpAuthHandler) TryAuth(r *http.Request) bool {
-	if self.authConfig == nil {
-		return true
-	}
-
-	if self.authConfig.Basic != nil {
-		basicAuth := self.authConfig.Basic
-		if username, password, ok := r.BasicAuth(); ok {
-			if basicAuth.Username == username && basicAuth.Password == password {
-				return true
-			}
-		}
-	}
-
-	if self.authConfig.Bearer != nil && self.authConfig.Bearer.Token != "" {
-		bearerAuth := self.authConfig.Bearer
-		authHeader := r.Header.Get("Authorization")
-		expect := fmt.Sprintf("Bearer %s", bearerAuth.Token)
-		if authHeader == expect {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (self *HttpAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if !self.TryAuth(r) {
-		w.WriteHeader(401)
-		w.Write([]byte("auth failed!\n"))
-		return
-	}
-	self.next.ServeHTTP(w, r)
-}
-
 // handle ratelimit
 type RatelimitHandler struct {
 	rootCtx context.Context
@@ -180,7 +140,7 @@ func (self *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	serverCfg := ServerConfigFromContext(self.rootCtx)
 	ok, err := checkIPRatelimit(r, serverCfg.Ratelimit.IP)
 	if err != nil {
-		log.Errorf("error while checking ratelimit %s", err)
+		requestLog(r).Errorf("error while checking ratelimit %s", err)
 		w.WriteHeader(500)
 		w.Write([]byte("server error"))
 	} else if !ok {

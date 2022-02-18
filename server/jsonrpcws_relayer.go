@@ -28,7 +28,7 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 		rootCtx: rootCtx,
 	}
 
-	rpcServer := jsonzhttp.NewWSServer()
+	rpcServer := jsonzhttp.NewWSServer(rootCtx)
 	rpcServer.Handler.OnClose(func(r *http.Request) {
 		relayer.onClose(r)
 	})
