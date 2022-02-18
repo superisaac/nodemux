@@ -32,7 +32,7 @@ func startMetricsServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		return
 	}
 
-	handler := NewHttpAuthHandler(
+	handler := jsonzhttp.NewHttpAuthHandler(
 		serverCfg.Metrics.Auth,
 		promhttp.Handler())
 	err := startServer(
@@ -86,9 +86,9 @@ func startEntrypointServer(rootCtx context.Context, entryCfg *EntrypointConfig, 
 	}
 }
 
-func handlerChains(rootCtx context.Context, authCfg *AuthConfig, next http.Handler) http.Handler {
+func handlerChains(rootCtx context.Context, authCfg *jsonzhttp.AuthConfig, next http.Handler) http.Handler {
 	h := NewRatelimitHandler(rootCtx, next)
-	h1 := NewHttpAuthHandler(authCfg, h)
+	h1 := jsonzhttp.NewHttpAuthHandler(authCfg, h)
 	return h1
 }
 

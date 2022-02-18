@@ -14,37 +14,18 @@ import (
 // 	Keyfile  string `yaml:"key"`
 // }
 
-type BasicAuthConfig struct {
-	Username string
-	Password string
-}
-
-type BearerAuthConfig struct {
-	Token string
-}
-
-type JwtAuthConfig struct {
-	Secret string
-}
-
-type AuthConfig struct {
-	Basic  *BasicAuthConfig  `yaml:"basic,omitempty"`
-	Bearer *BearerAuthConfig `yaml:"bearer,omitempty"`
-	Jwt    *JwtAuthConfig
-}
-
 type MetricsConfig struct {
 	Bind string
-	Auth *AuthConfig          `yaml:"auth,omitempty"`
-	TLS  *jsonzhttp.TLSConfig `yaml:"tls:omitempty"`
+	Auth *jsonzhttp.AuthConfig `yaml:"auth,omitempty"`
+	TLS  *jsonzhttp.TLSConfig  `yaml:"tls:omitempty"`
 }
 
 type EntrypointConfig struct {
 	Chain   string
 	Network string
 	Bind    string
-	Auth    *AuthConfig          `yaml:"auth,omitempty"`
-	TLS     *jsonzhttp.TLSConfig `yaml:"tls,omitempty"`
+	Auth    *jsonzhttp.AuthConfig `yaml:"auth,omitempty"`
+	TLS     *jsonzhttp.TLSConfig  `yaml:"tls,omitempty"`
 }
 
 type RatelimitConfig struct {
@@ -53,12 +34,12 @@ type RatelimitConfig struct {
 }
 
 type ServerConfig struct {
-	Bind        string               `yaml:"version,omitempty"`
-	TLS         *jsonzhttp.TLSConfig `yaml:"tls,omitempty"`
-	Metrics     *MetricsConfig       `yaml:"metrics,omitempty"`
-	Auth        *AuthConfig          `yaml:"auth,omitempty"`
-	Entrypoints []*EntrypointConfig  `yaml:"entrypoints,omitempty"`
-	Ratelimit   RatelimitConfig      `yaml:"ratelimit,omitempty"`
+	Bind        string                `yaml:"version,omitempty"`
+	TLS         *jsonzhttp.TLSConfig  `yaml:"tls,omitempty"`
+	Metrics     *MetricsConfig        `yaml:"metrics,omitempty"`
+	Auth        *jsonzhttp.AuthConfig `yaml:"auth,omitempty"`
+	Entrypoints []*EntrypointConfig   `yaml:"entrypoints,omitempty"`
+	Ratelimit   RatelimitConfig       `yaml:"ratelimit,omitempty"`
 }
 
 func NewServerConfig() *ServerConfig {
@@ -124,7 +105,7 @@ func (self *ServerConfig) validateValues() error {
 		}
 	}
 	if self.Auth != nil {
-		err := self.Auth.validateValues()
+		err := self.Auth.ValidateValues()
 		if err != nil {
 			return err
 		}
@@ -154,26 +135,6 @@ func (self *ServerConfig) validateValues() error {
 	return nil
 }
 
-// Auth config
-func (self *AuthConfig) validateValues() error {
-	if self == nil {
-		return nil
-	}
-
-	if self.Bearer != nil && self.Bearer.Token == "" {
-		return errors.New("bearer token cannot be empty")
-	}
-
-	if self.Basic != nil && (self.Basic.Username == "" || self.Basic.Password == "") {
-		return errors.New("basic username and password cannot be empty")
-	}
-
-	if self.Jwt != nil && self.Jwt.Secret != "" {
-		return errors.New("jwt has no secret")
-	}
-	return nil
-}
-
 func (self *EntrypointConfig) validateValues() error {
 	if self == nil {
 		return nil
@@ -194,7 +155,7 @@ func (self *EntrypointConfig) validateValues() error {
 		}
 	}
 	if self.Auth != nil {
-		err := self.Auth.validateValues()
+		err := self.Auth.ValidateValues()
 		if err != nil {
 			return err
 		}
@@ -214,7 +175,7 @@ func (self *MetricsConfig) validateValues() error {
 		}
 	}
 	if self.Auth != nil {
-		err := self.Auth.validateValues()
+		err := self.Auth.ValidateValues()
 		if err != nil {
 			return err
 		}
