@@ -3,7 +3,9 @@
 bind: 127.0.0.1:9990
 # auth:
 #   bearer:
-#     token: beartoken
+#     - token: beartoken
+#       username: bear1
+#     - token: beartoken2
 #   jwt:
 #     secret: secretSecretToken
 # tls:
@@ -15,10 +17,10 @@ ratelimit:
 metrics:
   auth:
     basic:
-      username: sss
-      password: ppp
+      - username: sss
+        password: ppp
     # bearer:
-    #   token: sssppp
+    #   - token: sssppp
 entrypoints:
   - chain: binance-chain
     network: mainnet
