@@ -20,6 +20,7 @@ func InstallAdaptors(factory *nodemuxcore.DelegatorFactory) {
 		"bitcoin-cash", "omnicore",
 		"dashcoin", "zcash")
 
+	factory.RegisterRPC(NewMoneroChain(), "monero")
 	factory.RegisterRPC(NewFilecoinChain(), "filecoin")
 	factory.RegisterRPC(NewHandshakeChain(), "handshake")
 	factory.RegisterRPC(NewCasperChain(), "casper")
