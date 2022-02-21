@@ -21,6 +21,7 @@ func InstallAdaptors(factory *nodemuxcore.DelegatorFactory) {
 		"dashcoin", "zcash")
 
 	factory.RegisterRPC(NewFilecoinChain(), "filecoin")
+	factory.RegisterRPC(NewHandshakeChain(), "handshake")
 	factory.RegisterRPC(NewCasperChain(), "casper")
 	factory.RegisterRPC(NewSolanaChain(), "solana")
 	factory.RegisterRPC(NewStarcoinChain(), "starcoin")

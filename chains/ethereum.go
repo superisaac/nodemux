@@ -1,5 +1,7 @@
 package chains
 
+// docsite: https://ethereum.org/en/developers/docs/apis/json-rpc/
+
 import (
 	"context"
 	"github.com/ethereum/go-ethereum/common/hexutil"

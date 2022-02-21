@@ -1,5 +1,7 @@
 package chains
 
+// docsite: https://developer.bitcoin.org/reference/rpc/
+
 import (
 	"context"
 	"fmt"

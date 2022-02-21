@@ -1,6 +1,6 @@
 package chains
 
-// for rpc doc refer to https://nippycodes.com/coding/casper-node-openrpc/
+// docsite: https://nippycodes.com/coding/casper-node-openrpc/
 
 import (
 	"context"
