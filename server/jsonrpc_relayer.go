@@ -15,9 +15,9 @@ var (
 
 // JSONRPC Handler
 type JSONRPCRelayer struct {
-	rootCtx   context.Context
-	chain     nodemuxcore.ChainRef
-	rpcServer *jsonzhttp.Server
+	rootCtx    context.Context
+	chain      nodemuxcore.ChainRef
+	rpcHandler *jsonzhttp.H1Handler
 }
 
 func NewJSONRPCRelayer(rootCtx context.Context) *JSONRPCRelayer {
@@ -25,11 +25,11 @@ func NewJSONRPCRelayer(rootCtx context.Context) *JSONRPCRelayer {
 		rootCtx: rootCtx,
 	}
 
-	rpcServer := jsonzhttp.NewServer()
-	rpcServer.Handler.OnMissing(func(req *jsonzhttp.RPCRequest) (interface{}, error) {
+	rpcHandler := jsonzhttp.NewH1Handler(nil)
+	rpcHandler.Actor.OnMissing(func(req *jsonzhttp.RPCRequest) (interface{}, error) {
 		return relayer.delegateRPC(req)
 	})
-	relayer.rpcServer = rpcServer
+	relayer.rpcHandler = rpcHandler
 	return relayer
 }
 
@@ -76,5 +76,5 @@ func (self *JSONRPCRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{},
 }
 
 func (self *JSONRPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	self.rpcServer.ServeHTTP(w, r)
+	self.rpcHandler.ServeHTTP(w, r)
 } // JSONRPCRelayer.ServeHTTP
