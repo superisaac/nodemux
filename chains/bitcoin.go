@@ -65,7 +65,7 @@ func (self BitcoinChain) updateMempoolPresenceCache(ctx context.Context, m *node
 		ep.Chain,
 		txids,
 		ep.Name,
-		time.Second*1800) // expire after 30 mins
+		time.Second*600) // expire after 10 mins
 }
 
 func (self BitcoinChain) updateBlockPresenceCache(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint, blockHash string) {
