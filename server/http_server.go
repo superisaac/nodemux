@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsonz/http"
@@ -173,10 +174,27 @@ func checkRatelimit(r *http.Request, ratelimitCfg RatelimitConfig) (bool, error)
 		// per user based ratelimit
 		if v := r.Context().Value("username"); r != nil {
 			if username, ok := v.(string); ok && username != "" {
+				limit := ratelimitCfg.User
+
+				// check against usersettings for ratelimit
+				var settingsT struct {
+					Ratelimit int
+				}
+				err := jsonzhttp.DecodeUserSettings(username, &settingsT)
+				if err != nil {
+					if !errors.Is(err, jsonzhttp.NoUserSettings) {
+						log.Warnf("error decode user settings %s", err)
+					}
+				} else if settingsT.Ratelimit > 0 {
+					limit = settingsT.Ratelimit
+				} else {
+					log.Warnf("user settings.Ratelimit %d <= 0", settingsT.Ratelimit)
+				}
+
 				return ratelimit.Incr(
 					r.Context(),
 					c, "user-"+username,
-					ratelimitCfg.User)
+					limit)
 
 			}
 		}
