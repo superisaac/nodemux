@@ -2,9 +2,9 @@ package server
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
+	"github.com/superisaac/jsonz"
 	"github.com/superisaac/jsonz/http"
 	"github.com/superisaac/nodemux/core"
 	"github.com/superisaac/nodemux/ratelimit"
@@ -172,19 +172,17 @@ func checkRatelimit(r *http.Request, ratelimitCfg RatelimitConfig) (bool, error)
 	m := nodemuxcore.GetMultiplexer()
 	if c, ok := m.RedisClient("ratelimit"); ok {
 		// per user based ratelimit
-		if v := r.Context().Value("username"); r != nil {
-			if username, ok := v.(string); ok && username != "" {
+		if v := r.Context().Value("authInfo"); r != nil {
+			if authInfo, ok := v.(*jsonzhttp.AuthInfo); ok && authInfo != nil && authInfo.Settings != nil {
 				limit := ratelimitCfg.User
 
 				// check against usersettings for ratelimit
 				var settingsT struct {
 					Ratelimit int
 				}
-				err := jsonzhttp.DecodeUserSettings(username, &settingsT)
+				err := jsonz.DecodeInterface(authInfo.Settings, &settingsT)
 				if err != nil {
-					if !errors.Is(err, jsonzhttp.NoUserSettings) {
-						log.Warnf("error decode user settings %s", err)
-					}
+					return false, err
 				} else if settingsT.Ratelimit > 0 {
 					limit = settingsT.Ratelimit
 				} else {
@@ -193,7 +191,8 @@ func checkRatelimit(r *http.Request, ratelimitCfg RatelimitConfig) (bool, error)
 
 				return ratelimit.Incr(
 					r.Context(),
-					c, "user-"+username,
+					c,
+					"u"+authInfo.Username,
 					limit)
 
 			}
