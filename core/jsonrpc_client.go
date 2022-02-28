@@ -10,7 +10,7 @@ import (
 
 func (self *Endpoint) connectRPC() {
 	if self.rpcClient == nil {
-		c, err := jsonzhttp.GetClient(self.Config.Url)
+		c, err := jsonzhttp.NewClient(self.Config.Url)
 		if err != nil {
 			panic(err)
 		}
