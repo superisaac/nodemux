@@ -172,8 +172,8 @@ func MultiplexerFromConfig(nbcfg *NodemuxConfig) *Multiplexer {
 	//if store, ok := nbcfg.Stores["default"]; ok && store.Scheme() == "redis" {
 	if rdb, ok := m.RedisClient("default"); ok {
 		// sync source must be a redis URL
-		log.Infof("using redis store")
-		chainHub, err := NewRedisChainhub(rdb)
+		log.Infof("using redis stream store")
+		chainHub, err := NewRedisStreamChainhub(rdb)
 		if err != nil {
 			panic(err)
 		}

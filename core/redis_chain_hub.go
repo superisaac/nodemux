@@ -126,8 +126,7 @@ func (self *RedisChainhub) Run(rootCtx context.Context) error {
 
 	go self.listen(ctx)
 
-	// run publish
-	//rdb := redis.NewClient(self.redisOptions)
+	// run publish and other jobs
 	networkFailure := 0
 	for {
 		select {
@@ -139,7 +138,7 @@ func (self *RedisChainhub) Run(rootCtx context.Context) error {
 				return nil
 			}
 			err := self.subscribe(ctx, cmd.Ch)
-			networkFailure, err = handleRedisError(networkFailure, err, "subscribe")
+			networkFailure, err = self.handleRedisError(networkFailure, err, "subscribe")
 			if err != nil {
 				return err
 			}
@@ -156,7 +155,7 @@ func (self *RedisChainhub) Run(rootCtx context.Context) error {
 			}
 
 			err := self.publishChainStatus(ctx, chainSt)
-			networkFailure, err = handleRedisError(networkFailure, err, "publish")
+			networkFailure, err = self.handleRedisError(networkFailure, err, "publish")
 			if err != nil {
 				return err
 			}
@@ -182,7 +181,7 @@ func (self *RedisChainhub) publishChainStatus(ctx context.Context, chainSt Chain
 	return nil
 }
 
-func handleRedisError(networkFailure int, err error, fn string) (int, error) {
+func (self RedisChainhub) handleRedisError(networkFailure int, err error, fn string) (int, error) {
 	if err != nil {
 		var opErr *net.OpError
 		if errors.As(err, &opErr) {

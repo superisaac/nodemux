@@ -21,4 +21,7 @@ govet:
 gofmt:
 	go fmt ./...
 
-.PHONY: build all test govet gofmt dist
+run-example: bin/nodemux
+	bin/nodemux -f examples/nodemux.example.yml -server examples/server.example.yml
+
+.PHONY: build all test govet gofmt dist run-example
