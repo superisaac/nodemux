@@ -40,5 +40,5 @@ func (self *FilecoinChain) GetChaintip(context context.Context, b *nodemuxcore.M
 
 func (self *FilecoinChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
 	// Custom relay methods can be defined here
-	return b.DefaultRelayMessage(rootCtx, chain, reqmsg, -3)
+	return b.DefaultRelayRPC(rootCtx, chain, reqmsg, -3)
 }

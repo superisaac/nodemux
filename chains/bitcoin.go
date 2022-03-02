@@ -119,10 +119,27 @@ func (self *BitcoinChain) GetChaintip(ctx context.Context, m *nodemuxcore.Multip
 
 func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
 	if ep, ok := presenceCacheMatchRequest(
-		ctx, m, chain, reqmsg, 0,
+		ctx, m, chain, reqmsg,
 		"gettransaction",
 		"getrawtransaction"); ok {
 		return ep.CallRPC(ctx, reqmsg)
 	}
-	return m.DefaultRelayMessage(ctx, chain, reqmsg, -2)
+
+	if reqmsg.Method == "getblockhash" {
+		if h, ok := self.findBlockHeight(reqmsg); ok {
+			return m.DefaultRelayRPC(ctx, chain, reqmsg, h)
+		}
+	}
+	return m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
+}
+
+func (self *BitcoinChain) findBlockHeight(reqmsg *jsonz.RequestMessage) (int, bool) {
+	// the first argument is a integer number
+	var bh struct {
+		Height int
+	}
+	if err := jsonz.DecodeParams(reqmsg.Params, &bh); err == nil && bh.Height > 0 {
+		return bh.Height, true
+	}
+	return 0, false
 }

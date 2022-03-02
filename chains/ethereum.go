@@ -78,11 +78,34 @@ func (self *EthereumChain) GetChaintip(context context.Context, m *nodemuxcore.M
 }
 
 func (self *EthereumChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
-	if ep, ok := presenceCacheMatchRequest(
-		ctx, m, chain, reqmsg, 0,
+	if endpoint, ok := presenceCacheMatchRequest(
+		ctx, m, chain, reqmsg,
 		"eth_getTransactionByHash",
 		"eth_getTransactionReceipt"); ok {
-		return ep.CallRPC(ctx, reqmsg)
+		return endpoint.CallRPC(ctx, reqmsg)
 	}
-	return m.DefaultRelayMessage(ctx, chain, reqmsg, -5)
+
+	if reqmsg.Method == "eth_getBlockByNumber" {
+		if h, ok := self.findBlockHeight(reqmsg); ok {
+			return m.DefaultRelayRPC(ctx, chain, reqmsg, h)
+		}
+	}
+	return m.DefaultRelayRPC(ctx, chain, reqmsg, -5)
+}
+
+func (self *EthereumChain) findBlockHeight(reqmsg *jsonz.RequestMessage) (int, bool) {
+	// the first argument is a hexlified block number or latest or pending
+	var bh struct {
+		Height string
+	}
+	if err := jsonz.DecodeParams(reqmsg.Params, &bh); err == nil && bh.Height != "" {
+		if bh.Height == "latest" || bh.Height == "pending" {
+			return 0, true
+		}
+		if height, err := hexutil.DecodeUint64(bh.Height); err == nil {
+			return int(height), true
+		}
+	}
+	return 0, false
+
 }

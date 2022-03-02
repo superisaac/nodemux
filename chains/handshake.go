@@ -65,5 +65,5 @@ func (self *HandshakeChain) GetChaintip(ctx context.Context, m *nodemuxcore.Mult
 }
 
 func (self *HandshakeChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
-	return m.DefaultRelayMessage(ctx, chain, reqmsg, -2)
+	return m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
 }

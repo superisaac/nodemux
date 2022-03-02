@@ -67,9 +67,9 @@ func presenceCacheGetEndpoint(ctx context.Context, m *nodemuxcore.Multiplexer, c
 }
 
 // match a request message against a given methods list, if matched
-// and the nparam'th param is txid then query the cache for an
+// and the firsst param is txid then query the cache for an
 // endpoint that has the txid.
-func presenceCacheMatchRequest(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage, nparams int, methods ...string) (*nodemuxcore.Endpoint, bool) {
+func presenceCacheMatchRequest(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage, methods ...string) (*nodemuxcore.Endpoint, bool) {
 	found := false
 	for _, mth := range methods {
 		if reqmsg.Method == mth {
@@ -80,11 +80,17 @@ func presenceCacheMatchRequest(ctx context.Context, m *nodemuxcore.Multiplexer, 
 	if !found {
 		return nil, false
 	}
-	if len(reqmsg.Params) <= nparams {
-		return nil, false
+
+	// struct to extract txid from params
+	var txidExtractor struct {
+		Txid string
+		// Other params are skiped
 	}
-	if txid, ok := reqmsg.Params[nparams].(string); ok {
-		return presenceCacheGetEndpoint(ctx, m, chain, txid)
+	err := jsonz.DecodeParams(reqmsg.Params, &txidExtractor)
+	if err != nil {
+		reqmsg.Log().Warnf("error decoding params for txid: %s", err)
+	} else if txidExtractor.Txid != "" {
+		return presenceCacheGetEndpoint(ctx, m, chain, txidExtractor.Txid)
 	}
 	return nil, false
 }

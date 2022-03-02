@@ -99,14 +99,14 @@ func (self *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightS
 			ep := eps.items[idx]
 
 			height := heightSpec
-			if heightSpec < 0 {
+			if heightSpec <= 0 {
 				height = eps.maxTipHeight + heightSpec
 			}
 			if ep.Unhealthy {
 				continue
 			}
 
-			if height >= 0 {
+			if height > 0 {
 				if ep.Chaintip == nil || ep.Chaintip.Height < height {
 					continue
 				}
@@ -197,7 +197,7 @@ func (self *Multiplexer) LoadFromConfig(nbcfg *NodemuxConfig) {
 	}
 }
 
-func (self *Multiplexer) DefaultRelayMessage(rootCtx context.Context, chain ChainRef, reqmsg *jsonz.RequestMessage, overHeight int) (jsonz.Message, error) {
+func (self *Multiplexer) DefaultRelayRPC(rootCtx context.Context, chain ChainRef, reqmsg *jsonz.RequestMessage, overHeight int) (jsonz.Message, error) {
 	ep, found := self.SelectOverHeight(chain, reqmsg.Method, overHeight)
 	if !found {
 		return jsonz.ErrMethodNotFound.ToMessage(reqmsg), nil
