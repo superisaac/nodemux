@@ -11,7 +11,6 @@ import (
 // configs
 type EndpointConfig struct {
 	Chain       string            `yaml:"chain"`
-	Network     string            `yaml:"network"`
 	Url         string            `yaml:"url"`
 	Headers     map[string]string `yaml:"headers,omitempty"`
 	SkipMethods []string          `yaml:"skip_methods,omitempty"`
@@ -69,9 +68,6 @@ func (self *NodemuxConfig) validateValues() error {
 	for _, epcfg := range self.Endpoints {
 		if epcfg.Chain == "" {
 			return errors.New("empty chain")
-		}
-		if epcfg.Network == "" {
-			return errors.New("empty network")
 		}
 		if epcfg.Url == "" {
 			return errors.New("empty server url")

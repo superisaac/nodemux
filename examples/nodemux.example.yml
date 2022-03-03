@@ -9,75 +9,61 @@ stores:
     url: redis://localhost:6379/2
 endpoints:
   # bsc01:
-  #   chain: "binance-chain"
-  #   network: mainnet
+  #   chain: "binance-chain/mainnet"
   #   url: https://bsc-dataseed1.defibit.io
   #   # headers:
   #   #   Authorization: Bearer token911
 
   # bsc02:
-  #   chain: "binance-chain"
-  #   network: mainnet
+  #   chain: "binance-chain/mainnet"
   #   url: https://bsc-dataseed2.defibit.io
 
   luna01:
-    chain: luna
-    network: mainnet
+    chain: luna/mainnet
     # from https://docs.terra.money/docs/develop/how-to/endpoints.html
     url: https://blockdaemon-terra-lcd.api.bdnodes.net:1317
 
   # mina01:
-  #   chain: mina
-  #   network: mainnet
+  #   chain: mina/mainnet
   #   #url: https://graphql.minaexplorer.com
 
   # stc01:
-  #   chain: starcoin
-  #   network: main
+  #   chain: starcoin/main
   #   url: https://main-seed.starcoin.org
 
   # tron01:
-  #   chain: tron-grid
-  #   network: mainnet
+  #   chain: tron-grid/mainnet
   #   url: https://api.shasta.trongrid.io
 
   # eosio01:
-  #   chain: eosio
-  #   network: mainnet
+  #   chain: eosio/mainnet
   #   url: https://api.eosn.io
 
   # algorand01:
-  #   chain: algorand
-  #   network: mainnet
+  #   chain: algorand/mainnet
   #   url: https://api.algoexplorer.io
 
   # kadena01:
-  #   chain: kadena
-  #   network: mainnet
+  #   chain: kadena/mainnet
   #   url: https://fr2.chainweb.com
 
   # fantom01:
-  #   chain: fantom
+  #   chain: fantom/mainnet
   #   description: fantom graphql server
-  #   network: mainnet
   #   url: https://xapi.fantom.network/
 
   # fantom02:
-  #   chain: fantom-web3
-  #   network: mainnet
+  #   chain: fantom-web3/mainnet
   #   url: https://rpc.fantom.network/
 
   # fantom03:
-  #   chain: fantom-web3
-  #   network: mainnet
+  #   chain: fantom-web3/mainnet
   #   url: wss://wsapi.fantom.network
 
   # eth01:
-  #   chain: ethereum
-  #   network: mainnet
+  #   chain: ethereum/mainnet
   #   url: https://mainnet.infura.io/
 
   # eth02:
-  #   chain: ethereum
-  #   network: mainnet
+  #   chain: ethereum/mainnet
   #   url: wss://eth-mainnet.ws.alchemyapi.io/ws/demo

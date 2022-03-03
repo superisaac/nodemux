@@ -93,6 +93,7 @@ func (self *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightS
 
 	if eps, ok := self.chainIndex[chain]; ok {
 		for i := 0; i < len(eps.items); i++ {
+			// round-robin selection
 			idx := eps.cursor % len(eps.items)
 			eps.cursor += 1
 

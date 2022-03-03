@@ -36,10 +36,10 @@ func (self EndpointSet) prometheusLabels(chain string, network string) prometheu
 
 /// Create an endpoint instance
 func NewEndpoint(name string, epcfg EndpointConfig) *Endpoint {
-	chain := ChainRef{
-		Brand:   epcfg.Chain,
-		Network: epcfg.Network}
-
+	chain, err := ParseChain(epcfg.Chain)
+	if err != nil {
+		panic(err)
+	}
 	ep := &Endpoint{
 		Config:    epcfg,
 		Name:      name,
