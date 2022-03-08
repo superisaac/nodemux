@@ -25,15 +25,15 @@ func newDelegatorFactory() *DelegatorFactory {
 	}
 }
 
-func (self DelegatorFactory) SupportChain(chain string) (bool, int) {
-	if _, ok := self.rpcDelegators[chain]; ok {
+func (self DelegatorFactory) SupportChain(brand string) (bool, int) {
+	if _, ok := self.rpcDelegators[brand]; ok {
 		return true, ApiJSONRPC
 	}
-	if _, ok := self.restDelegators[chain]; ok {
+	if _, ok := self.restDelegators[brand]; ok {
 		return true, ApiREST
 	}
 
-	if _, ok := self.graphDelegators[chain]; ok {
+	if _, ok := self.graphDelegators[brand]; ok {
 		return true, ApiGraphQL
 	}
 	return false, 0
