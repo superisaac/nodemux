@@ -7,6 +7,7 @@ import (
 	"github.com/superisaac/jsonz/http"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
+	"net/url"
 	"regexp"
 )
 
@@ -93,13 +94,17 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 		// the first time a websocket connection connects
 		// select an available dest websocket connection
 		// make a pair (session, destWs)
-		destWs := jsonzhttp.NewWSClient(ep.Config.Url)
+		u, err := url.Parse(ep.Config.Url)
+		if err != nil {
+			return nil, err
+		}
+		destWs := jsonzhttp.NewWSClient(u)
 		destWs.OnMessage(func(m jsonz.Message) {
 			session.Send(m)
 		})
 		wsPairs[r] = destWs
 		metricsWSPairsCount.Set(float64(len(wsPairs)))
-		err := destWs.Send(self.rootCtx, msg)
+		err = destWs.Send(self.rootCtx, msg)
 		return nil, err
 	} else if msg.IsRequest() {
 		// if no dest websocket connection is available and msg is a request message

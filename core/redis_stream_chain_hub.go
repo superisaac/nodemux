@@ -114,12 +114,15 @@ func (self *RedisStreamChainhub) listen(rootCtx context.Context) error {
 			// get the last item
 			xmsgs, err = self.rdb.XRevRangeN(ctx, streamsKey, "+", "-", 1).Result()
 		} else {
-			xmsgs, err = self.rdb.XRangeN(ctx, streamsKey, lastID, "+", 10).Result()
+			// open start by prefixing "("
+			xmsgs, err = self.rdb.XRangeN(ctx, streamsKey, "("+lastID, "+", 10).Result()
 		}
 		if err != nil {
 			return errors.Wrap(err, "read range n")
 		}
+		log.Debugf("refdis stream got %d msgs, %s", len(xmsgs), lastID)
 		if len(xmsgs) <= 0 {
+			// sleep for a while when no new streaming data
 			time.Sleep(time.Millisecond * 3)
 		} else {
 			for _, xmsg := range xmsgs {
@@ -201,7 +204,7 @@ func (self *RedisStreamChainhub) publishChainStatus(ctx context.Context, chainSt
 		return errors.Wrap(err, "redis.XAdd")
 	}
 
-	log.Infof("xadd got id %s", id)
+	log.Debugf("xadd got id %s", id)
 	return nil
 }
 
