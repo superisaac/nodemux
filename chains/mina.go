@@ -30,6 +30,10 @@ func (self MinaChain) GetClientVersion(context context.Context, ep *nodemuxcore.
 	return "", nil
 }
 
+func (self MinaChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+	return true, nil
+}
+
 func (self *MinaChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	q := `{
   bestChain(maxLength: 1){

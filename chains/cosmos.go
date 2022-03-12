@@ -42,6 +42,10 @@ func (self CosmosChain) GetClientVersion(context context.Context, ep *nodemuxcor
 	return "", nil
 }
 
+func (self CosmosChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+	return true, nil
+}
+
 func (self *CosmosChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res cosmosBlock
 	err := ep.GetJson(context,

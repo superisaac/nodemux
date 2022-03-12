@@ -45,6 +45,10 @@ func (self BitcoinChain) GetClientVersion(ctx context.Context, ep *nodemuxcore.E
 	return v, nil
 }
 
+func (self BitcoinChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+	return true, nil
+}
+
 // update txid cache from mempool
 func (self BitcoinChain) updateMempoolPresenceCache(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
 	c, ok := m.RedisClient(presenceCacheRedisKey(ep.Chain))

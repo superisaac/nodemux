@@ -46,6 +46,10 @@ func (self Multiplexer) Get(epName string) (*Endpoint, bool) {
 	return ep, ok
 }
 
+func (self Multiplexer) Chainhub() Chainhub {
+	return self.chainHub
+}
+
 func (self *Multiplexer) Add(endpoint *Endpoint) bool {
 	if _, exist := self.nameIndex[endpoint.Name]; exist {
 		// already exist

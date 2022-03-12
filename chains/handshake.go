@@ -42,6 +42,10 @@ func (self HandshakeChain) GetClientVersion(ctx context.Context, ep *nodemuxcore
 	return info.Version, nil
 }
 
+func (self HandshakeChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+	return true, nil
+}
+
 func (self *HandshakeChain) GetChaintip(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		1, "getchaintips", nil)

@@ -59,17 +59,21 @@ func (self *Multiplexer) updateStatus(cs ChainStatus) error {
 	if !ok {
 		return nil
 	}
+	logger := ep.Log()
 	if ep.Chain != cs.Chain {
-		ep.Log().Warnf("chain status mismatch, %#v", cs)
+		logger.Warnf("chain status mismatch, %#v", cs)
 	}
-	ep.Unhealthy = cs.Unhealthy
+	if cs.Unhealthy != ep.Unhealthy {
+		ep.Unhealthy = cs.Unhealthy
+		logger.Infof("unhealthy set to %t", cs.Unhealthy)
+	}
 
 	var healthiness float64 = 1
 	if ep.Unhealthy {
 		healthiness = 0
 	}
 	metricsEndpointHealthy.With(ep.prometheusLabels()).Set(healthiness)
-	logger := ep.Log()
+
 	block := cs.Chaintip
 	if block == nil {
 		return nil
@@ -79,24 +83,41 @@ func (self *Multiplexer) updateStatus(cs ChainStatus) error {
 
 	if ep.Chaintip != nil {
 		if ep.Chaintip.Height > block.Height {
-			logger.Warnf("new tip height %d < old tip height %d", block.Height, ep.Chaintip.Height)
+			logger.Warnf("new tip height %d < old tip height %d",
+				block.Height,
+				ep.Chaintip.Height)
 			heightChanged = true
 		} else if ep.Chaintip.Height == block.Height &&
 			ep.Chaintip.Hash != block.Hash {
-			logger.Warnf("tip hash changed from %s to %s", ep.Chaintip.Hash, block.Hash)
+			logger.Warnf("tip hash changed from %s to %s",
+				ep.Chaintip.Hash,
+				block.Hash)
 		}
 	}
 	ep.Chaintip = block
-	metricsEndpointBlockTip.With(ep.prometheusLabels()).Set(float64(block.Height))
+
+	metricsEndpointBlockTip.With(
+		ep.prometheusLabels()).Set(
+		float64(block.Height))
+
 	if epset, ok := self.chainIndex[ep.Chain]; ok {
 		if heightChanged {
 			epset.ResetMaxTipHeight()
-			ep.Chain.Log().Infof("height changed, max tip height set to %d", epset.maxTipHeight)
-			metricsBlockTip.With(epset.prometheusLabels(ep.Chain.Brand, ep.Chain.Network)).Set(float64(epset.maxTipHeight))
+			ep.Chain.Log().Infof(
+				"height changed, max tip height set to %d",
+				epset.maxTipHeight)
+			metricsBlockTip.With(
+				epset.prometheusLabels(ep.Chain)).Set(
+				float64(epset.maxTipHeight))
 		} else if epset.maxTipHeight < block.Height {
 			epset.maxTipHeight = block.Height
-			ep.Chain.Log().Infof("max tip height set to %d %s", epset.maxTipHeight, block.Hash)
-			metricsBlockTip.With(epset.prometheusLabels(ep.Chain.Brand, ep.Chain.Network)).Set(float64(epset.maxTipHeight))
+			ep.Chain.Log().Infof(
+				"max tip height set to %d %s",
+				epset.maxTipHeight,
+				block.Hash)
+			metricsBlockTip.With(
+				epset.prometheusLabels(ep.Chain)).Set(
+				float64(epset.maxTipHeight))
 		}
 	} else {
 		logger.Panicf("cnnot get epset by chain %s", ep.Chain)

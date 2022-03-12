@@ -21,6 +21,10 @@ func (self AlgorandChain) GetClientVersion(context context.Context, ep *nodemuxc
 	return "", nil
 }
 
+func (self AlgorandChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+	return true, nil
+}
+
 func (self *AlgorandChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res algorandChainStatus
 	err := ep.GetJson(context, "/v1/status", nil, &res)

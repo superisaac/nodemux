@@ -31,23 +31,18 @@ func (self *ethereumBlock) Height() int {
 	return self.height
 }
 
-type ethereumStreaming struct {
-	subscribeError error
-	currentBlock   *nodemuxcore.Block
-}
-
 type ethereumHeadSub struct {
 	Subscription string
 	Result       ethereumBlock
 }
 
 type EthereumChain struct {
-	streamings map[string]*ethereumStreaming
+	subTokens map[string]bool
 }
 
 func NewEthereumChain() *EthereumChain {
 	return &EthereumChain{
-		streamings: make(map[string]*ethereumStreaming),
+		subTokens: make(map[string]bool),
 	}
 }
 
@@ -63,11 +58,17 @@ func (self EthereumChain) GetClientVersion(context context.Context, ep *nodemuxc
 	return v, nil
 }
 
-func (self *EthereumChain) GetChaintip(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	if blk, ok := self.fetchStreaming(context, ep); ok && blk != nil {
-		return blk, nil
+func (self EthereumChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+	if !ep.IsWebsocket() {
+		return true, nil
 	}
 
+	// subscribe chaintip from is websocket
+	go self.subscribeChaintip(context, m, ep)
+	return false, nil
+}
+
+func (self *EthereumChain) GetChaintip(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		jsonz.NewUuid(), "eth_getBlockByNumber",
 		[]interface{}{"latest", false})
@@ -127,62 +128,103 @@ func (self *EthereumChain) findBlockHeight(reqmsg *jsonz.RequestMessage) (int, b
 	return 0, false
 }
 
-func (self *EthereumChain) fetchStreaming(context context.Context, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, bool) {
-	if !ep.IsWebsocket() {
-		return nil, false
+func (self *EthereumChain) subscribeChaintip(rootCtx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
+	wsClient, ok := ep.RPCClient().(*jsonzhttp.WSClient)
+	if !ok {
+		ep.Log().Panicf("client is not websocket")
+		return
+		//return errors.New("client is not websocket")
 	}
 
-	if es, ok := self.streamings[ep.Name]; ok {
-		if es.subscribeError != nil {
-			return nil, false
-		}
-		return es.currentBlock, true
-	}
-
-	es := &ethereumStreaming{}
-	self.subscribeChaintip(context, ep, es)
-	return nil, false
-}
-
-func (self *EthereumChain) subscribeChaintip(rootCtx context.Context, ep *nodemuxcore.Endpoint, es *ethereumStreaming) {
-	if wsClient, ok := ep.RPCClient().(*jsonzhttp.WSClient); ok {
-		var subscribeToken string
-		self.streamings[ep.Name] = es
-
-		submsg := jsonz.NewRequestMessage(
-			jsonz.NewUuid(), "eth_subscribe",
-			[]interface{}{"newHeads"})
-
-		err := ep.UnwrapCallRPC(rootCtx, submsg, &subscribeToken)
-		if err != nil {
-			//panic(err)
-			ep.Log().Warnf("subscribe error %s", err)
-			es.subscribeError = err
+	wsClient.OnMessage(func(msg jsonz.Message) {
+		ntf, ok := msg.(*jsonz.NotifyMessage)
+		if !ok && ntf.Method != "eth_subscription" || len(ntf.Params) == 0 {
 			return
 		}
-		ep.Log().Debugf("eth got subscrib subscribeToken %s", subscribeToken)
-
-		// listening eth_subscription notify
-		wsClient.OnMessage(func(msg jsonz.Message) {
-			ntf, ok := msg.(*jsonz.NotifyMessage)
-			if !ok && ntf.Method != "eth_subscription" || len(ntf.Params) == 0 {
+		var headSub ethereumHeadSub
+		err := jsonz.DecodeInterface(ntf.Params[0], &headSub)
+		if err != nil {
+			ep.Log().Warnf("decode head sub error %s", err)
+		} else {
+			// match Subscription against sub token
+			if _, ok := self.subTokens[headSub.Subscription]; !ok {
+				ep.Log().Warnf("subscription %s not found amount %#v",
+					headSub.Subscription,
+					self.subTokens)
 				return
 			}
-			var headSub ethereumHeadSub
-			err := jsonz.DecodeInterface(ntf.Params[0], &headSub)
-			if err != nil {
-				ep.Log().Warnf("decode head sub error %s", err)
-			} else {
-				// match Subscription against sub token
-				if headSub.Subscription != subscribeToken {
-					ep.Log().Warnf("subscription %s != subscribeToken %s", headSub.Subscription, subscribeToken)
-					return
-				}
-				es.currentBlock = &nodemuxcore.Block{
-					Height: headSub.Result.Height(),
-					Hash:   headSub.Result.Hash,
-				}
+			headBlock := &nodemuxcore.Block{
+				Height: headSub.Result.Height(),
+				Hash:   headSub.Result.Hash,
 			}
-		})
+			bs := nodemuxcore.ChainStatus{
+				EndpointName: ep.Name,
+				Chain:        ep.Chain,
+				Chaintip:     headBlock,
+				Unhealthy:    false,
+			}
+			m.Chainhub().Pub() <- bs
+		}
+	}) // end of wsClient.OnMessage
+
+	for {
+		err := self.connectAndSub(rootCtx, wsClient, m, ep)
+		if err != nil {
+			ep.Log().Warnf("connsub error %s, retrying", err)
+			bs := nodemuxcore.ChainStatus{
+				EndpointName: ep.Name,
+				Chain:        ep.Chain,
+				Unhealthy:    true,
+			}
+			m.Chainhub().Pub() <- bs
+			time.Sleep(2 * time.Second)
+		} else {
+			time.Sleep(1 * time.Second)
+		}
 	}
+}
+
+func (self *EthereumChain) connectAndSub(rootCtx context.Context, wsClient *jsonzhttp.WSClient, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) error {
+	ctx, cancel := context.WithCancel(rootCtx)
+	defer cancel()
+
+	// connect websocket
+	err := wsClient.Connect(ctx)
+	if err != nil {
+		return err
+	}
+
+	// get chaintip using request message
+	headBlock, err := self.GetChaintip(ctx, m, ep)
+	if err != nil {
+		return err
+	}
+	if headBlock != nil {
+		bs := nodemuxcore.ChainStatus{
+			EndpointName: ep.Name,
+			Chain:        ep.Chain,
+			Chaintip:     headBlock,
+			Unhealthy:    false,
+		}
+		m.Chainhub().Pub() <- bs
+	}
+
+	// send sub command
+	var subscribeToken string
+	submsg := jsonz.NewRequestMessage(
+		jsonz.NewUuid(), "eth_subscribe",
+		[]interface{}{"newHeads"})
+
+	err = ep.UnwrapCallRPC(ctx, submsg, &subscribeToken)
+	if err != nil {
+		return err
+	}
+	self.subTokens[subscribeToken] = true
+	ep.Log().Infof("eth got subscrib token %s", subscribeToken)
+	defer func() {
+		delete(self.subTokens, subscribeToken)
+	}()
+
+	return wsClient.Wait()
+
 }

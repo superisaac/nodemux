@@ -71,7 +71,8 @@ type Multiplexer struct {
 
 // Delegators
 type ChaintipDelegator interface {
-	GetChaintip(ctx context.Context, b *Multiplexer, ep *Endpoint) (*Block, error)
+	StartFetch(ctx context.Context, m *Multiplexer, ep *Endpoint) (started bool, err error)
+	GetChaintip(ctx context.Context, m *Multiplexer, ep *Endpoint) (*Block, error)
 	GetClientVersion(ctx context.Context, ep *Endpoint) (string, error)
 }
 

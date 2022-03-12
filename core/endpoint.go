@@ -27,10 +27,9 @@ func (self *EndpointSet) ResetMaxTipHeight() {
 	self.maxTipHeight = maxHeight
 }
 
-func (self EndpointSet) prometheusLabels(chain string, network string) prometheus.Labels {
+func (self EndpointSet) prometheusLabels(chain ChainRef) prometheus.Labels {
 	return prometheus.Labels{
-		"chain":   chain,
-		"network": network,
+		"chain": chain.String(),
 	}
 }
 
@@ -58,16 +57,14 @@ func NewEndpoint(name string, epcfg EndpointConfig) *Endpoint {
 
 func (self Endpoint) Log() *log.Entry {
 	return log.WithFields(log.Fields{
-		"chain":   self.Chain.Brand,
-		"network": self.Chain.Network,
-		"name":    self.Name,
+		"chain": self.Chain.String(),
+		"name":  self.Name,
 	})
 }
 
 func (self Endpoint) prometheusLabels() prometheus.Labels {
 	return prometheus.Labels{
-		"chain":    self.Chain.Brand,
-		"network":  self.Chain.Network,
+		"chain":    self.Chain.String(),
 		"endpoint": self.Name,
 	}
 }

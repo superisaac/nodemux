@@ -29,6 +29,10 @@ func (self SolanaChain) GetClientVersion(context context.Context, ep *nodemuxcor
 	return "", nil
 }
 
+func (self SolanaChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+	return true, nil
+}
+
 func (self *SolanaChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		1, "getLatestBlockhash", []interface{}{})

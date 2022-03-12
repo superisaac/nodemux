@@ -26,6 +26,10 @@ func (self CardanoChain) GetClientVersion(context context.Context, ep *nodemuxco
 	return "", nil
 }
 
+func (self CardanoChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+	return true, nil
+}
+
 func (self *CardanoChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	q := "{blocks(limit:1, order_by:[{number: \"desc\"}]){number hash}}"
 	var res cardanoTipResult

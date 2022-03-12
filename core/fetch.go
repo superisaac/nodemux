@@ -12,7 +12,7 @@ func blockIsEqual(a, b *Block) bool {
 	return a.Height == b.Height && a.Hash == b.Hash
 }
 
-func (self *Multiplexer) fetchChaintip(rootCtx context.Context, ep *Endpoint, lastBlock *Block) (*Block, error) {
+func (self *Multiplexer) getChaintip(rootCtx context.Context, ep *Endpoint, lastBlock *Block) (*Block, error) {
 	logger := ep.Log()
 	delegator := GetDelegatorFactory().GetChaintipDelegator(ep.Chain.Brand)
 	block, err := delegator.GetChaintip(rootCtx, self, ep)
@@ -46,6 +46,16 @@ func (self *Multiplexer) fetchChaintip(rootCtx context.Context, ep *Endpoint, la
 }
 
 func (self *Multiplexer) fetchEndpoint(rootCtx context.Context, ep *Endpoint) {
+	delegator := GetDelegatorFactory().GetChaintipDelegator(ep.Chain.Brand)
+	started, err := delegator.StartFetch(rootCtx, self, ep)
+	if err != nil {
+		panic(err)
+	}
+	if !started {
+		ep.Log().Infof("fetch job not started")
+		return
+	}
+
 	ep.Log().Info("fetch job started")
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
@@ -55,10 +65,11 @@ func (self *Multiplexer) fetchEndpoint(rootCtx context.Context, ep *Endpoint) {
 			break
 		}
 		sleepTime := 1 * time.Second
-		blk, err := self.fetchChaintip(ctx, ep, lastBlock)
+		blk, err := self.getChaintip(ctx, ep, lastBlock)
 		if err != nil {
 			// unhealthy
-			sleepTime = 15 * time.Second
+			ep.Log().Warnf("get chaintip error %s, sleep 15 secs", err)
+			sleepTime = 5 * time.Second
 		}
 		lastBlock = blk
 		select {
