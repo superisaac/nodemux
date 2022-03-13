@@ -36,13 +36,18 @@ type ethereumHeadSub struct {
 	Result       ethereumBlock
 }
 
+type ethereumSubkey struct {
+	EpName string
+	Token  string
+}
+
 type EthereumChain struct {
-	subTokens map[string]bool
+	subTokens map[ethereumSubkey]bool
 }
 
 func NewEthereumChain() *EthereumChain {
 	return &EthereumChain{
-		subTokens: make(map[string]bool),
+		subTokens: make(map[ethereumSubkey]bool),
 	}
 }
 
@@ -147,7 +152,8 @@ func (self *EthereumChain) subscribeChaintip(rootCtx context.Context, m *nodemux
 			ep.Log().Warnf("decode head sub error %s", err)
 		} else {
 			// match Subscription against sub token
-			if _, ok := self.subTokens[headSub.Subscription]; !ok {
+			subkey := ethereumSubkey{EpName: ep.Name, Token: headSub.Subscription}
+			if _, ok := self.subTokens[subkey]; !ok {
 				ep.Log().Warnf("subscription %s not found amount %#v",
 					headSub.Subscription,
 					self.subTokens)
@@ -219,10 +225,15 @@ func (self *EthereumChain) connectAndSub(rootCtx context.Context, wsClient *json
 	if err != nil {
 		return err
 	}
-	self.subTokens[subscribeToken] = true
+	subkey := ethereumSubkey{
+		EpName: ep.Name,
+		Token:  subscribeToken,
+	}
+
+	self.subTokens[subkey] = true
 	ep.Log().Infof("eth got subscrib token %s", subscribeToken)
 	defer func() {
-		delete(self.subTokens, subscribeToken)
+		delete(self.subTokens, subkey)
 	}()
 
 	return wsClient.Wait()
