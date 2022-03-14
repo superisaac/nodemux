@@ -10,6 +10,7 @@ import (
 	//"sync"
 )
 
+// singleton vars and methods
 var (
 	_instance *Multiplexer
 )
@@ -234,4 +235,12 @@ func (self *Multiplexer) DefaultPipeGraphQL(rootCtx context.Context, chain Chain
 	}
 	err := ep.PipeRequest(rootCtx, path, w, r)
 	return err
+}
+
+func (self Multiplexer) ListEndpointInfos() []EndpointInfo {
+	infos := make([]EndpointInfo, 0)
+	for _, ep := range self.nameIndex {
+		infos = append(infos, ep.Info())
+	}
+	return infos
 }

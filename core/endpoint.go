@@ -280,3 +280,12 @@ func (self *Endpoint) GetClientVersion(ctx context.Context) {
 		self.ClientVersion = version
 	}
 }
+
+func (self Endpoint) Info() EndpointInfo {
+	return EndpointInfo{
+		Name:      self.Name,
+		Chain:     self.Chain.String(),
+		Unhealthy: self.Unhealthy,
+		Chaintip:  self.Chaintip,
+	}
+}

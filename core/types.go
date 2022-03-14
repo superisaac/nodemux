@@ -17,7 +17,7 @@ const (
 
 // data structures
 type Block struct {
-	Height int
+	Height int    `json:"height"`
 	Hash   string `json:"hash,omitempty"`
 }
 
@@ -45,6 +45,13 @@ type Endpoint struct {
 
 	// sync status
 	connected bool
+}
+
+type EndpointInfo struct {
+	Name      string `json:"name"`
+	Chain     string `json:"chain"`
+	Unhealthy bool   `json:"unhealthy"`
+	Chaintip  *Block `json:"chaintip,omitempty"`
 }
 
 type EndpointSet struct {

@@ -56,7 +56,12 @@ func Incr(context context.Context, c *redis.Client, field string, limit int, opt
 			return false, err
 		}
 		expiration := opts.Span * 2
-		if err := c.ExpireNX(context, key, expiration).Err(); err != nil {
+		// ExpireNX only works abover version redis 7.0.0
+		//if err := c.ExpireNX(context, key, expiration).Err(); err != nil {
+		//	return false, err
+		//}
+
+		if err := c.Expire(context, key, expiration).Err(); err != nil {
 			return false, err
 		}
 

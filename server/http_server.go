@@ -100,12 +100,23 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	}
 	log.Infof("start http proxy at %s", bind)
 
+	var adminAuth *jsonzhttp.AuthConfig
+	if serverCfg.Admin != nil {
+		adminAuth = serverCfg.Admin.Auth
+	}
+
 	rootCtx = serverCfg.AddTo(rootCtx)
 	serverMux := http.NewServeMux()
 	serverMux.Handle("/metrics", handlerChains(
 		rootCtx,
 		serverCfg.Metrics.Auth,
 		promhttp.Handler()))
+
+	serverMux.Handle("/admin", handlerChains(
+		rootCtx,
+		adminAuth,
+		NewAdminHandler()))
+
 	serverMux.Handle("/jsonrpc/", handlerChains(
 		rootCtx,
 		serverCfg.Auth,

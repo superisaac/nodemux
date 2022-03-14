@@ -20,6 +20,10 @@ type MetricsConfig struct {
 	TLS  *jsonzhttp.TLSConfig  `yaml:"tls:omitempty"`
 }
 
+type AdminConfig struct {
+	Auth *jsonzhttp.AuthConfig `yaml:"auth,omitempty"`
+}
+
 type EntrypointConfig struct {
 	Chain   string
 	Network string
@@ -36,6 +40,7 @@ type RatelimitConfig struct {
 type ServerConfig struct {
 	Bind        string                `yaml:"version,omitempty"`
 	TLS         *jsonzhttp.TLSConfig  `yaml:"tls,omitempty"`
+	Admin       *AdminConfig          `yaml:"admin,omitempty"`
 	Metrics     *MetricsConfig        `yaml:"metrics,omitempty"`
 	Auth        *jsonzhttp.AuthConfig `yaml:"auth,omitempty"`
 	Entrypoints []*EntrypointConfig   `yaml:"entrypoints,omitempty"`

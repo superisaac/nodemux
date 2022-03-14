@@ -8,6 +8,7 @@ import (
 	"github.com/superisaac/jsonz"
 	"github.com/superisaac/jsonz/http"
 	"github.com/superisaac/nodemux/core"
+	"reflect"
 	"time"
 )
 
@@ -135,8 +136,9 @@ func (self *EthereumChain) findBlockHeight(reqmsg *jsonz.RequestMessage) (int, b
 
 func (self *EthereumChain) subscribeChaintip(rootCtx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
 	wsClient, ok := ep.RPCClient().(*jsonzhttp.WSClient)
+
 	if !ok {
-		ep.Log().Panicf("client is not websocket")
+		ep.Log().Panicf("client is not websocket, client is %s", reflect.TypeOf(ep.RPCClient()))
 		return
 		//return errors.New("client is not websocket")
 	}
@@ -200,7 +202,7 @@ func (self *EthereumChain) connectAndSub(rootCtx context.Context, wsClient *json
 		return err
 	}
 
-	// get chaintip using request message
+	// request chaintip
 	headBlock, err := self.GetChaintip(ctx, m, ep)
 	if err != nil {
 		return err

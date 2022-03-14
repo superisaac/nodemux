@@ -19,6 +19,7 @@ func (self *Endpoint) connectRPC() {
 }
 
 func (self *Endpoint) RPCClient() jsonzhttp.Client {
+	self.connectRPC()
 	return self.rpcClient
 }
 
