@@ -46,7 +46,7 @@ func (self CosmosChain) StartSync(context context.Context, m *nodemuxcore.Multip
 	return true, nil
 }
 
-func (self *CosmosChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *CosmosChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res cosmosBlock
 	err := ep.GetJson(context,
 		"/blocks/latest",

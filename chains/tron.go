@@ -32,7 +32,7 @@ func (self TronChain) StartSync(context context.Context, m *nodemuxcore.Multiple
 	return true, nil
 }
 
-func (self *TronChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *TronChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res tronBlock
 	err := ep.PostJson(context,
 		"/walletsolidity/getnowblock",

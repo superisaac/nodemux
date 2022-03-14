@@ -25,7 +25,7 @@ func (self FilecoinChain) StartSync(context context.Context, m *nodemuxcore.Mult
 	return true, nil
 }
 
-func (self *FilecoinChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *FilecoinChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		1, "Filecoin.ChainHead", nil)
 

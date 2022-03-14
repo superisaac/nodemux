@@ -74,27 +74,27 @@ func (self *Multiplexer) updateStatus(cs ChainStatus) error {
 	}
 	metricsEndpointHealthy.With(ep.prometheusLabels()).Set(healthy)
 
-	block := cs.Chaintip
+	block := cs.Blockhead
 	if block == nil {
 		return nil
 	}
 
 	heightChanged := false
 
-	if ep.Chaintip != nil {
-		if ep.Chaintip.Height > block.Height {
-			logger.Warnf("new tip height %d < old tip height %d",
+	if ep.Blockhead != nil {
+		if ep.Blockhead.Height > block.Height {
+			logger.Warnf("new block head height %d < old block head height %d",
 				block.Height,
-				ep.Chaintip.Height)
+				ep.Blockhead.Height)
 			heightChanged = true
-		} else if ep.Chaintip.Height == block.Height &&
-			ep.Chaintip.Hash != block.Hash {
-			logger.Warnf("tip hash changed from %s to %s",
-				ep.Chaintip.Hash,
+		} else if ep.Blockhead.Height == block.Height &&
+			ep.Blockhead.Hash != block.Hash {
+			logger.Warnf("block head hash changed from %s to %s",
+				ep.Blockhead.Hash,
 				block.Hash)
 		}
 	}
-	ep.Chaintip = block
+	ep.Blockhead = block
 
 	metricsEndpointBlockTip.With(
 		ep.prometheusLabels()).Set(
@@ -104,7 +104,7 @@ func (self *Multiplexer) updateStatus(cs ChainStatus) error {
 		if heightChanged {
 			epset.ResetMaxTipHeight()
 			ep.Chain.Log().Infof(
-				"height changed, max tip height set to %d",
+				"height changed, max block head height set to %d",
 				epset.maxTipHeight)
 			metricsBlockTip.With(
 				epset.prometheusLabels(ep.Chain)).Set(
@@ -112,7 +112,7 @@ func (self *Multiplexer) updateStatus(cs ChainStatus) error {
 		} else if epset.maxTipHeight < block.Height {
 			epset.maxTipHeight = block.Height
 			ep.Chain.Log().Infof(
-				"max tip height set to %d %s",
+				"max block head height set to %d %s",
 				epset.maxTipHeight,
 				block.Hash)
 			metricsBlockTip.With(

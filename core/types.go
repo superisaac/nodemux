@@ -37,8 +37,8 @@ type Endpoint struct {
 	ClientVersion string
 
 	// dynamic items
-	Healthy  bool
-	Chaintip *Block
+	Healthy   bool
+	Blockhead *Block
 
 	client    *http.Client
 	rpcClient jsonzhttp.Client
@@ -51,7 +51,7 @@ type EndpointInfo struct {
 	Name          string `json:"name"`
 	Chain         string `json:"chain"`
 	Healthy       bool   `json:"healthy"`
-	Chaintip      *Block `json:"chaintip,omitempty"`
+	Blockhead     *Block `json:"head,omitempty"`
 	ClientVersion string `json:"client,omitempty"`
 }
 
@@ -81,30 +81,30 @@ type Multiplexer struct {
 }
 
 // Delegators
-type ChaintipDelegator interface {
+type BlockheadDelegator interface {
 	// if an endpoint want to custom the sync procedure then the
 	// func should return false else the func returns true
 	StartSync(ctx context.Context, m *Multiplexer, ep *Endpoint) (started bool, err error)
 
-	// Get a chaintip
-	GetChaintip(ctx context.Context, m *Multiplexer, ep *Endpoint) (*Block, error)
+	// Get a block head
+	GetBlockhead(ctx context.Context, m *Multiplexer, ep *Endpoint) (*Block, error)
 
 	// Get the client version
 	GetClientVersion(ctx context.Context, ep *Endpoint) (string, error)
 }
 
 type RPCDelegator interface {
-	ChaintipDelegator
+	BlockheadDelegator
 	DelegateRPC(ctx context.Context, b *Multiplexer, chain ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error)
 }
 
 type RESTDelegator interface {
-	ChaintipDelegator
+	BlockheadDelegator
 	DelegateREST(ctx context.Context, b *Multiplexer, chain ChainRef, path string, w http.ResponseWriter, r *http.Request) error
 }
 
 type GraphQLDelegator interface {
-	ChaintipDelegator
+	BlockheadDelegator
 	DelegateGraphQL(ctx context.Context, b *Multiplexer, chain ChainRef, path string, w http.ResponseWriter, r *http.Request) error
 }
 
@@ -116,10 +116,10 @@ type DelegatorFactory struct {
 
 // chain stream
 type ChainStatus struct {
-	EndpointName string `json:"endpoint_name"`
-	Chain        ChainRef
-	Chaintip     *Block
-	Healthy      bool
+	EndpointName string   `json:"endpoint_name"`
+	Chain        ChainRef `json:"chain"`
+	Blockhead    *Block   `json:"head"`
+	Healthy      bool     `json:"healthy"`
 }
 
 type Chainhub interface {

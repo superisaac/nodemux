@@ -26,7 +26,7 @@ func (self EosChain) StartSync(context context.Context, m *nodemuxcore.Multiplex
 	return true, nil
 }
 
-func (self *EosChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *EosChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res eosChainInfo
 	err := ep.PostJson(context,
 		"/v1/chain/get_info",

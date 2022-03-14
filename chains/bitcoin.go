@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type bitcoinChaintip struct {
+type bitcoinBlockhead struct {
 	Status string
 	Height int
 	Hash   string
@@ -94,11 +94,11 @@ func (self BitcoinChain) updateBlockPresenceCache(ctx context.Context, m *nodemu
 		time.Second*1800) // expire after 30 mins
 }
 
-func (self *BitcoinChain) GetChaintip(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *BitcoinChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		1, "getchaintips", nil)
 
-	var chaintips []bitcoinChaintip
+	var chaintips []bitcoinBlockhead
 	err := ep.UnwrapCallRPC(ctx, reqmsg, &chaintips)
 	if err != nil {
 		return nil, err
@@ -112,7 +112,7 @@ func (self *BitcoinChain) GetChaintip(ctx context.Context, m *nodemuxcore.Multip
 			Hash:   ct.Hash,
 		}
 
-		if ep.Chaintip == nil || ep.Chaintip.Height != ct.Height {
+		if ep.Blockhead == nil || ep.Blockhead.Height != ct.Height {
 			go self.updateBlockPresenceCache(ctx, m, ep, ct.Hash)
 		}
 		go self.updateMempoolPresenceCache(ctx, m, ep)

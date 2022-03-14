@@ -25,7 +25,7 @@ func (self AlgorandChain) StartSync(context context.Context, m *nodemuxcore.Mult
 	return true, nil
 }
 
-func (self *AlgorandChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *AlgorandChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res algorandChainStatus
 	err := ep.GetJson(context, "/v1/status", nil, &res)
 	if err != nil {

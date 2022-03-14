@@ -30,7 +30,7 @@ func (self CardanoChain) StartSync(context context.Context, m *nodemuxcore.Multi
 	return true, nil
 }
 
-func (self *CardanoChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *CardanoChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	q := "{blocks(limit:1, order_by:[{number: \"desc\"}]){number hash}}"
 	var res cardanoTipResult
 	err := ep.RequestGraphQL(context, q, nil, nil, &res)

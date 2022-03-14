@@ -12,18 +12,18 @@ func blockIsEqual(a, b *Block) bool {
 	return a.Height == b.Height && a.Hash == b.Hash
 }
 
-func (self *Multiplexer) getChaintip(rootCtx context.Context, ep *Endpoint, lastBlock *Block) (*Block, error) {
+func (self *Multiplexer) getBlockhead(rootCtx context.Context, ep *Endpoint, lastBlock *Block) (*Block, error) {
 	logger := ep.Log()
-	delegator := GetDelegatorFactory().GetChaintipDelegator(ep.Chain.Brand)
-	block, err := delegator.GetChaintip(rootCtx, self, ep)
+	delegator := GetDelegatorFactory().GetBlockheadDelegator(ep.Chain.Brand)
+	block, err := delegator.GetBlockhead(rootCtx, self, ep)
 	if err != nil {
-		logger.Warnf("mark unhealthy due to tip height error %s", err)
+		logger.Warnf("mark unhealthy due to block head height error %s", err)
 		ep.connected = false
 		bs := ChainStatus{
 			EndpointName: ep.Name,
 			Chain:        ep.Chain,
 			Healthy:      false,
-			Chaintip:     nil,
+			Blockhead:    nil,
 		}
 		self.chainHub.Pub() <- bs
 		return nil, err
@@ -35,18 +35,18 @@ func (self *Multiplexer) getChaintip(rootCtx context.Context, ep *Endpoint, last
 				EndpointName: ep.Name,
 				Chain:        ep.Chain,
 				Healthy:      true,
-				Chaintip:     block,
+				Blockhead:    block,
 			}
 			self.chainHub.Pub() <- bs
 		}
 	} else {
-		logger.Warnf("got nil tip block when accessing %s %s", ep.Name, ep.Config.Url)
+		logger.Warnf("got nil head block when accessing %s %s", ep.Name, ep.Config.Url)
 	}
 	return block, nil
 }
 
 func (self *Multiplexer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
-	delegator := GetDelegatorFactory().GetChaintipDelegator(ep.Chain.Brand)
+	delegator := GetDelegatorFactory().GetBlockheadDelegator(ep.Chain.Brand)
 	started, err := delegator.StartSync(rootCtx, self, ep)
 	if err != nil {
 		panic(err)
@@ -65,10 +65,10 @@ func (self *Multiplexer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
 			break
 		}
 		sleepTime := 1 * time.Second
-		blk, err := self.getChaintip(ctx, ep, lastBlock)
+		blk, err := self.getBlockhead(ctx, ep, lastBlock)
 		if err != nil {
 			// unhealthy
-			ep.Log().Warnf("get chaintip error %s, sleep 15 secs", err)
+			ep.Log().Warnf("get block head error %s, sleep 15 secs", err)
 			sleepTime = 5 * time.Second
 		}
 		lastBlock = blk

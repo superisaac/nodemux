@@ -70,11 +70,11 @@ func (self EthereumChain) StartSync(context context.Context, m *nodemuxcore.Mult
 	}
 
 	// subscribe chaintip from is websocket
-	go self.subscribeChaintip(context, m, ep)
+	go self.subscribeBlockhead(context, m, ep)
 	return false, nil
 }
 
-func (self *EthereumChain) GetChaintip(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *EthereumChain) GetBlockhead(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		jsonz.NewUuid(), "eth_getBlockByNumber",
 		[]interface{}{"latest", false})
@@ -90,7 +90,7 @@ func (self *EthereumChain) GetChaintip(context context.Context, m *nodemuxcore.M
 		Hash:   bt.Hash,
 	}
 
-	if ep.Chaintip == nil || ep.Chaintip.Height != bt.Height() {
+	if ep.Blockhead == nil || ep.Blockhead.Height != bt.Height() {
 		if c, ok := m.RedisClient(presenceCacheRedisKey(ep.Chain)); ok {
 			go presenceCacheUpdate(
 				context, c,
@@ -134,7 +134,7 @@ func (self *EthereumChain) findBlockHeight(reqmsg *jsonz.RequestMessage) (int, b
 	return 0, false
 }
 
-func (self *EthereumChain) subscribeChaintip(rootCtx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
+func (self *EthereumChain) subscribeBlockhead(rootCtx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
 	wsClient, ok := ep.RPCClient().(*jsonzhttp.WSClient)
 
 	if !ok {
@@ -169,7 +169,7 @@ func (self *EthereumChain) subscribeChaintip(rootCtx context.Context, m *nodemux
 				EndpointName: ep.Name,
 				Chain:        ep.Chain,
 				Healthy:      true,
-				Chaintip:     headBlock,
+				Blockhead:    headBlock,
 			}
 			m.Chainhub().Pub() <- bs
 		}
@@ -203,7 +203,7 @@ func (self *EthereumChain) connectAndSub(rootCtx context.Context, wsClient *json
 	}
 
 	// request chaintip
-	headBlock, err := self.GetChaintip(ctx, m, ep)
+	headBlock, err := self.GetBlockhead(ctx, m, ep)
 	if err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func (self *EthereumChain) connectAndSub(rootCtx context.Context, wsClient *json
 			EndpointName: ep.Name,
 			Chain:        ep.Chain,
 			Healthy:      true,
-			Chaintip:     headBlock,
+			Blockhead:    headBlock,
 		}
 		m.Chainhub().Pub() <- bs
 	}

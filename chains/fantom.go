@@ -44,7 +44,7 @@ func (self FantomChain) StartSync(context context.Context, m *nodemuxcore.Multip
 	return true, nil
 }
 
-func (self *FantomChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *FantomChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	q := "{block(){number hash}}"
 	var res fantomTipResult
 	err := ep.RequestGraphQL(context, q, nil, nil, &res)

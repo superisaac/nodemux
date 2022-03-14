@@ -27,7 +27,7 @@ func (self MoneroChain) StartSync(context context.Context, m *nodemuxcore.Multip
 	return true, nil
 }
 
-func (self *MoneroChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *MoneroChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		1, "get_height", nil)
 

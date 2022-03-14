@@ -41,7 +41,7 @@ func (self RippleChain) StartSync(context context.Context, m *nodemuxcore.Multip
 	return true, nil
 }
 
-func (self *RippleChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *RippleChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	filter := rippleLedgerFilter{
 		LedgerIndex:  "validated",
 		Accounts:     false,

@@ -34,7 +34,7 @@ func (self MinaChain) StartSync(context context.Context, m *nodemuxcore.Multiple
 	return true, nil
 }
 
-func (self *MinaChain) GetChaintip(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *MinaChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	q := `{
   bestChain(maxLength: 1){
     stateHash

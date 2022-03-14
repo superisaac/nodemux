@@ -39,7 +39,7 @@ func (self DelegatorFactory) SupportChain(brand string) (bool, int) {
 	return false, 0
 }
 
-func (self DelegatorFactory) GetChaintipDelegator(chain string) ChaintipDelegator {
+func (self DelegatorFactory) GetBlockheadDelegator(chain string) BlockheadDelegator {
 	if delg, ok := self.rpcDelegators[chain]; ok {
 		return delg
 	} else if delg, ok := self.restDelegators[chain]; ok {

@@ -8,7 +8,7 @@ import (
 	"github.com/superisaac/nodemux/core"
 )
 
-type handshakeChaintip struct {
+type handshakeBlockhead struct {
 	Status string
 	Height int
 	Hash   string
@@ -46,11 +46,11 @@ func (self HandshakeChain) StartSync(context context.Context, m *nodemuxcore.Mul
 	return true, nil
 }
 
-func (self *HandshakeChain) GetChaintip(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *HandshakeChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsonz.NewRequestMessage(
 		1, "getchaintips", nil)
 
-	var chaintips []handshakeChaintip
+	var chaintips []handshakeBlockhead
 	err := ep.UnwrapCallRPC(ctx, reqmsg, &chaintips)
 	if err != nil {
 		return nil, err
