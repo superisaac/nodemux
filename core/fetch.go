@@ -22,8 +22,8 @@ func (self *Multiplexer) getChaintip(rootCtx context.Context, ep *Endpoint, last
 		bs := ChainStatus{
 			EndpointName: ep.Name,
 			Chain:        ep.Chain,
+			Healthy:      false,
 			Chaintip:     nil,
-			Unhealthy:    true,
 		}
 		self.chainHub.Pub() <- bs
 		return nil, err
@@ -34,8 +34,8 @@ func (self *Multiplexer) getChaintip(rootCtx context.Context, ep *Endpoint, last
 			bs := ChainStatus{
 				EndpointName: ep.Name,
 				Chain:        ep.Chain,
+				Healthy:      true,
 				Chaintip:     block,
-				Unhealthy:    false,
 			}
 			self.chainHub.Pub() <- bs
 		}

@@ -77,7 +77,7 @@ func (self *Multiplexer) Select(chain ChainRef, method string) (*Endpoint, bool)
 			eps.cursor += 1
 
 			ep := eps.items[idx]
-			if ep.Unhealthy {
+			if !ep.Healthy {
 				continue
 			}
 
@@ -108,7 +108,7 @@ func (self *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightS
 			if heightSpec <= 0 {
 				height = eps.maxTipHeight + heightSpec
 			}
-			if ep.Unhealthy {
+			if !ep.Healthy {
 				continue
 			}
 
@@ -148,7 +148,7 @@ func (self *Multiplexer) SelectWebsocketEndpoint(chain ChainRef, method string, 
 			if heightSpec < 0 {
 				height = eps.maxTipHeight + heightSpec
 			}
-			if ep.Unhealthy {
+			if !ep.Healthy {
 				continue
 			}
 

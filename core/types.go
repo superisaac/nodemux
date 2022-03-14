@@ -37,8 +37,8 @@ type Endpoint struct {
 	ClientVersion string
 
 	// dynamic items
-	Unhealthy bool
-	Chaintip  *Block
+	Healthy  bool
+	Chaintip *Block
 
 	client    *http.Client
 	rpcClient jsonzhttp.Client
@@ -48,10 +48,10 @@ type Endpoint struct {
 }
 
 type EndpointInfo struct {
-	Name      string `json:"name"`
-	Chain     string `json:"chain"`
-	Unhealthy bool   `json:"unhealthy"`
-	Chaintip  *Block `json:"chaintip,omitempty"`
+	Name          string `json:"name"`
+	Chain         string `json:"chain"`
+	Healthy       bool   `json:"healthy"`
+	Chaintip      *Block `json:"chaintip,omitempty"`
 	ClientVersion string `json:"client,omitempty"`
 }
 
@@ -66,7 +66,7 @@ type Multiplexer struct {
 	// indexes
 	// the name -> Endpoint map, the primary key
 	nameIndex map[string]*Endpoint
-	
+
 	// the chain -> name map, the secondary index
 	chainIndex map[ChainRef]*EndpointSet
 
@@ -119,7 +119,7 @@ type ChainStatus struct {
 	EndpointName string `json:"endpoint_name"`
 	Chain        ChainRef
 	Chaintip     *Block
-	Unhealthy    bool
+	Healthy      bool
 }
 
 type Chainhub interface {

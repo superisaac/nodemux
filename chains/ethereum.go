@@ -168,8 +168,8 @@ func (self *EthereumChain) subscribeChaintip(rootCtx context.Context, m *nodemux
 			bs := nodemuxcore.ChainStatus{
 				EndpointName: ep.Name,
 				Chain:        ep.Chain,
+				Healthy:      true,
 				Chaintip:     headBlock,
-				Unhealthy:    false,
 			}
 			m.Chainhub().Pub() <- bs
 		}
@@ -182,7 +182,7 @@ func (self *EthereumChain) subscribeChaintip(rootCtx context.Context, m *nodemux
 			bs := nodemuxcore.ChainStatus{
 				EndpointName: ep.Name,
 				Chain:        ep.Chain,
-				Unhealthy:    true,
+				Healthy:      false,
 			}
 			m.Chainhub().Pub() <- bs
 			time.Sleep(2 * time.Second)
@@ -211,8 +211,8 @@ func (self *EthereumChain) connectAndSub(rootCtx context.Context, wsClient *json
 		bs := nodemuxcore.ChainStatus{
 			EndpointName: ep.Name,
 			Chain:        ep.Chain,
+			Healthy:      true,
 			Chaintip:     headBlock,
-			Unhealthy:    false,
 		}
 		m.Chainhub().Pub() <- bs
 	}

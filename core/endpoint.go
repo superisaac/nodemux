@@ -43,7 +43,7 @@ func NewEndpoint(name string, epcfg EndpointConfig) *Endpoint {
 		Config:    epcfg,
 		Name:      name,
 		Chain:     chain,
-		Unhealthy: false,
+		Healthy:   true,
 		connected: true}
 
 	if epcfg.SkipMethods != nil {
@@ -283,10 +283,10 @@ func (self *Endpoint) GetClientVersion(ctx context.Context) {
 
 func (self Endpoint) Info() EndpointInfo {
 	return EndpointInfo{
-		Name:      self.Name,
-		Chain:     self.Chain.String(),
-		Unhealthy: self.Unhealthy,
-		Chaintip:  self.Chaintip,
+		Name:          self.Name,
+		Chain:         self.Chain.String(),
+		Healthy:       self.Healthy,
+		Chaintip:      self.Chaintip,
 		ClientVersion: self.ClientVersion,
 	}
 }

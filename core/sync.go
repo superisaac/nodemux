@@ -63,16 +63,16 @@ func (self *Multiplexer) updateStatus(cs ChainStatus) error {
 	if ep.Chain != cs.Chain {
 		logger.Warnf("chain status mismatch, %#v", cs)
 	}
-	if cs.Unhealthy != ep.Unhealthy {
-		ep.Unhealthy = cs.Unhealthy
-		logger.Infof("unhealthy set to %t", cs.Unhealthy)
+	if cs.Healthy != ep.Healthy {
+		ep.Healthy = cs.Healthy
+		logger.Infof("healthy set to %t", cs.Healthy)
 	}
 
-	var healthiness float64 = 1
-	if ep.Unhealthy {
-		healthiness = 0
+	var healthy float64 = 0
+	if ep.Healthy {
+		healthy = 1
 	}
-	metricsEndpointHealthy.With(ep.prometheusLabels()).Set(healthiness)
+	metricsEndpointHealthy.With(ep.prometheusLabels()).Set(healthy)
 
 	block := cs.Chaintip
 	if block == nil {
