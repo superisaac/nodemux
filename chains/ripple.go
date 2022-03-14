@@ -37,7 +37,7 @@ func (self RippleChain) GetClientVersion(context context.Context, ep *nodemuxcor
 	return "", nil
 }
 
-func (self RippleChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (self RippleChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 

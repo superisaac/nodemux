@@ -22,7 +22,7 @@ func (self EosChain) GetClientVersion(context context.Context, ep *nodemuxcore.E
 	return "", nil
 }
 
-func (self EosChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (self EosChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 

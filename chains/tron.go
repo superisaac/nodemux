@@ -28,7 +28,7 @@ func (self TronChain) GetClientVersion(context context.Context, ep *nodemuxcore.
 	return "", nil
 }
 
-func (self TronChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (self TronChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 

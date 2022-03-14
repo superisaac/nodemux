@@ -26,7 +26,7 @@ func (self CasperChain) GetClientVersion(context context.Context, ep *nodemuxcor
 	return "", nil
 }
 
-func (self CasperChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (self CasperChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 

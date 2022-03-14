@@ -26,7 +26,7 @@ func (self StarcoinChain) GetClientVersion(context context.Context, ep *nodemuxc
 	return "", nil
 }
 
-func (self StarcoinChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (self StarcoinChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 

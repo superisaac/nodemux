@@ -39,7 +39,7 @@ func (self *Multiplexer) StartSync(rootCtx context.Context, fetch bool) {
 	// start syncer
 	if fetch {
 		for _, ep := range self.nameIndex {
-			go self.fetchEndpoint(ctx, ep)
+			go self.syncEndpoint(ctx, ep)
 		}
 	}
 }

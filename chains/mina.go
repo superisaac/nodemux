@@ -30,7 +30,7 @@ func (self MinaChain) GetClientVersion(context context.Context, ep *nodemuxcore.
 	return "", nil
 }
 
-func (self MinaChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (self MinaChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 

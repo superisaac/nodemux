@@ -22,7 +22,7 @@ func (self PolkadotChain) GetClientVersion(context context.Context, ep *nodemuxc
 	return "", nil
 }
 
-func (self PolkadotChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (self PolkadotChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 

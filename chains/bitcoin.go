@@ -45,7 +45,7 @@ func (self BitcoinChain) GetClientVersion(ctx context.Context, ep *nodemuxcore.E
 	return v, nil
 }
 
-func (self BitcoinChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (self BitcoinChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 

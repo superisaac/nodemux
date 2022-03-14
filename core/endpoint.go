@@ -287,5 +287,6 @@ func (self Endpoint) Info() EndpointInfo {
 		Chain:     self.Chain.String(),
 		Unhealthy: self.Unhealthy,
 		Chaintip:  self.Chaintip,
+		ClientVersion: self.ClientVersion,
 	}
 }

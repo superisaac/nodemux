@@ -52,6 +52,7 @@ type EndpointInfo struct {
 	Chain     string `json:"chain"`
 	Unhealthy bool   `json:"unhealthy"`
 	Chaintip  *Block `json:"chaintip,omitempty"`
+	ClientVersion string `json:"client,omitempty"`
 }
 
 type EndpointSet struct {
@@ -65,21 +66,30 @@ type Multiplexer struct {
 	// indexes
 	// the name -> Endpoint map, the primary key
 	nameIndex map[string]*Endpoint
+	
 	// the chain -> name map, the secondary index
 	chainIndex map[ChainRef]*EndpointSet
 
 	// the function to cancel sync functions
 	cancelSync func()
 
+	// the pubsub hub of chain status messages
 	chainHub Chainhub
 
+	// a pool of redis clients
 	redisClients map[string]*redis.Client
 }
 
 // Delegators
 type ChaintipDelegator interface {
-	StartFetch(ctx context.Context, m *Multiplexer, ep *Endpoint) (started bool, err error)
+	// if an endpoint want to custom the sync procedure then the
+	// func should return false else the func returns true
+	StartSync(ctx context.Context, m *Multiplexer, ep *Endpoint) (started bool, err error)
+
+	// Get a chaintip
 	GetChaintip(ctx context.Context, m *Multiplexer, ep *Endpoint) (*Block, error)
+
+	// Get the client version
 	GetClientVersion(ctx context.Context, ep *Endpoint) (string, error)
 }
 

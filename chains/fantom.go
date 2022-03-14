@@ -40,7 +40,7 @@ func (self FantomChain) GetClientVersion(context context.Context, ep *nodemuxcor
 	return "", nil
 }
 
-func (self FantomChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (self FantomChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 

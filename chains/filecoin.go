@@ -21,7 +21,7 @@ func (self FilecoinChain) GetClientVersion(context context.Context, ep *nodemuxc
 	return "", nil
 }
 
-func (self FilecoinChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (self FilecoinChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 

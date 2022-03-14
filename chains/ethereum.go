@@ -64,7 +64,7 @@ func (self EthereumChain) GetClientVersion(context context.Context, ep *nodemuxc
 	return v, nil
 }
 
-func (self EthereumChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (self EthereumChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	if !ep.IsWebsocket() {
 		return true, nil
 	}

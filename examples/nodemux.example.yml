@@ -67,3 +67,8 @@ endpoints:
   # eth02:
   #   chain: ethereum/mainnet
   #   url: wss://eth-mainnet.ws.alchemyapi.io/ws/demo
+
+  # ganache01:
+  #  chain: ethereum/ganache
+  #  url: ws://127.0.0.1:7545
+  

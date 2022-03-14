@@ -21,7 +21,7 @@ func (self AlgorandChain) GetClientVersion(context context.Context, ep *nodemuxc
 	return "", nil
 }
 
-func (self AlgorandChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (self AlgorandChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 

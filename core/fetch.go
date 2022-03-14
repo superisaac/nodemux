@@ -45,18 +45,18 @@ func (self *Multiplexer) getChaintip(rootCtx context.Context, ep *Endpoint, last
 	return block, nil
 }
 
-func (self *Multiplexer) fetchEndpoint(rootCtx context.Context, ep *Endpoint) {
+func (self *Multiplexer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
 	delegator := GetDelegatorFactory().GetChaintipDelegator(ep.Chain.Brand)
-	started, err := delegator.StartFetch(rootCtx, self, ep)
+	started, err := delegator.StartSync(rootCtx, self, ep)
 	if err != nil {
 		panic(err)
 	}
 	if !started {
-		ep.Log().Infof("fetch job not started")
+		ep.Log().Infof("sync job not started")
 		return
 	}
 
-	ep.Log().Info("fetch job started")
+	ep.Log().Info("sync job started")
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 	var lastBlock *Block

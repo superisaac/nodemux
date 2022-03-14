@@ -26,7 +26,7 @@ func (self CardanoChain) GetClientVersion(context context.Context, ep *nodemuxco
 	return "", nil
 }
 
-func (self CardanoChain) StartFetch(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (self CardanoChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 
