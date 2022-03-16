@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	wsPairs = make(map[*http.Request]*jsonzhttp.WSClient)
+	wsPairs = make(map[string]*jsonzhttp.WSClient)
 
 	wsRegex = regexp.MustCompile(`^/jsonrpc\-ws/([^/]+)/([^/]+)/?$`)
 )
@@ -30,8 +30,8 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 	}
 
 	rpcHandler := jsonzhttp.NewWSHandler(rootCtx, nil)
-	rpcHandler.Actor.OnClose(func(r *http.Request) {
-		relayer.onClose(r)
+	rpcHandler.Actor.OnClose(func(r *http.Request, s jsonzhttp.RPCSession) {
+		relayer.onClose(r, s)
 	})
 	rpcHandler.Actor.OnMissing(func(req *jsonzhttp.RPCRequest) (interface{}, error) {
 		serverCfg := ServerConfigFromContext(rootCtx)
@@ -50,8 +50,8 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 	return relayer
 }
 
-func (self *JSONRPCWSRelayer) onClose(r *http.Request) {
-	delete(wsPairs, r)
+func (self *JSONRPCWSRelayer) onClose(r *http.Request, s jsonzhttp.RPCSession) {
+	delete(wsPairs, s.SessionID())
 	metricsWSPairsCount.Set(float64(len(wsPairs)))
 }
 
@@ -59,12 +59,8 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 	r := req.HttpRequest()
 	msg := req.Msg()
 	chain := self.chain
-	data := req.Data()
-	if data == nil {
-		return nil, errors.New("request data is nil")
-	}
-	session, ok := data.(*jsonzhttp.WSSession)
-	if !ok {
+	session := req.Session()
+	if session == nil {
 		return nil, errors.New("request data is not websocket conn")
 	}
 
@@ -86,7 +82,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 
 	m := nodemuxcore.GetMultiplexer()
 
-	if destWs, ok := wsPairs[r]; ok {
+	if destWs, ok := wsPairs[session.SessionID()]; ok {
 		// a existing dest ws conn found, relay the message to it
 		err := destWs.Send(self.rootCtx, msg)
 		return nil, err
@@ -102,7 +98,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 		destWs.OnMessage(func(m jsonz.Message) {
 			session.Send(m)
 		})
-		wsPairs[r] = destWs
+		wsPairs[session.SessionID()] = destWs
 		metricsWSPairsCount.Set(float64(len(wsPairs)))
 		err = destWs.Send(self.rootCtx, msg)
 		return nil, err
