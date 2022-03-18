@@ -57,6 +57,7 @@ type EndpointInfo struct {
 
 type EndpointSet struct {
 	items        []*Endpoint // endpoints of the same chain
+	weights      []int
 	cursor       int
 	maxTipHeight int
 }

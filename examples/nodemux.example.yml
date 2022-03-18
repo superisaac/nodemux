@@ -11,11 +11,13 @@ endpoints:
   # bsc01:
   #   chain: "binance-chain/mainnet"
   #   url: https://bsc-dataseed1.defibit.io
+  #   weight: 200   # default value of weight is 100
   #   # headers:
   #   #   Authorization: Bearer token911
 
   # bsc02:
   #   chain: "binance-chain/mainnet"
+  #   weight: 120
   #   url: https://bsc-dataseed2.defibit.io
 
   luna01:

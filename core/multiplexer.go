@@ -60,35 +60,35 @@ func (self *Multiplexer) Add(endpoint *Endpoint) bool {
 	self.nameIndex[endpoint.Name] = endpoint
 
 	if eps, ok := self.chainIndex[endpoint.Chain]; ok {
-		eps.items = append(eps.items, endpoint)
+		eps.Add(endpoint)
 	} else {
-		eps := new(EndpointSet)
-		eps.items = make([]*Endpoint, 1)
-		eps.items[0] = endpoint
+		eps := NewEndpointSet()
 		self.chainIndex[endpoint.Chain] = eps
+		eps.Add(endpoint)
 	}
 	return true
 }
 
 func (self *Multiplexer) Select(chain ChainRef, method string) (*Endpoint, bool) {
 	if eps, ok := self.chainIndex[chain]; ok {
-		for i := 0; i < len(eps.items); i++ {
-			idx := eps.cursor % len(eps.items)
-			eps.cursor += 1
-
+		if idx, ok := eps.WeightRandom(); ok {
 			ep := eps.items[idx]
-			if !ep.Healthy {
-				continue
+			if ep.Available(method, 0) {
+				return ep, true
 			}
 
-			if method != "" && ep.SkipMethods != nil {
-				if _, ok := ep.SkipMethods[method]; ok {
-					// the method is not provided by the endpoint, so skip it
-					continue
+			for i := 0; i < len(eps.items)-1; i++ {
+				//idx := eps.cursor % len(eps.items)
+				//eps.cursor += 1
+				idx++
+				idx = idx % len(eps.items)
+				ep := eps.items[idx]
+
+				if ep.Available(method, 0) {
+					return ep, true
 				}
+				return ep, true
 			}
-
-			return ep, true
 		}
 	}
 	return nil, false
@@ -97,36 +97,27 @@ func (self *Multiplexer) Select(chain ChainRef, method string) (*Endpoint, bool)
 func (self *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightSpec int) (*Endpoint, bool) {
 
 	if eps, ok := self.chainIndex[chain]; ok {
-		for i := 0; i < len(eps.items); i++ {
-			// round-robin selection
-			idx := eps.cursor % len(eps.items)
-			eps.cursor += 1
-
-			ep := eps.items[idx]
-
-			height := heightSpec
-			if heightSpec <= 0 {
-				height = eps.maxTipHeight + heightSpec
-			}
-			if !ep.Healthy {
-				continue
-			}
-
-			if height > 0 {
-				if ep.Blockhead == nil || ep.Blockhead.Height < height {
-					continue
-				}
-			}
-
-			if method != "" && ep.SkipMethods != nil {
-				if _, ok := ep.SkipMethods[method]; ok {
-					// the method is not provided by the endpoint, so skip it
-					continue
-				}
-			}
-
-			return ep, true
+		height := heightSpec
+		if heightSpec <= 0 {
+			height = eps.maxTipHeight + heightSpec
 		}
+
+		if idx, ok := eps.WeightRandom(); ok {
+			ep := eps.items[idx]
+			if ep.Available(method, height) {
+				return ep, true
+			}
+			for i := 0; i < len(eps.items)-1; i++ {
+				idx++
+				idx = idx % len(eps.items)
+				ep := eps.items[idx]
+
+				if ep.Available(method, height) {
+					return ep, true
+				}
+			}
+		}
+
 	}
 	return nil, false
 }
@@ -134,38 +125,25 @@ func (self *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightS
 func (self *Multiplexer) SelectWebsocketEndpoint(chain ChainRef, method string, heightSpec int) (ep1 *Endpoint, found bool) {
 
 	if eps, ok := self.chainIndex[chain]; ok {
-		for i := 0; i < len(eps.items); i++ {
-			idx := eps.cursor % len(eps.items)
-			eps.cursor += 1
+		height := heightSpec
+		if heightSpec < 0 {
+			height = eps.maxTipHeight + heightSpec
+		}
 
+		if idx, ok := eps.WeightRandom(); ok {
 			ep := eps.items[idx]
-
-			if !ep.IsWebsocket() {
-				continue
+			if ep.IsWebsocket() && ep.Available(method, height) {
+				return ep, true
 			}
+			for i := 0; i < len(eps.items)-1; i++ {
+				idx++
+				idx = idx % len(eps.items)
+				ep := eps.items[idx]
 
-			height := heightSpec
-			if heightSpec < 0 {
-				height = eps.maxTipHeight + heightSpec
-			}
-			if !ep.Healthy {
-				continue
-			}
-
-			if height >= 0 {
-				if ep.Blockhead == nil || ep.Blockhead.Height < height {
-					continue
+				if ep.IsWebsocket() && ep.Available(method, height) {
+					return ep, true
 				}
 			}
-
-			if method != "" && ep.SkipMethods != nil {
-				if _, ok := ep.SkipMethods[method]; ok {
-					// the method is not provided by the endpoint, so skip it
-					continue
-				}
-			}
-
-			return ep, true
 		}
 	}
 	return nil, false

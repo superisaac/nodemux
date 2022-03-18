@@ -24,6 +24,56 @@ func TestEndpoint(t *testing.T) {
 	assert.Equal("http://127.0.0.1:8899/aa/bb/v1/status", ep.FullUrl("/v1/status"))
 }
 
+func TestWeight(t *testing.T) {
+	assert := assert.New(t)
+
+	ep1 := NewEndpoint("tron01", EndpointConfig{
+		Chain:  "eosio/mainnet",
+		Url:    "http://127.0.0.1:8899/aa/bb/",
+		Weight: 150, // weight range [0, 150)
+	})
+
+	ep2 := NewEndpoint("tron01", EndpointConfig{
+		Chain:  "eosio/mainnet",
+		Url:    "http://127.0.0.1:8899/aa/bb/",
+		Weight: 60, // weight range [150, 210)
+	})
+
+	eps := NewEndpointSet()
+	eps.Add(ep1)
+	eps.Add(ep2)
+
+	assert.Equal(210, eps.WeightLimit())
+
+	idx, ok := eps.WeightSearch(0)
+	assert.True(ok)
+	assert.Equal(0, idx)
+
+	idx, ok = eps.WeightSearch(70)
+	assert.True(ok)
+	assert.Equal(0, idx)
+
+	idx, ok = eps.WeightSearch(150)
+	assert.True(ok)
+	assert.Equal(1, idx)
+
+	idx, ok = eps.WeightSearch(151)
+	assert.True(ok)
+	assert.Equal(1, idx)
+
+	idx, ok = eps.WeightSearch(210)
+	assert.False(ok)
+
+	idx, ok = eps.WeightSearch(211)
+	assert.False(ok)
+
+	idx, ok = eps.WeightSearch(211)
+	assert.False(ok)
+
+	idx, ok = eps.WeightSearch(-3)
+	assert.False(ok)
+}
+
 func TestMultiplexer(t *testing.T) {
 	assert := assert.New(t)
 

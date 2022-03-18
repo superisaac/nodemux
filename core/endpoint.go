@@ -16,23 +16,6 @@ import (
 	"time"
 )
 
-// EndpointSet
-func (self *EndpointSet) ResetMaxTipHeight() {
-	maxHeight := 0
-	for _, epItem := range self.items {
-		if epItem.Blockhead != nil && epItem.Blockhead.Height > maxHeight {
-			maxHeight = epItem.Blockhead.Height
-		}
-	}
-	self.maxTipHeight = maxHeight
-}
-
-func (self EndpointSet) prometheusLabels(chain ChainRef) prometheus.Labels {
-	return prometheus.Labels{
-		"chain": chain.String(),
-	}
-}
-
 /// Create an endpoint instance
 func NewEndpoint(name string, epcfg EndpointConfig) *Endpoint {
 	chain, err := ParseChain(epcfg.Chain)
@@ -289,4 +272,24 @@ func (self Endpoint) Info() EndpointInfo {
 		Blockhead:     self.Blockhead,
 		ClientVersion: self.ClientVersion,
 	}
+}
+
+func (self Endpoint) Available(method string, minHeight int) bool {
+	if !self.Healthy {
+		return false
+	}
+
+	if minHeight > 0 {
+		if self.Blockhead == nil || self.Blockhead.Height < minHeight {
+			return false
+		}
+	}
+
+	if method != "" && self.SkipMethods != nil {
+		if _, ok := self.SkipMethods[method]; ok {
+			// the method is not provided by the endpoint, so skip it
+			return false
+		}
+	}
+	return true
 }

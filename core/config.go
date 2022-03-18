@@ -13,6 +13,7 @@ type EndpointConfig struct {
 	Chain       string            `yaml:"chain"`
 	Url         string            `yaml:"url"`
 	Headers     map[string]string `yaml:"headers,omitempty"`
+	Weight      int               `yaml:"weight,omitempty"`
 	SkipMethods []string          `yaml:"skip_methods,omitempty"`
 	Options     map[string]string `yaml:"options,omitempty"`
 }
