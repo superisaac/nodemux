@@ -26,6 +26,7 @@ func (self *Endpoint) RPCClient() jsonzhttp.Client {
 func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
 	//self.Connect()
 	self.ensureRPCClient()
+	self.incrRelayCount()
 	return self.rpcClient.Call(rootCtx, reqmsg)
 } // CallRPC
 

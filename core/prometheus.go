@@ -22,10 +22,17 @@ var (
 		Name:      "endpoint_healthy",
 		Help:      "healthiness of endpoint",
 	}, []string{"chain", "endpoint"})
+
+	metricsEndpointRelayCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "nodemux",
+		Name:      "endpoint_relay_count",
+		Help:      "the count of endpoint relays",
+	}, []string{"endpoint"})
 )
 
 func init() {
 	prometheus.MustRegister(metricsBlockTip)
 	prometheus.MustRegister(metricsEndpointBlockTip)
 	prometheus.MustRegister(metricsEndpointHealthy)
+	prometheus.MustRegister(metricsEndpointRelayCount)
 }

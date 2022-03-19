@@ -52,6 +52,12 @@ func (self Endpoint) prometheusLabels() prometheus.Labels {
 	}
 }
 
+func (self Endpoint) incrRelayCount() {
+	metricsEndpointRelayCount.With(prometheus.Labels{
+		"endpoint": self.Name,
+	}).Inc()
+}
+
 func (self *Endpoint) Connect() {
 	if self.client == nil {
 		tr := &http.Transport{
@@ -79,7 +85,7 @@ func (self Endpoint) FullUrl(path string) string {
 // RESTful methods
 func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.ResponseWriter, r *http.Request) error {
 	self.Connect()
-
+	self.incrRelayCount()
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 

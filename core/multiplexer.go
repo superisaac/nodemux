@@ -70,6 +70,7 @@ func (self *Multiplexer) Add(endpoint *Endpoint) bool {
 }
 
 func (self *Multiplexer) Select(chain ChainRef, method string) (*Endpoint, bool) {
+
 	if eps, ok := self.chainIndex[chain]; ok {
 		if idx, ok := eps.WeightRandom(); ok {
 			ep := eps.items[idx]
