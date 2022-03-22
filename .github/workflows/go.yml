@@ -21,11 +21,8 @@ jobs:
     - name: submodule
       run: git submodule update --init --recursive
   
-    - name: govet
-      run: make govet
-  
-    - name: gofmt
-      run: make gofmt
+    - name: Go lint
+      run: make golint
   
     - name: Test
       run: make test

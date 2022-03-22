@@ -15,11 +15,9 @@ test:
 clean:
 	rm -rf build dist bin/nodemux
 
-govet:
-	go vet ./...
-
-gofmt:
+golint:
 	go fmt ./...
+	go vet ./...
 
 run-example: bin/nodemux
 	bin/nodemux -f examples/nodemux.example.yml -server examples/server.example.yml

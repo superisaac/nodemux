@@ -5,6 +5,8 @@ bind: 127.0.0.1:9990
 #   bearer:
 #     - token: beartoken
 #       username: bear1
+#       settings:
+#         namespace: team1
 #     - token: beartoken2
 #   jwt:
 #     secret: secretSecretToken
@@ -16,6 +18,8 @@ admin:
     basic:
       - username: admin
         password: a92ksk9jj
+        settings:
+          namespace: bigadm
 ratelimit:
   ip: 36000  # 36000 visits per ip per hour, the default value is 3600
 
