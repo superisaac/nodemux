@@ -8,22 +8,22 @@ stores:
   default:
     url: redis://localhost:6379/2
 endpoints:
-  # bsc01:
-  #   chain: "binance-chain/mainnet"
-  #   url: https://bsc-dataseed1.defibit.io
-  #   weight: 200   # default value of weight is 100
-  #   # headers:
-  #   #   Authorization: Bearer token911
+  bsc01:
+    chain: "binance-chain/mainnet"
+    url: https://bsc-dataseed1.defibit.io
+    weight: 200   # default value of weight is 100
+    # headers:
+    #   Authorization: Bearer token911
 
-  # bsc02:
-  #   chain: "binance-chain/mainnet"
-  #   weight: 120
-  #   url: https://bsc-dataseed2.defibit.io
+  bsc02:
+    chain: "binance-chain/mainnet"
+    weight: 120
+    url: https://bsc-dataseed2.defibit.io
 
-  luna01:
-    chain: luna/mainnet
-    # from https://docs.terra.money/docs/develop/how-to/endpoints.html
-    url: https://blockdaemon-terra-lcd.api.bdnodes.net:1317
+  # luna01:
+  #   chain: luna/mainnet
+  #   # from https://docs.terra.money/docs/develop/how-to/endpoints.html
+  #   url: https://blockdaemon-terra-lcd.api.bdnodes.net:1317
 
   # mina01:
   #   chain: mina/mainnet
@@ -74,3 +74,6 @@ endpoints:
   #  chain: ethereum/ganache
   #  url: ws://127.0.0.1:7545
   
+  # near01:
+  #   chain: near/mainnet
+  #   url: https://rpc.mainnet.near.org
