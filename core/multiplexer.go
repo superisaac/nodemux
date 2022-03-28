@@ -79,8 +79,6 @@ func (self *Multiplexer) Select(chain ChainRef, method string) (*Endpoint, bool)
 			}
 
 			for i := 0; i < len(eps.items)-1; i++ {
-				//idx := eps.cursor % len(eps.items)
-				//eps.cursor += 1
 				idx++
 				idx = idx % len(eps.items)
 				ep := eps.items[idx]
