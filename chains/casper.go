@@ -4,8 +4,9 @@ package chains
 
 import (
 	"context"
-	"github.com/superisaac/jsonz"
+	"github.com/superisaac/jlib"
 	"github.com/superisaac/nodemux/core"
+	"net/http"
 )
 
 type casperBlock struct {
@@ -31,7 +32,7 @@ func (self CasperChain) StartSync(context context.Context, m *nodemuxcore.Multip
 }
 
 func (self *CasperChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	reqmsg := jsonz.NewRequestMessage(
+	reqmsg := jlib.NewRequestMessage(
 		1, "chain_get_block", nil)
 
 	var bt casperBlock
@@ -47,7 +48,7 @@ func (self *CasperChain) GetBlockhead(context context.Context, b *nodemuxcore.Mu
 	return block, nil
 }
 
-func (self *CasperChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
+func (self *CasperChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayRPC(rootCtx, chain, reqmsg, -3)
 }

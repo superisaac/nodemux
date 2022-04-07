@@ -4,8 +4,9 @@ package chains
 
 import (
 	"context"
-	"github.com/superisaac/jsonz"
+	"github.com/superisaac/jlib"
 	"github.com/superisaac/nodemux/core"
+	"net/http"
 )
 
 type nearBlock struct {
@@ -33,7 +34,7 @@ func (self NearChain) StartSync(context context.Context, m *nodemuxcore.Multiple
 
 func (self *NearChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	params := map[string]interface{}{"finality": "final"}
-	reqmsg := jsonz.NewRequestMessage(
+	reqmsg := jlib.NewRequestMessage(
 		1, "block", params)
 
 	var bt nearBlock
@@ -49,7 +50,7 @@ func (self *NearChain) GetBlockhead(context context.Context, b *nodemuxcore.Mult
 	return block, nil
 }
 
-func (self *NearChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
+func (self *NearChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayRPC(rootCtx, chain, reqmsg, -3)
 }

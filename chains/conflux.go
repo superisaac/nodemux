@@ -2,8 +2,9 @@ package chains
 
 import (
 	"context"
-	"github.com/superisaac/jsonz"
+	"github.com/superisaac/jlib"
 	"github.com/superisaac/nodemux/core"
+	"net/http"
 )
 
 type ConfluxChain struct {
@@ -22,7 +23,7 @@ func (self ConfluxChain) StartSync(context context.Context, m *nodemuxcore.Multi
 }
 
 func (self *ConfluxChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	reqmsg := jsonz.NewRequestMessage(
+	reqmsg := jlib.NewRequestMessage(
 		1, "cfx_epochNumber",
 		[]interface{}{"latest_mined"})
 	var height int
@@ -37,7 +38,7 @@ func (self *ConfluxChain) GetBlockhead(context context.Context, b *nodemuxcore.M
 	return block, nil
 }
 
-func (self *ConfluxChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
+func (self *ConfluxChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayRPC(rootCtx, chain, reqmsg, -5)
 }

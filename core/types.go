@@ -3,8 +3,8 @@ package nodemuxcore
 import (
 	"context"
 	"github.com/go-redis/redis/v8"
-	"github.com/superisaac/jsonz"
-	"github.com/superisaac/jsonz/http"
+	"github.com/superisaac/jlib"
+	"github.com/superisaac/jlib/http"
 	"net/http"
 )
 
@@ -41,7 +41,7 @@ type Endpoint struct {
 	Blockhead *Block
 
 	client    *http.Client
-	rpcClient jsonzhttp.Client
+	rpcClient jlibhttp.Client
 
 	// sync status
 	connected bool
@@ -95,7 +95,7 @@ type BlockheadDelegator interface {
 
 type RPCDelegator interface {
 	BlockheadDelegator
-	DelegateRPC(ctx context.Context, b *Multiplexer, chain ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error)
+	DelegateRPC(ctx context.Context, b *Multiplexer, chain ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error)
 }
 
 type RESTDelegator interface {

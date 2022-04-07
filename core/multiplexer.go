@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/jsonz"
+	"github.com/superisaac/jlib"
 	"net/http"
 	//"sync"
 )
@@ -183,10 +183,10 @@ func (self *Multiplexer) LoadFromConfig(nbcfg *NodemuxConfig) {
 	}
 }
 
-func (self *Multiplexer) DefaultRelayRPC(rootCtx context.Context, chain ChainRef, reqmsg *jsonz.RequestMessage, overHeight int) (jsonz.Message, error) {
+func (self *Multiplexer) DefaultRelayRPC(rootCtx context.Context, chain ChainRef, reqmsg *jlib.RequestMessage, overHeight int) (jlib.Message, error) {
 	ep, found := self.SelectOverHeight(chain, reqmsg.Method, overHeight)
 	if !found {
-		return jsonz.ErrMethodNotFound.ToMessage(reqmsg), nil
+		return jlib.ErrMethodNotFound.ToMessage(reqmsg), nil
 	}
 	resmsg, err := ep.CallRPC(rootCtx, reqmsg)
 	return resmsg, err

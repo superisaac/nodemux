@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 	"github.com/pkg/errors"
-	"github.com/superisaac/jsonz"
-	"github.com/superisaac/jsonz/http"
+	"github.com/superisaac/jlib"
+	"github.com/superisaac/jlib/http"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 	"net/url"
@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	wsPairs = make(map[string]*jsonzhttp.WSClient)
+	wsPairs = make(map[string]*jlibhttp.WSClient)
 
 	wsRegex = regexp.MustCompile(`^/jsonrpc\-ws/([^/]+)/([^/]+)/?$`)
 )
@@ -21,7 +21,7 @@ var (
 type JSONRPCWSRelayer struct {
 	rootCtx    context.Context
 	chain      nodemuxcore.ChainRef
-	rpcHandler *jsonzhttp.WSHandler
+	rpcHandler *jlibhttp.WSHandler
 }
 
 func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
@@ -29,17 +29,17 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 		rootCtx: rootCtx,
 	}
 
-	rpcHandler := jsonzhttp.NewWSHandler(rootCtx, nil)
-	rpcHandler.Actor.OnClose(func(r *http.Request, s jsonzhttp.RPCSession) {
+	rpcHandler := jlibhttp.NewWSHandler(rootCtx, nil)
+	rpcHandler.Actor.OnClose(func(r *http.Request, s jlibhttp.RPCSession) {
 		relayer.onClose(r, s)
 	})
-	rpcHandler.Actor.OnMissing(func(req *jsonzhttp.RPCRequest) (interface{}, error) {
+	rpcHandler.Actor.OnMissing(func(req *jlibhttp.RPCRequest) (interface{}, error) {
 		serverCfg := ServerConfigFromContext(rootCtx)
 		ok, err := checkRatelimit(req.HttpRequest(), serverCfg.Ratelimit)
 		if err != nil {
 			return nil, err
 		} else if !ok {
-			return nil, jsonzhttp.SimpleResponse{
+			return nil, jlibhttp.SimpleResponse{
 				Code: 403,
 				Body: []byte("rate limit exceeded!"),
 			}
@@ -50,12 +50,12 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 	return relayer
 }
 
-func (self *JSONRPCWSRelayer) onClose(r *http.Request, s jsonzhttp.RPCSession) {
+func (self *JSONRPCWSRelayer) onClose(r *http.Request, s jlibhttp.RPCSession) {
 	delete(wsPairs, s.SessionID())
 	metricsWSPairsCount.Set(float64(len(wsPairs)))
 }
 
-func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{}, error) {
+func (self *JSONRPCWSRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}, error) {
 	r := req.HttpRequest()
 	msg := req.Msg()
 	chain := self.chain
@@ -67,7 +67,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 	if chain.Empty() {
 		matches := wsRegex.FindStringSubmatch(r.URL.Path)
 		if len(matches) < 3 {
-			return nil, jsonzhttp.SimpleResponse{
+			return nil, jlibhttp.SimpleResponse{
 				Code: 404,
 				Body: []byte("not found"),
 			}
@@ -94,8 +94,8 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 		if err != nil {
 			return nil, err
 		}
-		destWs := jsonzhttp.NewWSClient(u)
-		destWs.OnMessage(func(m jsonz.Message) {
+		destWs := jlibhttp.NewWSClient(u)
+		destWs.OnMessage(func(m jlib.Message) {
 			session.Send(m)
 		})
 		wsPairs[session.SessionID()] = destWs
@@ -106,19 +106,19 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{
 		// if no dest websocket connection is available and msg is a request message
 		// it's still ok to deliver the message to http endpoints
 		delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(chain.Brand)
-		reqmsg, _ := msg.(*jsonz.RequestMessage)
+		reqmsg, _ := msg.(*jlib.RequestMessage)
 		if delegator == nil {
-			return nil, jsonzhttp.SimpleResponse{
+			return nil, jlibhttp.SimpleResponse{
 				Code: 404,
 				Body: []byte("backend not found"),
 			}
 		}
 
-		resmsg, err := delegator.DelegateRPC(self.rootCtx, m, chain, reqmsg)
+		resmsg, err := delegator.DelegateRPC(self.rootCtx, m, chain, reqmsg, r)
 		return resmsg, err
 	} else {
 		// the last way, return back
-		return nil, jsonzhttp.SimpleResponse{
+		return nil, jlibhttp.SimpleResponse{
 			Code: 400,
 			Body: []byte("no websocket upstreams"),
 		}

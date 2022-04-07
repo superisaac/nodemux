@@ -3,14 +3,14 @@ package nodemuxcore
 // JSONRPC client from http or websocket
 import (
 	"context"
-	"github.com/superisaac/jsonz"
-	"github.com/superisaac/jsonz/http"
+	"github.com/superisaac/jlib"
+	"github.com/superisaac/jlib/http"
 	"strings"
 )
 
 func (self *Endpoint) ensureRPCClient() {
 	if self.rpcClient == nil {
-		c, err := jsonzhttp.NewClient(self.Config.Url)
+		c, err := jlibhttp.NewClient(self.Config.Url)
 		if err != nil {
 			panic(err)
 		}
@@ -18,19 +18,19 @@ func (self *Endpoint) ensureRPCClient() {
 	}
 }
 
-func (self *Endpoint) RPCClient() jsonzhttp.Client {
+func (self *Endpoint) RPCClient() jlibhttp.Client {
 	self.ensureRPCClient()
 	return self.rpcClient
 }
 
-func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
+func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jlib.RequestMessage) (jlib.Message, error) {
 	//self.Connect()
 	self.ensureRPCClient()
 	self.incrRelayCount()
 	return self.rpcClient.Call(rootCtx, reqmsg)
 } // CallRPC
 
-func (self *Endpoint) UnwrapCallRPC(rootCtx context.Context, reqmsg *jsonz.RequestMessage, output interface{}) error {
+func (self *Endpoint) UnwrapCallRPC(rootCtx context.Context, reqmsg *jlib.RequestMessage, output interface{}) error {
 	//self.Connect()
 	self.ensureRPCClient()
 	return self.rpcClient.UnwrapCall(rootCtx, reqmsg, output)

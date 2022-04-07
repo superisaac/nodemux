@@ -2,9 +2,9 @@ package chains
 
 import (
 	"context"
-	//"fmt"
-	"github.com/superisaac/jsonz"
+	"github.com/superisaac/jlib"
 	"github.com/superisaac/nodemux/core"
+	"net/http"
 )
 
 type solanaBlock struct {
@@ -34,7 +34,7 @@ func (self SolanaChain) StartSync(context context.Context, m *nodemuxcore.Multip
 }
 
 func (self *SolanaChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	reqmsg := jsonz.NewRequestMessage(
+	reqmsg := jlib.NewRequestMessage(
 		1, "getLatestBlockhash", []interface{}{})
 
 	var bt solanaBlock
@@ -49,7 +49,7 @@ func (self *SolanaChain) GetBlockhead(context context.Context, b *nodemuxcore.Mu
 	return block, nil
 }
 
-func (self *SolanaChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
+func (self *SolanaChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayRPC(rootCtx, chain, reqmsg, -10)
 }

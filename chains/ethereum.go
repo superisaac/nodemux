@@ -5,9 +5,10 @@ package chains
 import (
 	"context"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/superisaac/jsonz"
-	"github.com/superisaac/jsonz/http"
+	"github.com/superisaac/jlib"
+	"github.com/superisaac/jlib/http"
 	"github.com/superisaac/nodemux/core"
+	"net/http"
 	"reflect"
 	"time"
 )
@@ -53,7 +54,7 @@ func NewEthereumChain() *EthereumChain {
 }
 
 func (self EthereumChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
-	reqmsg := jsonz.NewRequestMessage(
+	reqmsg := jlib.NewRequestMessage(
 		1, "web3_clientVersion", nil)
 	var v string
 	err := ep.UnwrapCallRPC(context, reqmsg, &v)
@@ -75,8 +76,8 @@ func (self EthereumChain) StartSync(context context.Context, m *nodemuxcore.Mult
 }
 
 func (self *EthereumChain) GetBlockhead(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	reqmsg := jsonz.NewRequestMessage(
-		jsonz.NewUuid(), "eth_getBlockByNumber",
+	reqmsg := jlib.NewRequestMessage(
+		jlib.NewUuid(), "eth_getBlockByNumber",
 		[]interface{}{"latest", false})
 
 	var bt ethereumBlock
@@ -102,7 +103,7 @@ func (self *EthereumChain) GetBlockhead(context context.Context, m *nodemuxcore.
 	return block, nil
 }
 
-func (self *EthereumChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsonz.RequestMessage) (jsonz.Message, error) {
+func (self *EthereumChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
 	if endpoint, ok := presenceCacheMatchRequest(
 		ctx, m, chain, reqmsg,
 		"eth_getTransactionByHash",
@@ -118,12 +119,12 @@ func (self *EthereumChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multi
 	return m.DefaultRelayRPC(ctx, chain, reqmsg, -5)
 }
 
-func (self *EthereumChain) findBlockHeight(reqmsg *jsonz.RequestMessage) (int, bool) {
+func (self *EthereumChain) findBlockHeight(reqmsg *jlib.RequestMessage) (int, bool) {
 	// the first argument is a hexlified block number or latest or pending
 	var bh struct {
 		Height string
 	}
-	if err := jsonz.DecodeParams(reqmsg.Params, &bh); err == nil && bh.Height != "" {
+	if err := jlib.DecodeParams(reqmsg.Params, &bh); err == nil && bh.Height != "" {
 		if bh.Height == "latest" || bh.Height == "pending" {
 			return 0, true
 		}
@@ -135,7 +136,7 @@ func (self *EthereumChain) findBlockHeight(reqmsg *jsonz.RequestMessage) (int, b
 }
 
 func (self *EthereumChain) subscribeBlockhead(rootCtx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
-	wsClient, ok := ep.RPCClient().(*jsonzhttp.WSClient)
+	wsClient, ok := ep.RPCClient().(*jlibhttp.WSClient)
 
 	if !ok {
 		ep.Log().Panicf("client is not websocket, client is %s", reflect.TypeOf(ep.RPCClient()))
@@ -143,13 +144,13 @@ func (self *EthereumChain) subscribeBlockhead(rootCtx context.Context, m *nodemu
 		//return errors.New("client is not websocket")
 	}
 
-	wsClient.OnMessage(func(msg jsonz.Message) {
-		ntf, ok := msg.(*jsonz.NotifyMessage)
+	wsClient.OnMessage(func(msg jlib.Message) {
+		ntf, ok := msg.(*jlib.NotifyMessage)
 		if !ok && ntf.Method != "eth_subscription" || len(ntf.Params) == 0 {
 			return
 		}
 		var headSub ethereumHeadSub
-		err := jsonz.DecodeInterface(ntf.Params[0], &headSub)
+		err := jlib.DecodeInterface(ntf.Params[0], &headSub)
 		if err != nil {
 			ep.Log().Warnf("decode head sub error %s", err)
 		} else {
@@ -192,7 +193,7 @@ func (self *EthereumChain) subscribeBlockhead(rootCtx context.Context, m *nodemu
 	}
 }
 
-func (self *EthereumChain) connectAndSub(rootCtx context.Context, wsClient *jsonzhttp.WSClient, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) error {
+func (self *EthereumChain) connectAndSub(rootCtx context.Context, wsClient *jlibhttp.WSClient, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) error {
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
@@ -219,8 +220,8 @@ func (self *EthereumChain) connectAndSub(rootCtx context.Context, wsClient *json
 
 	// send sub command
 	var subscribeToken string
-	submsg := jsonz.NewRequestMessage(
-		jsonz.NewUuid(), "eth_subscribe",
+	submsg := jlib.NewRequestMessage(
+		jlib.NewUuid(), "eth_subscribe",
 		[]interface{}{"newHeads"})
 
 	err = ep.UnwrapCallRPC(ctx, submsg, &subscribeToken)

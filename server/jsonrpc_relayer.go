@@ -2,8 +2,8 @@ package server
 
 import (
 	"context"
-	"github.com/superisaac/jsonz"
-	"github.com/superisaac/jsonz/http"
+	"github.com/superisaac/jlib"
+	"github.com/superisaac/jlib/http"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 	"regexp"
@@ -17,7 +17,7 @@ var (
 type JSONRPCRelayer struct {
 	rootCtx    context.Context
 	chain      nodemuxcore.ChainRef
-	rpcHandler *jsonzhttp.H1Handler
+	rpcHandler *jlibhttp.H1Handler
 }
 
 func NewJSONRPCRelayer(rootCtx context.Context) *JSONRPCRelayer {
@@ -25,22 +25,22 @@ func NewJSONRPCRelayer(rootCtx context.Context) *JSONRPCRelayer {
 		rootCtx: rootCtx,
 	}
 
-	rpcHandler := jsonzhttp.NewH1Handler(nil)
-	rpcHandler.Actor.OnMissing(func(req *jsonzhttp.RPCRequest) (interface{}, error) {
+	rpcHandler := jlibhttp.NewH1Handler(nil)
+	rpcHandler.Actor.OnMissing(func(req *jlibhttp.RPCRequest) (interface{}, error) {
 		return relayer.delegateRPC(req)
 	})
 	relayer.rpcHandler = rpcHandler
 	return relayer
 }
 
-func (self *JSONRPCRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{}, error) {
+func (self *JSONRPCRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}, error) {
 	r := req.HttpRequest()
 	msg := req.Msg()
 	chain := self.chain
 	if chain.Empty() {
 		matches := rpcRegex.FindStringSubmatch(r.URL.Path)
 		if len(matches) < 3 {
-			return nil, jsonzhttp.SimpleResponse{
+			return nil, jlibhttp.SimpleResponse{
 				Code: 404,
 				Body: []byte("not found"),
 			}
@@ -54,24 +54,24 @@ func (self *JSONRPCRelayer) delegateRPC(req *jsonzhttp.RPCRequest) (interface{},
 	}
 
 	if !msg.IsRequest() {
-		return nil, jsonzhttp.SimpleResponse{
+		return nil, jlibhttp.SimpleResponse{
 			Code: 400,
 			Body: []byte("bad request"),
 		}
 	}
 
-	reqmsg, _ := msg.(*jsonz.RequestMessage)
+	reqmsg, _ := msg.(*jlib.RequestMessage)
 	m := nodemuxcore.GetMultiplexer()
 
 	delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(chain.Brand)
 	if delegator == nil {
-		return nil, jsonzhttp.SimpleResponse{
+		return nil, jlibhttp.SimpleResponse{
 			Code: 404,
 			Body: []byte("backend not found"),
 		}
 	}
 
-	resmsg, err := delegator.DelegateRPC(self.rootCtx, m, chain, reqmsg)
+	resmsg, err := delegator.DelegateRPC(self.rootCtx, m, chain, reqmsg, r)
 	return resmsg, err
 }
 

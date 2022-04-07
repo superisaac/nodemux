@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"github.com/pkg/errors"
-	"github.com/superisaac/jsonz/http"
+	"github.com/superisaac/jlib/http"
 	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
@@ -16,20 +16,20 @@ import (
 
 type MetricsConfig struct {
 	Bind string
-	Auth *jsonzhttp.AuthConfig `yaml:"auth,omitempty"`
-	TLS  *jsonzhttp.TLSConfig  `yaml:"tls:omitempty"`
+	Auth *jlibhttp.AuthConfig `yaml:"auth,omitempty"`
+	TLS  *jlibhttp.TLSConfig  `yaml:"tls:omitempty"`
 }
 
 type AdminConfig struct {
-	Auth *jsonzhttp.AuthConfig `yaml:"auth,omitempty"`
+	Auth *jlibhttp.AuthConfig `yaml:"auth,omitempty"`
 }
 
 type EntrypointConfig struct {
 	Chain   string
 	Network string
 	Bind    string
-	Auth    *jsonzhttp.AuthConfig `yaml:"auth,omitempty"`
-	TLS     *jsonzhttp.TLSConfig  `yaml:"tls,omitempty"`
+	Auth    *jlibhttp.AuthConfig `yaml:"auth,omitempty"`
+	TLS     *jlibhttp.TLSConfig  `yaml:"tls,omitempty"`
 }
 
 type RatelimitConfig struct {
@@ -38,13 +38,13 @@ type RatelimitConfig struct {
 }
 
 type ServerConfig struct {
-	Bind        string                `yaml:"version,omitempty"`
-	TLS         *jsonzhttp.TLSConfig  `yaml:"tls,omitempty"`
-	Admin       *AdminConfig          `yaml:"admin,omitempty"`
-	Metrics     *MetricsConfig        `yaml:"metrics,omitempty"`
-	Auth        *jsonzhttp.AuthConfig `yaml:"auth,omitempty"`
-	Entrypoints []*EntrypointConfig   `yaml:"entrypoints,omitempty"`
-	Ratelimit   RatelimitConfig       `yaml:"ratelimit,omitempty"`
+	Bind        string               `yaml:"version,omitempty"`
+	TLS         *jlibhttp.TLSConfig  `yaml:"tls,omitempty"`
+	Admin       *AdminConfig         `yaml:"admin,omitempty"`
+	Metrics     *MetricsConfig       `yaml:"metrics,omitempty"`
+	Auth        *jlibhttp.AuthConfig `yaml:"auth,omitempty"`
+	Entrypoints []*EntrypointConfig  `yaml:"entrypoints,omitempty"`
+	Ratelimit   RatelimitConfig      `yaml:"ratelimit,omitempty"`
 }
 
 func NewServerConfig() *ServerConfig {

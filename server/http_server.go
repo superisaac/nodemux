@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/jsonz"
-	"github.com/superisaac/jsonz/http"
+	"github.com/superisaac/jlib"
+	"github.com/superisaac/jlib/http"
 	"github.com/superisaac/nodemux/core"
 	"github.com/superisaac/nodemux/ratelimit"
 	"net/http"
@@ -17,9 +17,9 @@ func requestLog(r *http.Request) *log.Entry {
 	})
 }
 
-func startServer(rootCtx context.Context, bind string, handler http.Handler, tlsConfigs ...*jsonzhttp.TLSConfig) error {
+func startServer(rootCtx context.Context, bind string, handler http.Handler, tlsConfigs ...*jlibhttp.TLSConfig) error {
 	//ratelimitHandler := NewRatelimitHandler(rootCtx, handler)
-	return jsonzhttp.ListenAndServe(
+	return jlibhttp.ListenAndServe(
 		rootCtx, bind,
 		//ratelimitHandler,
 		handler,
@@ -33,7 +33,7 @@ func startMetricsServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		return
 	}
 
-	handler := jsonzhttp.NewAuthHandler(
+	handler := jlibhttp.NewAuthHandler(
 		serverCfg.Metrics.Auth,
 		promhttp.Handler())
 	err := startServer(
@@ -87,9 +87,9 @@ func startEntrypointServer(rootCtx context.Context, entryCfg *EntrypointConfig, 
 	}
 }
 
-func handlerChains(rootCtx context.Context, authCfg *jsonzhttp.AuthConfig, next http.Handler) http.Handler {
+func handlerChains(rootCtx context.Context, authCfg *jlibhttp.AuthConfig, next http.Handler) http.Handler {
 	h := NewRatelimitHandler(rootCtx, next)
-	h1 := jsonzhttp.NewAuthHandler(authCfg, h)
+	h1 := jlibhttp.NewAuthHandler(authCfg, h)
 	return h1
 }
 
@@ -100,7 +100,7 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	}
 	log.Infof("start http proxy at %s", bind)
 
-	var adminAuth *jsonzhttp.AuthConfig
+	var adminAuth *jlibhttp.AuthConfig
 	if serverCfg.Admin != nil {
 		adminAuth = serverCfg.Admin.Auth
 	}
@@ -184,14 +184,14 @@ func checkRatelimit(r *http.Request, ratelimitCfg RatelimitConfig) (bool, error)
 	if c, ok := m.RedisClient("ratelimit"); ok {
 		// per user based ratelimit
 		if v := r.Context().Value("authInfo"); r != nil {
-			if authInfo, ok := v.(*jsonzhttp.AuthInfo); ok && authInfo != nil && authInfo.Settings != nil {
+			if authInfo, ok := v.(*jlibhttp.AuthInfo); ok && authInfo != nil && authInfo.Settings != nil {
 				limit := ratelimitCfg.User
 
 				// check against usersettings for ratelimit
 				var settingsT struct {
 					Ratelimit int
 				}
-				err := jsonz.DecodeInterface(authInfo.Settings, &settingsT)
+				err := jlib.DecodeInterface(authInfo.Settings, &settingsT)
 				if err != nil {
 					return false, err
 				} else if settingsT.Ratelimit > 0 {
