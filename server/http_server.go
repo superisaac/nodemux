@@ -4,10 +4,7 @@ import (
 	"context"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/jlib"
 	"github.com/superisaac/jlib/http"
-	"github.com/superisaac/nodemux/core"
-	"github.com/superisaac/nodemux/ratelimit"
 	"net/http"
 )
 
@@ -18,10 +15,8 @@ func requestLog(r *http.Request) *log.Entry {
 }
 
 func startServer(rootCtx context.Context, bind string, handler http.Handler, tlsConfigs ...*jlibhttp.TLSConfig) error {
-	//ratelimitHandler := NewRatelimitHandler(rootCtx, handler)
 	return jlibhttp.ListenAndServe(
 		rootCtx, bind,
-		//ratelimitHandler,
 		handler,
 		tlsConfigs...)
 }
@@ -45,52 +40,16 @@ func startMetricsServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	}
 }
 
-func startEntrypointServer(rootCtx context.Context, entryCfg *EntrypointConfig, serverCfg *ServerConfig) {
-	support, rpcType := nodemuxcore.GetDelegatorFactory().SupportChain(entryCfg.Chain)
-	if !support {
-		log.Warnf("entry point for chain %s not supported", entryCfg.Chain)
-		return
-	}
-	chain := nodemuxcore.ChainRef{
-		Brand:   entryCfg.Chain,
-		Network: entryCfg.Network,
-	}
-	var handler http.Handler
-	if rpcType == nodemuxcore.ApiJSONRPC {
-		rpc1 := NewJSONRPCRelayer(rootCtx)
-		rpc1.chain = chain
-		handler = rpc1
-	} else if rpcType == nodemuxcore.ApiJSONRPCWS {
-		rpc1 := NewJSONRPCWSRelayer(rootCtx)
-		rpc1.chain = chain
-		handler = rpc1
-	} else if rpcType == nodemuxcore.ApiREST {
-		rest1 := NewRESTRelayer(rootCtx)
-		rest1.chain = chain
-		handler = rest1
-	} else {
-		graph1 := NewGraphQLRelayer(rootCtx)
-		graph1.chain = chain
-		handler = graph1
-	}
-	log.Infof("entrypoint server %s listens at %s", chain, entryCfg.Bind)
-
-	err := startServer(rootCtx, entryCfg.Bind,
-		handlerChains(
-			rootCtx,
-			serverCfg.Auth,
-			handler),
-		entryCfg.TLS, serverCfg.TLS)
-
-	if err != nil {
-		log.Println("entry point error ---", err)
-	}
+func adminHandler(rootCtx context.Context, authCfg *jlibhttp.AuthConfig, next http.Handler) http.Handler {
+	h1 := jlibhttp.NewAuthHandler(authCfg, next)
+	return h1
 }
 
-func handlerChains(rootCtx context.Context, authCfg *jlibhttp.AuthConfig, next http.Handler) http.Handler {
-	h := NewRatelimitHandler(rootCtx, next)
-	h1 := jlibhttp.NewAuthHandler(authCfg, h)
-	return h1
+func relayHandler(rootCtx context.Context, authCfg *jlibhttp.AuthConfig, next http.Handler) http.Handler {
+	h0 := NewRatelimitHandler(rootCtx, next)
+	h1 := NewAccHandler(rootCtx, h0)
+	h2 := jlibhttp.NewAuthHandler(authCfg, h1)
+	return h2
 }
 
 func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
@@ -107,31 +66,31 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 
 	rootCtx = serverCfg.AddTo(rootCtx)
 	serverMux := http.NewServeMux()
-	serverMux.Handle("/metrics", handlerChains(
+	serverMux.Handle("/metrics", adminHandler(
 		rootCtx,
 		serverCfg.Metrics.Auth,
 		promhttp.Handler()))
 
-	serverMux.Handle("/admin", handlerChains(
+	serverMux.Handle("/admin", adminHandler(
 		rootCtx,
 		adminAuth,
 		NewAdminHandler()))
 
-	serverMux.Handle("/jsonrpc/", handlerChains(
+	serverMux.Handle("/jsonrpc/", relayHandler(
 		rootCtx,
 		serverCfg.Auth,
 		NewJSONRPCRelayer(rootCtx)))
 
-	serverMux.Handle("/jsonrpc-ws/", handlerChains(
+	serverMux.Handle("/jsonrpc-ws/", relayHandler(
 		rootCtx,
 		serverCfg.Auth,
 		NewJSONRPCWSRelayer(rootCtx)))
 
-	serverMux.Handle("/rest/", handlerChains(
+	serverMux.Handle("/rest/", relayHandler(
 		rootCtx,
 		serverCfg.Auth,
 		NewRESTRelayer(rootCtx)))
-	serverMux.Handle("/graphql/", handlerChains(
+	serverMux.Handle("/graphql/", relayHandler(
 		rootCtx,
 		serverCfg.Auth,
 		NewGraphQLRelayer(rootCtx)))
@@ -149,69 +108,4 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		log.Println("HTTP Server Error - ", err)
 		//panic(err)
 	}
-}
-
-// handle ratelimit
-type RatelimitHandler struct {
-	rootCtx context.Context
-	next    http.Handler
-}
-
-func NewRatelimitHandler(rootCtx context.Context, next http.Handler) *RatelimitHandler {
-	return &RatelimitHandler{
-		rootCtx: rootCtx,
-		next:    next,
-	}
-}
-
-func (self *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	serverCfg := ServerConfigFromContext(self.rootCtx)
-	ok, err := checkRatelimit(r, serverCfg.Ratelimit)
-	if err != nil {
-		requestLog(r).Errorf("error while checking ratelimit %s", err)
-		w.WriteHeader(500)
-		w.Write([]byte("server error"))
-	} else if !ok {
-		w.WriteHeader(403)
-		w.Write([]byte("rate limit exceeded!"))
-	} else {
-		self.next.ServeHTTP(w, r)
-	}
-}
-
-func checkRatelimit(r *http.Request, ratelimitCfg RatelimitConfig) (bool, error) {
-	m := nodemuxcore.GetMultiplexer()
-	if c, ok := m.RedisClient("ratelimit"); ok {
-		// per user based ratelimit
-		if v := r.Context().Value("authInfo"); r != nil {
-			if authInfo, ok := v.(*jlibhttp.AuthInfo); ok && authInfo != nil && authInfo.Settings != nil {
-				limit := ratelimitCfg.User
-
-				// check against usersettings for ratelimit
-				var settingsT struct {
-					Ratelimit int
-				}
-				err := jlib.DecodeInterface(authInfo.Settings, &settingsT)
-				if err != nil {
-					return false, err
-				} else if settingsT.Ratelimit > 0 {
-					limit = settingsT.Ratelimit
-				} else {
-					log.Warnf("user settings.Ratelimit %d <= 0", settingsT.Ratelimit)
-				}
-
-				return ratelimit.Incr(
-					r.Context(),
-					c,
-					"u"+authInfo.Username,
-					limit)
-
-			}
-		}
-		// per IP based ratelimit
-		return ratelimit.Incr(
-			r.Context(),
-			c, r.RemoteAddr, ratelimitCfg.IP)
-	}
-	return true, nil
 }

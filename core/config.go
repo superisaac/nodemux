@@ -31,8 +31,7 @@ func (self StoreConfig) Scheme() string {
 }
 
 type NodemuxConfig struct {
-	Version string `yaml:"version,omitempty"`
-	//Store     StoreConfig               `yaml:"store,omitempty"`
+	Version   string                    `yaml:"version,omitempty"`
 	Endpoints map[string]EndpointConfig `yaml:"endpoints"`
 	Stores    map[string]StoreConfig    `yaml:"stores,omitempty"`
 }

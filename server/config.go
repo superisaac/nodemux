@@ -2,11 +2,13 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/pkg/errors"
 	"github.com/superisaac/jlib/http"
 	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 // type TLSConfig struct {
@@ -25,8 +27,7 @@ type AdminConfig struct {
 }
 
 type EntrypointConfig struct {
-	Chain   string
-	Network string
+	Account string
 	Bind    string
 	Auth    *jlibhttp.AuthConfig `yaml:"auth,omitempty"`
 	TLS     *jlibhttp.TLSConfig  `yaml:"tls,omitempty"`
@@ -37,14 +38,21 @@ type RatelimitConfig struct {
 	User int `yaml:"user"`
 }
 
+type AccountConfig struct {
+	Username  string          `yaml:"username"`
+	Chain     string          `yaml:"chain"`
+	Ratelimit RatelimitConfig `yaml:"ratelimit,omitempty"`
+}
+
 type ServerConfig struct {
-	Bind        string               `yaml:"version,omitempty"`
-	TLS         *jlibhttp.TLSConfig  `yaml:"tls,omitempty"`
-	Admin       *AdminConfig         `yaml:"admin,omitempty"`
-	Metrics     *MetricsConfig       `yaml:"metrics,omitempty"`
-	Auth        *jlibhttp.AuthConfig `yaml:"auth,omitempty"`
-	Entrypoints []*EntrypointConfig  `yaml:"entrypoints,omitempty"`
-	Ratelimit   RatelimitConfig      `yaml:"ratelimit,omitempty"`
+	Bind        string                   `yaml:"version,omitempty"`
+	TLS         *jlibhttp.TLSConfig      `yaml:"tls,omitempty"`
+	Admin       *AdminConfig             `yaml:"admin,omitempty"`
+	Metrics     *MetricsConfig           `yaml:"metrics,omitempty"`
+	Auth        *jlibhttp.AuthConfig     `yaml:"auth,omitempty"`
+	Entrypoints []EntrypointConfig       `yaml:"entrypoints,omitempty"`
+	Ratelimit   RatelimitConfig          `yaml:"ratelimit,omitempty"`
+	Accounts    map[string]AccountConfig `yaml:"accounts,omitempty"`
 }
 
 func NewServerConfig() *ServerConfig {
@@ -123,6 +131,20 @@ func (self *ServerConfig) validateValues() error {
 		}
 	}
 
+	for account, acccfg := range self.Accounts {
+		if strings.Contains(account, "/") || strings.Contains(account, " ") {
+			return fmt.Errorf("invalid account name '%s'", account)
+		}
+		if acccfg.Ratelimit.IP < 0 {
+			return fmt.Errorf("acc ip ratelimit < 0, '%s'", account)
+		}
+
+		if acccfg.Ratelimit.User < 0 {
+			return fmt.Errorf("acc user ratelimit < 0, '%s'", account)
+		}
+
+	}
+
 	for _, entrycfg := range self.Entrypoints {
 		err := entrycfg.validateValues()
 		if err != nil {
@@ -130,13 +152,6 @@ func (self *ServerConfig) validateValues() error {
 		}
 	}
 
-	if self.Ratelimit.IP <= 0 {
-		self.Ratelimit.IP = 3600
-	}
-
-	if self.Ratelimit.User <= 0 {
-		self.Ratelimit.User = 3600
-	}
 	return nil
 }
 
@@ -144,12 +159,11 @@ func (self *EntrypointConfig) validateValues() error {
 	if self == nil {
 		return nil
 	}
-	if self.Chain == "" {
-		return errors.New("entrypoint, chain cannot be empty")
+
+	if self.Account == "" {
+		return errors.New("entrypoint, account cannot be empty")
 	}
-	if self.Network == "" {
-		return errors.New("entrypoint, network cannot be empty")
-	}
+
 	if self.Bind == "" {
 		return errors.New("entrypoint, bind address cannot be empty")
 	}
@@ -186,4 +200,21 @@ func (self *MetricsConfig) validateValues() error {
 		}
 	}
 	return nil
+}
+
+// Ratelimit Config
+func (self RatelimitConfig) UserLimit() int {
+	if self.User <= 0 {
+		return 3600
+	} else {
+		return self.User
+	}
+}
+
+func (self RatelimitConfig) IPLimit() int {
+	if self.IP <= 0 {
+		return 3600
+	} else {
+		return self.IP
+	}
 }

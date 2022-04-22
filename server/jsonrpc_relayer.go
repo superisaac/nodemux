@@ -6,17 +6,12 @@ import (
 	"github.com/superisaac/jlib/http"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
-	"regexp"
-)
-
-var (
-	rpcRegex = regexp.MustCompile(`^/jsonrpc/([^/]+)/([^/]+)/?$`)
 )
 
 // JSONRPC Handler
 type JSONRPCRelayer struct {
 	rootCtx    context.Context
-	chain      nodemuxcore.ChainRef
+	acc        *Acc
 	rpcHandler *jlibhttp.H1Handler
 }
 
@@ -36,23 +31,17 @@ func NewJSONRPCRelayer(rootCtx context.Context) *JSONRPCRelayer {
 func (self *JSONRPCRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}, error) {
 	r := req.HttpRequest()
 	msg := req.Msg()
-	chain := self.chain
-	if chain.Empty() {
-		matches := rpcRegex.FindStringSubmatch(r.URL.Path)
-		if len(matches) < 3 {
+	acc := self.acc
+
+	if acc == nil {
+		acc = AccFromContext(r.Context())
+		if acc == nil {
 			return nil, jlibhttp.SimpleResponse{
 				Code: 404,
-				Body: []byte("not found"),
+				Body: []byte("acc not found"),
 			}
 		}
-		brand := matches[1]
-		network := matches[2]
-		chain = nodemuxcore.ChainRef{
-			Brand:   brand,
-			Network: network,
-		}
 	}
-
 	if !msg.IsRequest() {
 		return nil, jlibhttp.SimpleResponse{
 			Code: 400,
@@ -63,7 +52,7 @@ func (self *JSONRPCRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}, 
 	reqmsg, _ := msg.(*jlib.RequestMessage)
 	m := nodemuxcore.GetMultiplexer()
 
-	delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(chain.Brand)
+	delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(acc.Chain.Brand)
 	if delegator == nil {
 		return nil, jlibhttp.SimpleResponse{
 			Code: 404,
@@ -71,7 +60,7 @@ func (self *JSONRPCRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}, 
 		}
 	}
 
-	resmsg, err := delegator.DelegateRPC(self.rootCtx, m, chain, reqmsg, r)
+	resmsg, err := delegator.DelegateRPC(self.rootCtx, m, acc.Chain, reqmsg, r)
 	return resmsg, err
 }
 

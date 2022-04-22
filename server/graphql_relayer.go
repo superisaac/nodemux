@@ -4,54 +4,46 @@ import (
 	"context"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
-	"regexp"
 )
 
 // GraphQL Handler
 type GraphQLRelayer struct {
 	rootCtx context.Context
-	regex   *regexp.Regexp
-	chain   nodemuxcore.ChainRef
+	//regex   *regexp.Regexp
+	//chain   nodemuxcore.ChainRef
+	acc *Acc
 }
 
 func NewGraphQLRelayer(rootCtx context.Context) *GraphQLRelayer {
 	return &GraphQLRelayer{
 		rootCtx: rootCtx,
-		regex:   regexp.MustCompile(`^/graphql/([^/]+)/([^/]+)(/.*)?$`),
+		//regex:   regexp.MustCompile(`^/graphql/([^/]+\/[^/]+)(/.*)?$`),
 	}
 }
 
 func (self *GraphQLRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	chain := self.chain
+	acc := self.acc
 	path := "/"
-	if chain.Empty() {
-		matches := self.regex.FindStringSubmatch(r.URL.Path)
-		if len(matches) < 4 {
-			requestLog(r).Warnf("http url pattern failed")
+	if acc == nil {
+		acc = AccFromContext(r.Context())
+		if acc == nil {
 			w.WriteHeader(404)
-			w.Write([]byte("not found"))
+			w.Write([]byte("acc not found"))
 			return
-		}
-		brand := matches[1]
-		network := matches[2]
-		path = matches[3]
-		chain = nodemuxcore.ChainRef{
-			Brand:   brand,
-			Network: network,
 		}
 	}
 
 	m := nodemuxcore.GetMultiplexer()
-	delegator := nodemuxcore.GetDelegatorFactory().GetGraphQLDelegator(chain.Brand)
+	delegator := nodemuxcore.GetDelegatorFactory().GetGraphQLDelegator(acc.Chain.Brand)
 	if delegator == nil {
 		w.WriteHeader(404)
 		w.Write([]byte("backend not found"))
 		return
 	}
 
-	err := delegator.DelegateGraphQL(self.rootCtx, m, chain, path, w, r)
+	err := delegator.DelegateGraphQL(self.rootCtx, m, acc.Chain, path, w, r)
 	if err != nil {
-		requestLog(r).Warnf("error delegate rest %s", err)
+		requestLog(r).Warnf("error delegate graphql %s", err)
 		w.WriteHeader(500)
 		w.Write([]byte("server error"))
 	}

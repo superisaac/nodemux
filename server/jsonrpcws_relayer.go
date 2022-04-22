@@ -8,19 +8,16 @@ import (
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 	"net/url"
-	"regexp"
 )
 
 var (
 	wsPairs = make(map[string]*jlibhttp.WSClient)
-
-	wsRegex = regexp.MustCompile(`^/jsonrpc\-ws/([^/]+)/([^/]+)/?$`)
 )
 
 // JSONRPC Handler
 type JSONRPCWSRelayer struct {
 	rootCtx    context.Context
-	chain      nodemuxcore.ChainRef
+	acc        *Acc
 	rpcHandler *jlibhttp.WSHandler
 }
 
@@ -34,8 +31,18 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 		relayer.onClose(r, s)
 	})
 	rpcHandler.Actor.OnMissing(func(req *jlibhttp.RPCRequest) (interface{}, error) {
-		serverCfg := ServerConfigFromContext(rootCtx)
-		ok, err := checkRatelimit(req.HttpRequest(), serverCfg.Ratelimit)
+		r := req.HttpRequest()
+		acc := AccFromContext(r.Context())
+		accName := ""
+		var ratelimit RatelimitConfig
+		if acc != nil {
+			accName = acc.Name
+			ratelimit = acc.Config.Ratelimit
+		} else {
+			serverCfg := ServerConfigFromContext(rootCtx)
+			ratelimit = serverCfg.Ratelimit
+		}
+		ok, err := checkRatelimit(r, accName, ratelimit)
 		if err != nil {
 			return nil, err
 		} else if !ok {
@@ -58,25 +65,20 @@ func (self *JSONRPCWSRelayer) onClose(r *http.Request, s jlibhttp.RPCSession) {
 func (self *JSONRPCWSRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}, error) {
 	r := req.HttpRequest()
 	msg := req.Msg()
-	chain := self.chain
+
 	session := req.Session()
 	if session == nil {
 		return nil, errors.New("request data is not websocket conn")
 	}
 
-	if chain.Empty() {
-		matches := wsRegex.FindStringSubmatch(r.URL.Path)
-		if len(matches) < 3 {
+	acc := self.acc
+	if acc == nil {
+		acc = AccFromContext(r.Context())
+		if acc == nil {
 			return nil, jlibhttp.SimpleResponse{
 				Code: 404,
-				Body: []byte("not found"),
+				Body: []byte("acc not found"),
 			}
-		}
-		brand := matches[1]
-		network := matches[2]
-		chain = nodemuxcore.ChainRef{
-			Brand:   brand,
-			Network: network,
 		}
 	}
 
@@ -86,7 +88,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}
 		// a existing dest ws conn found, relay the message to it
 		err := destWs.Send(self.rootCtx, msg)
 		return nil, err
-	} else if ep, found := m.SelectWebsocketEndpoint(chain, "", -2); found {
+	} else if ep, found := m.SelectWebsocketEndpoint(acc.Chain, "", -2); found {
 		// the first time a websocket connection connects
 		// select an available dest websocket connection
 		// make a pair (session, destWs)
@@ -105,7 +107,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}
 	} else if msg.IsRequest() {
 		// if no dest websocket connection is available and msg is a request message
 		// it's still ok to deliver the message to http endpoints
-		delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(chain.Brand)
+		delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(acc.Chain.Brand)
 		reqmsg, _ := msg.(*jlib.RequestMessage)
 		if delegator == nil {
 			return nil, jlibhttp.SimpleResponse{
@@ -114,7 +116,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}
 			}
 		}
 
-		resmsg, err := delegator.DelegateRPC(self.rootCtx, m, chain, reqmsg, r)
+		resmsg, err := delegator.DelegateRPC(self.rootCtx, m, acc.Chain, reqmsg, r)
 		return resmsg, err
 	} else {
 		// the last way, return back

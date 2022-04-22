@@ -31,9 +31,13 @@ metrics:
     # bearer:
     #   - token: sssppp
 entrypoints:
-  - chain: binance-chain
-    network: mainnet
+  - account: bsc01
     bind: 0.0.0.0:9999
     # tls:
     #   certfile: localhost.crt
     #   keyfile: localhost.key
+
+accounts:
+  bsc01:
+    chain: binance-chain/mainnet
+    username: user01

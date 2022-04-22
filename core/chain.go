@@ -19,6 +19,14 @@ func ParseChain(chainRepr string) (ChainRef, error) {
 	}, nil
 }
 
+func MustParseChain(chainRepr string) ChainRef {
+	chain, err := ParseChain(chainRepr)
+	if err != nil {
+		log.Panicf("parse chain %s", err)
+	}
+	return chain
+}
+
 func (self ChainRef) String() string {
 	return fmt.Sprintf("%s/%s", self.Brand, self.Network)
 }
