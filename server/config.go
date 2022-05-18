@@ -40,8 +40,7 @@ type RatelimitConfig struct {
 }
 
 type AccountConfig struct {
-	Username string `yaml:"username"`
-	//Chain     string          `yaml:"chain"`
+	Username  string          `yaml:"username"`
 	Ratelimit RatelimitConfig `yaml:"ratelimit,omitempty"`
 }
 

@@ -13,6 +13,60 @@ import (
 	"time"
 )
 
+var (
+	// refer to https://eth.wiki/json-rpc/API
+	supportedMethods map[string]bool = map[string]bool{
+		"web3_clientVersion": true,
+		"web3_sha3":          true,
+
+		"net_version":   true,
+		"net_peerCount": true,
+		"net_listening": true,
+
+		"eth_gasPrice":        true,
+		"eth_estimateGas":     true,
+		"eth_protocolVersion": true,
+		"eth_syncing":         true,
+		"eth_coinbase":        true,
+
+		"eth_blockNumber":                         true,
+		"eth_getBlockByNumber":                    true,
+		"eth_getBlockByHash":                      true,
+		"eth_subscribe":                           true,
+		"eth_getTransactionByHash":                true,
+		"eth_getTransactionCount":                 true,
+		"eth_getTransactionByBlockHashAndIndex":   true,
+		"eth_getTransactionByBlockNumberAndIndex": true,
+		"eth_getTransactionReceipt":               true,
+		"eth_getUncleByBlockHashAndIndex":         true,
+		"eth_getUncleByBlockNumberAndIndex":       true,
+
+		"eth_getBalance":         true,
+		"eth_getStorageAt":       true,
+		"eth_call":               true,
+		"eth_getCode":            true,
+		"eth_sendRawTransaction": true,
+		"eth_getLogs":            true,
+
+		// wallet/account related RPCs are not supported by default
+
+		"eth_getCompilers":    true,
+		"eth_compileLLL":      true,
+		"eth_compileSolidity": true,
+		"eth_compileSerpent":  true,
+
+		// mining
+		"eth_mining":         true,
+		"eth_hashrate":       true,
+		"eth_getWork":        true,
+		"eth_submitWork":     true,
+		"eth_submitHashrate": true,
+
+		// filter related RPCs are not supported by default
+
+	}
+)
+
 type ethereumBlock struct {
 	Number       string
 	Hash         string
@@ -104,6 +158,10 @@ func (self *EthereumChain) GetBlockhead(context context.Context, m *nodemuxcore.
 }
 
 func (self *EthereumChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
+	if supported, ok := supportedMethods[reqmsg.Method]; !ok || !supported {
+		reqmsg.Log().Warnf("relayer method not supported")
+		return jlib.ErrMethodNotFound.ToMessage(reqmsg), nil
+	}
 	if endpoint, ok := presenceCacheMatchRequest(
 		ctx, m, chain, reqmsg,
 		"eth_getTransactionByHash",
