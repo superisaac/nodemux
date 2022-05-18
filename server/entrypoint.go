@@ -15,6 +15,7 @@ func startEntrypointServer(rootCtx context.Context, entryCfg EntrypointConfig, s
 	}
 
 	acc := NewAccFromConfig(entryCfg.Account, acccfg)
+	acc.Chain = nodemuxcore.MustParseChain(entryCfg.Chain)
 
 	support, rpcType := nodemuxcore.GetDelegatorFactory().SupportChain(acc.Chain.Brand)
 	if !support {

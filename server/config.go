@@ -28,6 +28,7 @@ type AdminConfig struct {
 
 type EntrypointConfig struct {
 	Account string
+	Chain   string
 	Bind    string
 	Auth    *jlibhttp.AuthConfig `yaml:"auth,omitempty"`
 	TLS     *jlibhttp.TLSConfig  `yaml:"tls,omitempty"`
@@ -39,8 +40,8 @@ type RatelimitConfig struct {
 }
 
 type AccountConfig struct {
-	Username  string          `yaml:"username"`
-	Chain     string          `yaml:"chain"`
+	Username string `yaml:"username"`
+	//Chain     string          `yaml:"chain"`
 	Ratelimit RatelimitConfig `yaml:"ratelimit,omitempty"`
 }
 
@@ -162,6 +163,10 @@ func (self *EntrypointConfig) validateValues() error {
 
 	if self.Account == "" {
 		return errors.New("entrypoint, account cannot be empty")
+	}
+
+	if self.Chain == "" {
+		return errors.New("entrypoint, chain cannot be empty")
 	}
 
 	if self.Bind == "" {

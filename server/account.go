@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	accRegex = regexp.MustCompile(`^/(jsonrpc\-ws|jsonrpc|rest|graphql)/([^/]+)`)
+	accRegex = regexp.MustCompile(`^/(jsonrpc\-ws|jsonrpc|rest|graphql)/([^/]+)/([^/]+)/([^/]+)`)
 )
 
 type Acc struct {
@@ -19,7 +19,6 @@ type Acc struct {
 
 func NewAccFromConfig(name string, cfg AccountConfig) *Acc {
 	return &Acc{
-		Chain:  nodemuxcore.MustParseChain(cfg.Chain),
 		Name:   name,
 		Config: cfg,
 	}
@@ -49,15 +48,21 @@ func NewAccHandler(rootCtx context.Context, next http.Handler) *AccHandler {
 
 func (self *AccHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	matches := accRegex.FindStringSubmatch(r.URL.Path)
-	if len(matches) < 3 {
+	if len(matches) < 5 {
 		w.WriteHeader(404)
 		w.Write([]byte("not found"))
 		return
 	}
 	account := matches[2]
+	brand := matches[3]
+	network := matches[4]
 	serverCfg := ServerConfigFromContext(self.rootCtx)
 	if acccfg, ok := serverCfg.Accounts[account]; ok {
 		acc := NewAccFromConfig(account, acccfg)
+		acc.Chain = nodemuxcore.ChainRef{
+			Brand:   brand,
+			Network: network,
+		}
 		ctx := context.WithValue(r.Context(), "account", acc)
 		self.next.ServeHTTP(w, r.WithContext(ctx))
 		return
