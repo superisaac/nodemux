@@ -15,7 +15,7 @@ import (
 
 var (
 	// refer to https://eth.wiki/json-rpc/API
-	supportedMethods map[string]bool = map[string]bool{
+	allowedMethods map[string]bool = map[string]bool{
 		"web3_clientVersion": true,
 		"web3_sha3":          true,
 
@@ -158,7 +158,7 @@ func (self *EthereumChain) GetBlockhead(context context.Context, m *nodemuxcore.
 }
 
 func (self *EthereumChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
-	if supported, ok := supportedMethods[reqmsg.Method]; !ok || !supported {
+	if allowed, ok := allowedMethods[reqmsg.Method]; !ok || !allowed {
 		reqmsg.Log().Warnf("relayer method not supported")
 		return jlib.ErrMethodNotFound.ToMessage(reqmsg), nil
 	}
