@@ -33,6 +33,7 @@ var (
 		"eth_getBlockByNumber":                    true,
 		"eth_getBlockByHash":                      true,
 		"eth_subscribe":                           true,
+		"eth_unsubscribe":                         true,
 		"eth_getTransactionByHash":                true,
 		"eth_getTransactionCount":                 true,
 		"eth_getTransactionByBlockHashAndIndex":   true,
@@ -64,6 +65,19 @@ var (
 
 		// filter related RPCs are not supported by default
 
+		"parity_getBlockReceipts": true,
+
+		"debug_traceTransaction": true,
+
+		// trace
+		"trace_call":                    true,
+		"trace_callMany":                true,
+		"trace_rawTransaction":          true,
+		"trace_replayBlockTransactions": true,
+		"trace_replayTransaction":       true,
+		"trace_block":                   true,
+		"trace_get":                     true,
+		"trace_transaction":             true,
 	}
 )
 
