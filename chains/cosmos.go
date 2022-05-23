@@ -5,6 +5,7 @@ package chains
 
 import (
 	"context"
+	"fmt"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 	"strconv"
@@ -31,6 +32,19 @@ func (self *cosmosBlock) Height() int {
 	return self.height
 }
 
+type cosmosNodeInfo struct {
+	ApplicationVersion struct {
+		ServerName       string `json:"server_name"`
+		Version          string `json:"version"`
+		CosmosSDKVersion string `json:"cosmos_sdk_version"`
+	} `json:"application_version"`
+}
+
+func (self cosmosNodeInfo) String() string {
+	av := self.ApplicationVersion
+	return fmt.Sprintf("%s-%s-%s", av.ServerName, av.Version, av.CosmosSDKVersion)
+}
+
 type CosmosChain struct {
 }
 
@@ -39,7 +53,12 @@ func NewCosmosChain() *CosmosChain {
 }
 
 func (self CosmosChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
-	return "", nil
+	var info cosmosNodeInfo
+	err := ep.GetJson(context, "/node_info", nil, &info)
+	if err != nil {
+		return "", err
+	}
+	return info.String(), nil
 }
 
 func (self CosmosChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {

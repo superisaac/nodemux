@@ -33,6 +33,7 @@ metrics:
 entrypoints:
   - account: bsc01
     bind: 0.0.0.0:9999
+    chain: binance-chain/mainnet
     # tls:
     #   certfile: localhost.crt
     #   keyfile: localhost.key
