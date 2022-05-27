@@ -47,6 +47,14 @@ func (self Multiplexer) Get(epName string) (*Endpoint, bool) {
 	return ep, ok
 }
 
+func (self Multiplexer) MustGet(epName string) *Endpoint {
+	if ep, ok := self.Get(epName); ok {
+		return ep
+	}
+	log.Panicf("fail to get endpoint %s", epName)
+	return nil
+}
+
 func (self Multiplexer) Chainhub() Chainhub {
 	return self.chainHub
 }
@@ -72,21 +80,20 @@ func (self *Multiplexer) Add(endpoint *Endpoint) bool {
 func (self *Multiplexer) Select(chain ChainRef, method string) (*Endpoint, bool) {
 
 	if eps, ok := self.chainIndex[chain]; ok {
-		if idx, ok := eps.WeightRandom(); ok {
-			ep := eps.items[idx]
+		if epName, ok := eps.WeightRandom(); ok {
+			ep := self.MustGet(epName)
+			if ep.Chain != chain {
+				log.Fatalf("ep.Chain %s doesnot match %s", ep.Chain, chain)
+			}
 			if ep.Available(method, 0) {
 				return ep, true
 			}
 
-			for i := 0; i < len(eps.items)-1; i++ {
-				idx++
-				idx = idx % len(eps.items)
-				ep := eps.items[idx]
-
+			// select endpoint sequentially
+			for _, ep := range eps.items {
 				if ep.Available(method, 0) {
 					return ep, true
 				}
-				return ep, true
 			}
 		}
 	}
@@ -101,16 +108,13 @@ func (self *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightS
 			height = eps.maxTipHeight + heightSpec
 		}
 
-		if idx, ok := eps.WeightRandom(); ok {
-			ep := eps.items[idx]
+		if epName, ok := eps.WeightRandom(); ok {
+			ep := self.MustGet(epName)
 			if ep.Available(method, height) {
 				return ep, true
 			}
-			for i := 0; i < len(eps.items)-1; i++ {
-				idx++
-				idx = idx % len(eps.items)
-				ep := eps.items[idx]
 
+			for _, ep := range eps.items {
 				if ep.Available(method, height) {
 					return ep, true
 				}
@@ -129,16 +133,12 @@ func (self *Multiplexer) SelectWebsocketEndpoint(chain ChainRef, method string, 
 			height = eps.maxTipHeight + heightSpec
 		}
 
-		if idx, ok := eps.WeightRandom(); ok {
-			ep := eps.items[idx]
+		if epName, ok := eps.WeightRandom(); ok {
+			ep := self.MustGet(epName)
 			if ep.IsWebsocket() && ep.Available(method, height) {
 				return ep, true
 			}
-			for i := 0; i < len(eps.items)-1; i++ {
-				idx++
-				idx = idx % len(eps.items)
-				ep := eps.items[idx]
-
+			for _, ep := range eps.items {
 				if ep.IsWebsocket() && ep.Available(method, height) {
 					return ep, true
 				}

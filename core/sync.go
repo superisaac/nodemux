@@ -66,6 +66,8 @@ func (self *Multiplexer) updateStatus(cs ChainStatus) error {
 	if cs.Healthy != ep.Healthy {
 		ep.Healthy = cs.Healthy
 		logger.Infof("healthy set to %t", cs.Healthy)
+		eps := self.chainIndex[ep.Chain]
+		eps.resetWeights()
 	}
 
 	var healthy float64 = 0

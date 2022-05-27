@@ -55,9 +55,14 @@ type EndpointInfo struct {
 	ClientVersion string `json:"client,omitempty"`
 }
 
+type Weight struct {
+	EpName         string
+	AggregateValue int
+}
+
 type EndpointSet struct {
 	items        []*Endpoint // endpoints of the same chain
-	weights      []int
+	weights      []Weight
 	maxTipHeight int
 }
 

@@ -33,7 +33,7 @@ func TestWeight(t *testing.T) {
 		Weight: 150, // weight range [0, 150)
 	})
 
-	ep2 := NewEndpoint("tron01", EndpointConfig{
+	ep2 := NewEndpoint("tron02", EndpointConfig{
 		Chain:  "eosio/mainnet",
 		Url:    "http://127.0.0.1:8899/aa/bb/",
 		Weight: 60, // weight range [150, 210)
@@ -45,32 +45,32 @@ func TestWeight(t *testing.T) {
 
 	assert.Equal(210, eps.WeightLimit())
 
-	idx, ok := eps.WeightSearch(0)
+	epName, ok := eps.WeightSearch(0)
 	assert.True(ok)
-	assert.Equal(0, idx)
+	assert.Equal("tron01", epName)
 
-	idx, ok = eps.WeightSearch(70)
+	epName, ok = eps.WeightSearch(70)
 	assert.True(ok)
-	assert.Equal(0, idx)
+	assert.Equal("tron01", epName)
 
-	idx, ok = eps.WeightSearch(150)
+	epName, ok = eps.WeightSearch(150)
 	assert.True(ok)
-	assert.Equal(1, idx)
+	assert.Equal("tron02", epName)
 
-	idx, ok = eps.WeightSearch(151)
+	epName, ok = eps.WeightSearch(151)
 	assert.True(ok)
-	assert.Equal(1, idx)
+	assert.Equal("tron02", epName)
 
-	idx, ok = eps.WeightSearch(210)
+	epName, ok = eps.WeightSearch(210)
 	assert.False(ok)
 
-	idx, ok = eps.WeightSearch(211)
+	epName, ok = eps.WeightSearch(211)
 	assert.False(ok)
 
-	idx, ok = eps.WeightSearch(211)
+	epName, ok = eps.WeightSearch(211)
 	assert.False(ok)
 
-	idx, ok = eps.WeightSearch(-3)
+	epName, ok = eps.WeightSearch(-3)
 	assert.False(ok)
 }
 
