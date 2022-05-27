@@ -81,10 +81,7 @@ func (self *Multiplexer) Select(chain ChainRef, method string) (*Endpoint, bool)
 
 	if eps, ok := self.chainIndex[chain]; ok {
 		if epName, ok := eps.WeightRandom(); ok {
-			ep := self.MustGet(epName)
-			if ep.Chain != chain {
-				log.Fatalf("ep.Chain %s doesnot match %s", ep.Chain, chain)
-			}
+			ep := eps.MustGet(epName)
 			if ep.Available(method, 0) {
 				return ep, true
 			}
@@ -109,7 +106,7 @@ func (self *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightS
 		}
 
 		if epName, ok := eps.WeightRandom(); ok {
-			ep := self.MustGet(epName)
+			ep := eps.MustGet(epName)
 			if ep.Available(method, height) {
 				return ep, true
 			}
@@ -134,7 +131,7 @@ func (self *Multiplexer) SelectWebsocketEndpoint(chain ChainRef, method string, 
 		}
 
 		if epName, ok := eps.WeightRandom(); ok {
-			ep := self.MustGet(epName)
+			ep := eps.MustGet(epName)
 			if ep.IsWebsocket() && ep.Available(method, height) {
 				return ep, true
 			}

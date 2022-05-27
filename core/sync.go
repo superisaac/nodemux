@@ -104,7 +104,7 @@ func (self *Multiplexer) updateStatus(cs ChainStatus) error {
 
 	if epset, ok := self.chainIndex[ep.Chain]; ok {
 		if heightChanged {
-			epset.ResetMaxTipHeight()
+			epset.resetMaxTipHeight()
 			ep.Chain.Log().Infof(
 				"height changed, max block head height set to %d",
 				epset.maxTipHeight)

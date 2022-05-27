@@ -2,17 +2,18 @@ package nodemuxcore
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"sort"
 )
 
 func NewEndpointSet() *EndpointSet {
 	return &EndpointSet{
-		items:   make([]*Endpoint, 0),
+		items:   make(map[string]*Endpoint),
 		weights: make([]Weight, 0),
 	}
 }
-func (self *EndpointSet) ResetMaxTipHeight() {
+func (self *EndpointSet) resetMaxTipHeight() {
 	maxHeight := 0
 	for _, epItem := range self.items {
 		if epItem.Blockhead != nil && epItem.Blockhead.Height > maxHeight {
@@ -22,6 +23,19 @@ func (self *EndpointSet) ResetMaxTipHeight() {
 	self.maxTipHeight = maxHeight
 }
 
+func (self EndpointSet) Get(epName string) (*Endpoint, bool) {
+	ep, ok := self.items[epName]
+	return ep, ok
+}
+
+func (self EndpointSet) MustGet(epName string) *Endpoint {
+	if ep, ok := self.Get(epName); ok {
+		return ep
+	}
+	log.Panicf("fail to get endpoint %s", epName)
+	return nil
+}
+
 func (self EndpointSet) prometheusLabels(chain ChainRef) prometheus.Labels {
 	return prometheus.Labels{
 		"chain": chain.String(),
@@ -29,7 +43,8 @@ func (self EndpointSet) prometheusLabels(chain ChainRef) prometheus.Labels {
 }
 
 func (self *EndpointSet) Add(endpoint *Endpoint) {
-	self.items = append(self.items, endpoint)
+	//self.items = append(self.items, endpoint)
+	self.items[endpoint.Name] = endpoint
 	self.appendWeights(endpoint)
 }
 

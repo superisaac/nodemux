@@ -61,7 +61,7 @@ type Weight struct {
 }
 
 type EndpointSet struct {
-	items        []*Endpoint // endpoints of the same chain
+	items        map[string]*Endpoint // endpoints of the same chain
 	weights      []Weight
 	maxTipHeight int
 }
