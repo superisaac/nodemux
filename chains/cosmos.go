@@ -2,6 +2,7 @@ package chains
 
 // for cosmos API doc refer to https://v1.cosmos.network/rpc/v0.41.4
 // for luna API doc refer to https://lcd.terra.dev/swagger/
+// for gRPC and gRPC-Gateway refer to https://buf.build/cosmos/cosmos-sdk/docs/bfe2fb50c22b479e8653f81e23b32659
 
 import (
 	"context"
@@ -12,13 +13,20 @@ import (
 )
 
 type cosmosBlock struct {
+	BlockID struct {
+		Hash string `json:"hash"`
+	} `json:"block_id"`
+
 	Block struct {
 		Header struct {
-			Height string
-		}
-	}
+			Height      string `json:"height"`
+			LastBlockID struct {
+				Hash string `json:"hash"`
+			} `json:"last_block_id,omitempty"`
+		} `json:"header"`
+	} `json:"block"`
 
-	height int
+	height int `json:"-"`
 }
 
 func (self *cosmosBlock) Height() int {
@@ -34,7 +42,8 @@ func (self *cosmosBlock) Height() int {
 
 type cosmosNodeInfo struct {
 	ApplicationVersion struct {
-		ServerName       string `json:"server_name"`
+		Name             string `json:"name"`
+		AppName          string `json:"app_name"`
 		Version          string `json:"version"`
 		CosmosSDKVersion string `json:"cosmos_sdk_version"`
 	} `json:"application_version"`
@@ -42,7 +51,7 @@ type cosmosNodeInfo struct {
 
 func (self cosmosNodeInfo) String() string {
 	av := self.ApplicationVersion
-	return fmt.Sprintf("%s-%s-%s", av.ServerName, av.Version, av.CosmosSDKVersion)
+	return fmt.Sprintf("%s-%s-%s", av.AppName, av.Version, av.CosmosSDKVersion)
 }
 
 type CosmosChain struct {
@@ -54,7 +63,9 @@ func NewCosmosChain() *CosmosChain {
 
 func (self CosmosChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	var info cosmosNodeInfo
-	err := ep.GetJson(context, "/node_info", nil, &info)
+	err := ep.GetJson(context,
+		"/cosmos/base/tendermint/v1beta1/node_info",
+		nil, &info)
 	if err != nil {
 		return "", err
 	}
@@ -68,7 +79,7 @@ func (self CosmosChain) StartSync(context context.Context, m *nodemuxcore.Multip
 func (self *CosmosChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res cosmosBlock
 	err := ep.GetJson(context,
-		"/blocks/latest",
+		"/cosmos/base/tendermint/v1beta1/blocks/latest",
 		nil, &res)
 	if err != nil {
 		return nil, err
@@ -76,7 +87,7 @@ func (self *CosmosChain) GetBlockhead(context context.Context, b *nodemuxcore.Mu
 
 	block := &nodemuxcore.Block{
 		Height: res.Height(),
-		// Hash: not provided
+		Hash:   res.BlockID.Hash,
 	}
 	return block, nil
 }
