@@ -29,6 +29,7 @@ func InstallAdaptors(factory *nodemuxcore.DelegatorFactory) {
 	factory.RegisterRPC(NewConfluxChain(), "conflux")
 	factory.RegisterRPC(NewPolkadotChain(), "polkadot", "kusama")
 	factory.RegisterRPC(NewNearChain(), "near")
+	factory.RegisterRPC(NewSuiChain(), "sui")
 
 	// REST handlers
 	factory.RegisterREST(NewRippleChain(), "ripple")

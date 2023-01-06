@@ -1,5 +1,5 @@
 GOFILES := $(shell find . -name '*.go')
-GOFLAG := -gcflags=-G=3
+GOFLAG :=
 GOBUILD := GO111MODULE=on go build -v
 
 build: bin/nodemux

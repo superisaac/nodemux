@@ -20,6 +20,10 @@ endpoints:
     weight: 120
     url: https://bsc-dataseed2.defibit.io
 
+  sui01:
+    chain: sui/devnet
+    url: https://fullnode.devnet.sui.io
+
   # luna01:
   #   chain: luna/mainnet
   #   # from https://docs.terra.money/docs/develop/how-to/endpoints.html
