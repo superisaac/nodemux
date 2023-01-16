@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-/// Create an endpoint instance
+// / Create an endpoint instance
 func NewEndpoint(name string, epcfg EndpointConfig) *Endpoint {
 	chain, err := ParseChain(epcfg.Chain)
 	if err != nil {

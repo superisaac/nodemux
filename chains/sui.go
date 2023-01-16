@@ -2,6 +2,7 @@ package chains
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/superisaac/jlib"
@@ -16,6 +17,17 @@ type txForTimestamp struct {
 	TimestampMs int `json:"timestamp_ms"`
 }
 
+type rpcDiscover struct {
+	Info struct {
+		Title   string `json:"title"`
+		Version string `json:"version"`
+	} `json:"info"`
+}
+
+func (self rpcDiscover) ToString() string {
+	return fmt.Sprintf("%s/%s", self.Info.Title, self.Info.Version)
+}
+
 type SuiChain struct {
 }
 
@@ -24,7 +36,15 @@ func NewSuiChain() *SuiChain {
 }
 
 func (self SuiChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
-	return "", nil
+	reqmsg := jlib.NewRequestMessage(
+		1, "rpc.discover", []interface{}{})
+	var rpc rpcDiscover
+	err := ep.UnwrapCallRPC(context, reqmsg, &rpc)
+	if err != nil {
+		return "", err
+	}
+
+	return rpc.ToString(), nil
 }
 
 func (self SuiChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
