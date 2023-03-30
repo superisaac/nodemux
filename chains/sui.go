@@ -9,12 +9,19 @@ import (
 	nodemuxcore "github.com/superisaac/nodemux/core"
 )
 
-type txList struct {
-	Data []string `json:"data"`
+type txInfo struct {
+	Digest string `json:"digest"`
+	TimestampMs int `json:"timestampMs"`
 }
 
-type txForTimestamp struct {
-	TimestampMs int `json:"timestamp_ms"`
+type txList struct {
+	Data []txInfo `json:"data"`
+}
+
+type txQuery struct {
+	Options struct {
+		ShowRawInput bool `json:"showRawInput"`
+	} `json:"options"`
 }
 
 type rpcDiscover struct {
@@ -52,29 +59,27 @@ func (self SuiChain) StartSync(context context.Context, m *nodemuxcore.Multiplex
 }
 
 func (self *SuiChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+	query := &txQuery{}
+	query.Options.ShowRawInput = true
+	
 	reqmsg := jlib.NewRequestMessage(
-		1, "sui_getTransactions", []interface{}{"All", nil, 2, true})
-
+		1, "suix_queryTransactionBlocks",
+		[]interface{}{query, nil, 2, true})
+	
 	var txl txList
 	err := ep.UnwrapCallRPC(context, reqmsg, &txl)
 	if err != nil {
 		return nil, err
 	}
-
-	latestDigest := txl.Data[0]
-
-	var tx txForTimestamp
-
-	reqmsg = jlib.NewRequestMessage(
-		2, "sui_getTransaction", []interface{}{latestDigest})
-
-	err = ep.UnwrapCallRPC(context, reqmsg, &tx)
-	if err != nil {
-		return nil, err
+	
+	if(len(txl.Data) <= 0) {
+		return  nil, nil
 	}
 
+	latestTx := txl.Data[0]
+
 	block := &nodemuxcore.Block{
-		Height: tx.TimestampMs / (1000 * 5), // one block per 5 seconds
+		Height: latestTx.TimestampMs / (1000 * 5), // one dummy block per 5 seconds
 		//Hash:   bt.Hash,
 	}
 	return block, nil
