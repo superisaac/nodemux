@@ -80,7 +80,7 @@ func TestMultiplexer(t *testing.T) {
 	b := NewMultiplexer()
 
 	chain := ChainRef{
-		Brand:   "binance-chain",
+		Namespace:   "binance-chain",
 		Network: "mainnet",
 	}
 	ep := NewEndpoint("bsc01", EndpointConfig{

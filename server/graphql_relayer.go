@@ -34,7 +34,7 @@ func (self *GraphQLRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	m := nodemuxcore.GetMultiplexer()
-	delegator := nodemuxcore.GetDelegatorFactory().GetGraphQLDelegator(acc.Chain.Brand)
+	delegator := nodemuxcore.GetDelegatorFactory().GetGraphQLDelegator(acc.Chain.Namespace)
 	if delegator == nil {
 		w.WriteHeader(404)
 		w.Write([]byte("backend not found"))

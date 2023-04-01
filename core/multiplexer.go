@@ -171,7 +171,7 @@ func (self *Multiplexer) LoadFromConfig(nbcfg *NodemuxConfig) {
 		if err != nil {
 			panic(err)
 		}
-		if support, _ := GetDelegatorFactory().SupportChain(chainref.Brand); !support {
+		if support, _ := GetDelegatorFactory().SupportChain(chainref.Namespace); !support {
 			panic(fmt.Sprintf("chain %s not supported", chainref))
 		}
 

@@ -260,7 +260,7 @@ func (self *Endpoint) RequestGraphQL(ctx context.Context, query string, variable
 }
 
 func (self *Endpoint) GetClientVersion(ctx context.Context) {
-	delegator := GetDelegatorFactory().GetBlockheadDelegator(self.Chain.Brand)
+	delegator := GetDelegatorFactory().GetBlockheadDelegator(self.Chain.Namespace)
 	version, err := delegator.GetClientVersion(ctx, self)
 	if err != nil {
 		self.Log().Warnf("error while getting client version %s", err)

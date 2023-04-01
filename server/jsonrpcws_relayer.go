@@ -107,7 +107,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}
 	} else if msg.IsRequest() {
 		// if no dest websocket connection is available and msg is a request message
 		// it's still ok to deliver the message to http endpoints
-		delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(acc.Chain.Brand)
+		delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(acc.Chain.Namespace)
 		reqmsg, _ := msg.(*jlib.RequestMessage)
 		if delegator == nil {
 			return nil, jlibhttp.SimpleResponse{

@@ -44,7 +44,7 @@ func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	m := nodemuxcore.GetMultiplexer()
 
-	delegator := nodemuxcore.GetDelegatorFactory().GetRESTDelegator(acc.Chain.Brand)
+	delegator := nodemuxcore.GetDelegatorFactory().GetRESTDelegator(acc.Chain.Namespace)
 	if delegator == nil {
 		w.WriteHeader(404)
 		w.Write([]byte("backend not found"))

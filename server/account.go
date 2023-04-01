@@ -54,13 +54,13 @@ func (self *AccHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	account := matches[2]
-	brand := matches[3]
+	namespace := matches[3]
 	network := matches[4]
 	serverCfg := ServerConfigFromContext(self.rootCtx)
 	if acccfg, ok := serverCfg.Accounts[account]; ok {
 		acc := NewAccFromConfig(account, acccfg)
 		acc.Chain = nodemuxcore.ChainRef{
-			Brand:   brand,
+			Namespace:   namespace,
 			Network: network,
 		}
 		ctx := context.WithValue(r.Context(), "account", acc)

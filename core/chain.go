@@ -14,7 +14,7 @@ func ParseChain(chainRepr string) (ChainRef, error) {
 		return ChainRef{}, errors.New("invalid chain format")
 	}
 	return ChainRef{
-		Brand:   arr[0],
+		Namespace:   arr[0],
 		Network: arr[1],
 	}, nil
 }
@@ -28,16 +28,16 @@ func MustParseChain(chainRepr string) ChainRef {
 }
 
 func (self ChainRef) String() string {
-	return fmt.Sprintf("%s/%s", self.Brand, self.Network)
+	return fmt.Sprintf("%s/%s", self.Namespace, self.Network)
 }
 
 func (self ChainRef) Empty() bool {
-	return self.Brand == "" || self.Network == ""
+	return self.Namespace == "" || self.Network == ""
 }
 
 func (self ChainRef) Log() *log.Entry {
 	return log.WithFields(log.Fields{
-		"chain":   self.Brand,
+		"chain":   self.Namespace,
 		"network": self.Network,
 	})
 }

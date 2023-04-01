@@ -52,7 +52,7 @@ func (self *JSONRPCRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}, 
 	reqmsg, _ := msg.(*jlib.RequestMessage)
 	m := nodemuxcore.GetMultiplexer()
 
-	delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(acc.Chain.Brand)
+	delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(acc.Chain.Namespace)
 	if delegator == nil {
 		return nil, jlibhttp.SimpleResponse{
 			Code: 404,

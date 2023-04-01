@@ -14,7 +14,7 @@ func blockIsEqual(a, b *Block) bool {
 
 func (self *Multiplexer) getBlockhead(rootCtx context.Context, ep *Endpoint, lastBlock *Block) (*Block, error) {
 	logger := ep.Log()
-	delegator := GetDelegatorFactory().GetBlockheadDelegator(ep.Chain.Brand)
+	delegator := GetDelegatorFactory().GetBlockheadDelegator(ep.Chain.Namespace)
 	block, err := delegator.GetBlockhead(rootCtx, self, ep)
 	if err != nil {
 		logger.Warnf("mark unhealthy due to block head height error %s", err)
@@ -46,7 +46,7 @@ func (self *Multiplexer) getBlockhead(rootCtx context.Context, ep *Endpoint, las
 }
 
 func (self *Multiplexer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
-	delegator := GetDelegatorFactory().GetBlockheadDelegator(ep.Chain.Brand)
+	delegator := GetDelegatorFactory().GetBlockheadDelegator(ep.Chain.Namespace)
 	started, err := delegator.StartSync(rootCtx, self, ep)
 	if err != nil {
 		panic(err)
