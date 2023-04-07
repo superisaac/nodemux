@@ -7,6 +7,7 @@ stores:
     url: redis://localhost:6379/1
   default:
     url: redis://localhost:6379/2
+  
 endpoints:
   bsc01:
     chain: "binance-chain/mainnet"
@@ -19,6 +20,7 @@ endpoints:
     chain: "binance-chain/mainnet"
     weight: 120
     url: https://bsc-dataseed2.defibit.io
+    fetch_interval: 10
 
   sui01:
     chain: sui/devnet
@@ -73,6 +75,7 @@ endpoints:
   # eth02:
   #   chain: ethereum/mainnet
   #   url: wss://eth-mainnet.ws.alchemyapi.io/ws/demo
+  #   fetch_interval: 15
 
   # ganache01:
   #  chain: ethereum/ganache

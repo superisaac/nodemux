@@ -14,8 +14,8 @@ func ParseChain(chainRepr string) (ChainRef, error) {
 		return ChainRef{}, errors.New("invalid chain format")
 	}
 	return ChainRef{
-		Namespace:   arr[0],
-		Network: arr[1],
+		Namespace: arr[0],
+		Network:   arr[1],
 	}, nil
 }
 

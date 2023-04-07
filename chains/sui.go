@@ -10,8 +10,8 @@ import (
 )
 
 type txInfo struct {
-	Digest string `json:"digest"`
-	TimestampMs int `json:"timestampMs"`
+	Digest      string `json:"digest"`
+	TimestampMs int    `json:"timestampMs"`
 }
 
 type txList struct {
@@ -61,19 +61,19 @@ func (self SuiChain) StartSync(context context.Context, m *nodemuxcore.Multiplex
 func (self *SuiChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	query := &txQuery{}
 	query.Options.ShowRawInput = true
-	
+
 	reqmsg := jlib.NewRequestMessage(
 		1, "suix_queryTransactionBlocks",
 		[]interface{}{query, nil, 2, true})
-	
+
 	var txl txList
 	err := ep.UnwrapCallRPC(context, reqmsg, &txl)
 	if err != nil {
 		return nil, err
 	}
-	
-	if(len(txl.Data) <= 0) {
-		return  nil, nil
+
+	if len(txl.Data) <= 0 {
+		return nil, nil
 	}
 
 	latestTx := txl.Data[0]

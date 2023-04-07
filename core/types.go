@@ -22,8 +22,8 @@ type Block struct {
 }
 
 type ChainRef struct {
-	Namespace   string
-	Network string
+	Namespace string
+	Network   string
 }
 
 type Endpoint struct {

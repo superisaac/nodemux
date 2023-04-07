@@ -60,8 +60,8 @@ func (self *AccHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if acccfg, ok := serverCfg.Accounts[account]; ok {
 		acc := NewAccFromConfig(account, acccfg)
 		acc.Chain = nodemuxcore.ChainRef{
-			Namespace:   namespace,
-			Network: network,
+			Namespace: namespace,
+			Network:   network,
 		}
 		ctx := context.WithValue(r.Context(), "account", acc)
 		self.next.ServeHTTP(w, r.WithContext(ctx))

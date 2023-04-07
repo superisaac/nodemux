@@ -64,12 +64,13 @@ func (self *Multiplexer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
 		if !self.Syncing() {
 			break
 		}
-		sleepTime := 1 * time.Second
+
+		sleepTime := time.Duration(ep.Config.FetchInterval) * time.Second
 		blk, err := self.getBlockhead(ctx, ep, lastBlock)
 		if err != nil {
 			// unhealthy
-			ep.Log().Warnf("get block head error %s, sleep 15 secs", err)
-			sleepTime = 5 * time.Second
+			ep.Log().Warnf("get block head error %s, sleep %d secs", err, 2*ep.Config.FetchInterval)
+			sleepTime = time.Duration(2*ep.Config.FetchInterval) * time.Second
 		}
 		lastBlock = blk
 		select {

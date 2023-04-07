@@ -10,12 +10,13 @@ import (
 
 // configs
 type EndpointConfig struct {
-	Chain       string            `yaml:"chain"`
-	Url         string            `yaml:"url"`
-	Headers     map[string]string `yaml:"headers,omitempty"`
-	Weight      int               `yaml:"weight,omitempty"`
-	SkipMethods []string          `yaml:"skip_methods,omitempty"`
-	Options     map[string]string `yaml:"options,omitempty"`
+	Chain         string            `yaml:"chain"`
+	Url           string            `yaml:"url"`
+	Headers       map[string]string `yaml:"headers,omitempty"`
+	Weight        int               `yaml:"weight,omitempty"`
+	FetchInterval int               `yaml:"fetch_interval,omitempty"`
+	SkipMethods   []string          `yaml:"skip_methods,omitempty"`
+	Options       map[string]string `yaml:"options,omitempty"`
 }
 
 type StoreConfig struct {
@@ -76,6 +77,10 @@ func (self *NodemuxConfig) validateValues() error {
 			if skipmtd == "" {
 				return errors.New("empty skip method")
 			}
+		}
+
+		if epcfg.FetchInterval <= 0 {
+			epcfg.FetchInterval = 1
 		}
 	}
 	return nil
