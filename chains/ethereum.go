@@ -208,10 +208,10 @@ func (self *EthereumChain) findBlockHeight(reqmsg *jlib.RequestMessage) (int, bo
 }
 
 func (self *EthereumChain) subscribeBlockhead(rootCtx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
-	wsClient, ok := ep.RPCClient().(*jlibhttp.WSClient)
+	wsClient, ok := ep.JSONRPCRelayer().(*jlibhttp.WSClient)
 
 	if !ok {
-		ep.Log().Panicf("client is not websocket, client is %s", reflect.TypeOf(ep.RPCClient()))
+		ep.Log().Panicf("client is not websocket, client is %s", reflect.TypeOf(ep.JSONRPCRelayer()))
 		return
 		//return errors.New("client is not websocket")
 	}

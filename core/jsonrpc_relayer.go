@@ -5,7 +5,9 @@ import (
 	"context"
 	"github.com/superisaac/jlib"
 	"github.com/superisaac/jlib/http"
+	log "github.com/sirupsen/logrus"
 	"strings"
+	"time"
 )
 
 func (self *Endpoint) ensureRPCClient() {
@@ -18,7 +20,7 @@ func (self *Endpoint) ensureRPCClient() {
 	}
 }
 
-func (self *Endpoint) RPCClient() jlibhttp.Client {
+func (self *Endpoint) JSONRPCRelayer() jlibhttp.Client {
 	self.ensureRPCClient()
 	return self.rpcClient
 }
@@ -27,7 +29,16 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jlib.RequestMessa
 	//self.Connect()
 	self.ensureRPCClient()
 	self.incrRelayCount()
-	return self.rpcClient.Call(rootCtx, reqmsg)
+	start := time.Now()
+	
+	res, err := self.rpcClient.Call(rootCtx, reqmsg)
+	// metrics the call time
+	delta := time.Now().Sub(start)
+	self.Log().WithFields(log.Fields{
+		"method": reqmsg.Method,
+		"timeSpentMS": delta.Milliseconds(),
+	}).Info("replay jsonrpc")
+	return res, err
 } // CallRPC
 
 func (self *Endpoint) UnwrapCallRPC(rootCtx context.Context, reqmsg *jlib.RequestMessage, output interface{}) error {

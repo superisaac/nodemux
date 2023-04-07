@@ -111,7 +111,15 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 	}
 	req.Header.Set("X-Forwarded-For", r.RemoteAddr)
 
+	
+	start := time.Now()
 	resp, err := self.client.Do(req)
+	delta := time.Now().Sub(start)
+	self.Log().WithFields(log.Fields{
+		"method": r.Method,
+		"timeSpentMS": delta.Milliseconds(),
+	}).Info("replay http")
+
 	if err != nil {
 		return errors.Wrap(err, "http Do")
 	}
