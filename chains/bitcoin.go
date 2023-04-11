@@ -52,7 +52,7 @@ func (self BitcoinChain) StartSync(context context.Context, m *nodemuxcore.Multi
 
 // update txid cache from mempool
 func (self BitcoinChain) updateMempoolPresenceCache(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
-	c, ok := m.RedisClient(presenceCacheRedisKey(ep.Chain))
+	redisClient, ok := m.RedisClient(presenceCacheRedisKey(ep.Chain))
 	if !ok {
 		return
 	}
@@ -66,7 +66,7 @@ func (self BitcoinChain) updateMempoolPresenceCache(ctx context.Context, m *node
 		return
 	}
 	presenceCacheUpdate(
-		ctx, c,
+		ctx, redisClient,
 		ep.Chain,
 		txids,
 		ep.Name,
@@ -116,7 +116,9 @@ func (self *BitcoinChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multi
 		if ep.Blockhead == nil || ep.Blockhead.Height != ct.Height {
 			go self.updateBlockPresenceCache(ctx, m, ep, ct.Hash)
 		}
-		go self.updateMempoolPresenceCache(ctx, m, ep)
+		if(ep.Config.SyncMempool) {
+			go self.updateMempoolPresenceCache(ctx, m, ep)
+		}
 		return block, nil
 	}
 	return nil, nil

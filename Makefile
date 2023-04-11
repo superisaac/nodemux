@@ -1,6 +1,9 @@
 GOFILES := $(shell find . -name '*.go')
 GOFLAG :=
-GOBUILD := GO111MODULE=on go build -v
+GOBUILD := go build -v
+
+GOARCHS := linux-amd64 linux-arm64 darwin-amd64 darwin-arm64
+buildarchdirs := $(foreach a,$(GOARCHS),build/arch/nodemux-$a)
 
 build: bin/nodemux
 
@@ -22,4 +25,21 @@ golint:
 run-example: bin/nodemux
 	bin/nodemux -f examples/nodemux.example.yml -server examples/server.example.yml
 
-.PHONY: build all test govet gofmt dist run-example
+
+# cross build distributions of multiple targets
+
+archs:
+	@for arch in $(GOARCHS); do \
+		$(MAKE) dist/nodemux-$$arch.tar.gz; \
+	done
+
+dist/nodemux-%.tar.gz: build/arch/nodemux-%
+	mkdir -p dist
+	tar czvf $@ $<
+
+build/arch/nodemux-%: ${GOFILES}
+	GOOS=$(shell echo $@|cut -d- -f 2) \
+	GOARCH=$(shell echo $@|cut -d- -f 3) \
+	${GOBUILD} ${GOFLAG} -o $@/nodemux nodemux.go
+
+.PHONY: build all test govet gofmt archs run-example

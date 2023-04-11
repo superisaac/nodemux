@@ -15,6 +15,7 @@ type EndpointConfig struct {
 	Headers       map[string]string `yaml:"headers,omitempty"`
 	Weight        int               `yaml:"weight,omitempty"`
 	FetchInterval int               `yaml:"fetch_interval,omitempty"`
+	SyncMempool	  bool				`yaml:"sync_mempool,omitempty"`
 	SkipMethods   []string          `yaml:"skip_methods,omitempty"`
 	Options       map[string]string `yaml:"options,omitempty"`
 }
