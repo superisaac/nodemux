@@ -78,9 +78,8 @@ func (self *Multiplexer) Add(endpoint *Endpoint) bool {
 }
 
 func (self *Multiplexer) Select(chain ChainRef, method string) (*Endpoint, bool) {
-
 	if eps, ok := self.chainIndex[chain]; ok {
-		if epName, ok := eps.WeightRandom(); ok {
+		if epName, ok := eps.WeightedRandom(); ok {
 			ep := eps.MustGet(epName)
 			if ep.Available(method, 0) {
 				return ep, true
@@ -98,44 +97,42 @@ func (self *Multiplexer) Select(chain ChainRef, method string) (*Endpoint, bool)
 }
 
 func (self *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightSpec int) (*Endpoint, bool) {
-
-	if eps, ok := self.chainIndex[chain]; ok {
+	if endpoints, ok := self.chainIndex[chain]; ok {
 		height := heightSpec
 		if heightSpec <= 0 {
-			height = eps.maxTipHeight + heightSpec
+			height = endpoints.maxTipHeight + heightSpec
 		}
 
-		if epName, ok := eps.WeightRandom(); ok {
-			ep := eps.MustGet(epName)
+		// select a random endpoint by weights, if it's not available then select by sequence
+		if epName, ok := endpoints.WeightedRandom(); ok {
+			ep := endpoints.MustGet(epName)
 			if ep.Available(method, height) {
 				return ep, true
 			}
 
-			for _, ep := range eps.items {
+			for _, ep := range endpoints.items {
 				if ep.Available(method, height) {
 					return ep, true
 				}
 			}
 		}
-
 	}
 	return nil, false
 }
 
 func (self *Multiplexer) SelectWebsocketEndpoint(chain ChainRef, method string, heightSpec int) (ep1 *Endpoint, found bool) {
-
-	if eps, ok := self.chainIndex[chain]; ok {
+	if endpoints, ok := self.chainIndex[chain]; ok {
 		height := heightSpec
 		if heightSpec < 0 {
-			height = eps.maxTipHeight + heightSpec
+			height = endpoints.maxTipHeight + heightSpec
 		}
 
-		if epName, ok := eps.WeightRandom(); ok {
-			ep := eps.MustGet(epName)
+		if epName, ok := endpoints.WeightedRandom(); ok {
+			ep := endpoints.MustGet(epName)
 			if ep.IsWebsocket() && ep.Available(method, height) {
 				return ep, true
 			}
-			for _, ep := range eps.items {
+			for _, ep := range endpoints.items {
 				if ep.IsWebsocket() && ep.Available(method, height) {
 					return ep, true
 				}
@@ -183,6 +180,10 @@ func (self *Multiplexer) LoadFromConfig(nbcfg *NodemuxConfig) {
 func (self *Multiplexer) DefaultRelayRPC(rootCtx context.Context, chain ChainRef, reqmsg *jlib.RequestMessage, overHeight int) (jlib.Message, error) {
 	ep, found := self.SelectOverHeight(chain, reqmsg.Method, overHeight)
 	if !found {
+		if overHeight > 0 {
+			// if not find then relay to any healthy endpoint
+			return self.DefaultRelayRPC(rootCtx, chain, reqmsg, -2);
+		}
 		return jlib.ErrMethodNotFound.ToMessage(reqmsg), nil
 	}
 	resmsg, err := ep.CallRPC(rootCtx, reqmsg)
@@ -192,6 +193,10 @@ func (self *Multiplexer) DefaultRelayRPC(rootCtx context.Context, chain ChainRef
 func (self *Multiplexer) DefaultPipeREST(rootCtx context.Context, chain ChainRef, path string, w http.ResponseWriter, r *http.Request, overHeight int) error {
 	ep, found := self.SelectOverHeight(chain, path, overHeight)
 	if !found {
+		if overHeight > 0 {
+			// if not find then relay to any healthy endpoint
+			return self.DefaultPipeREST(rootCtx, chain, path, w, r, -2);
+		}
 		w.WriteHeader(404)
 		w.Write([]byte("not found"))
 		return nil
@@ -203,6 +208,10 @@ func (self *Multiplexer) DefaultPipeREST(rootCtx context.Context, chain ChainRef
 func (self *Multiplexer) DefaultPipeGraphQL(rootCtx context.Context, chain ChainRef, path string, w http.ResponseWriter, r *http.Request, overHeight int) error {
 	ep, found := self.SelectOverHeight(chain, "", overHeight)
 	if !found {
+		if overHeight > 0 {
+			// if not find then relay to any healthy endpoint
+			return self.DefaultPipeGraphQL(rootCtx, chain, path, w, r, -2);
+		}
 		w.WriteHeader(404)
 		w.Write([]byte("not found"))
 		return nil
