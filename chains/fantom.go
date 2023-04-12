@@ -11,7 +11,7 @@ type fantomBlock struct {
 	Number string
 	Hash   string
 
-	height int
+	height int `json:"-"`
 }
 
 func (self *fantomBlock) Height() int {

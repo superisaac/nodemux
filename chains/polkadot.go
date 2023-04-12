@@ -2,9 +2,9 @@ package chains
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/superisaac/jlib"
 	"github.com/superisaac/nodemux/core"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"net/http"
 )
 
@@ -12,7 +12,7 @@ type polkadotBlock struct {
 	//Hash   string
 	Number string
 
-	height int
+	height int `json:"-"`
 }
 
 func (self *polkadotBlock) Height() int {

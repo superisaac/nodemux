@@ -40,8 +40,8 @@ func NewEndpoint(name string, epcfg EndpointConfig) *Endpoint {
 
 func (self Endpoint) Log() *log.Entry {
 	return log.WithFields(log.Fields{
-		"chain": self.Chain.String(),
-		"endpoint":  self.Name,
+		"chain":    self.Chain.String(),
+		"endpoint": self.Name,
 	})
 }
 
