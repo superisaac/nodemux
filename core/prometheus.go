@@ -27,7 +27,7 @@ var (
 		Namespace: "nodemux",
 		Name:      "endpoint_relay_count",
 		Help:      "the count of endpoint relays",
-	}, []string{"endpoint"})
+	}, []string{"chain", "endpoint"})
 )
 
 func init() {

@@ -4,12 +4,26 @@ import (
 	"context"
 	"github.com/superisaac/jlib"
 	"github.com/superisaac/nodemux/core"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"net/http"
 )
 
 type polkadotBlock struct {
-	Hash   string
-	Number int
+	//Hash   string
+	Number string
+
+	height int
+}
+
+func (self *polkadotBlock) Height() int {
+	if self.height <= 0 {
+		height, err := hexutil.DecodeUint64(self.Number)
+		if err != nil {
+			panic(err)
+		}
+		self.height = int(height)
+	}
+	return self.height
 }
 
 type PolkadotChain struct {
@@ -37,9 +51,10 @@ func (self *PolkadotChain) GetBlockhead(context context.Context, b *nodemuxcore.
 		return nil, err
 	}
 	block := &nodemuxcore.Block{
-		Height: bt.Number,
-		Hash:   bt.Hash,
+		Height: bt.Height(),
+		Hash:   "", //bt.Hash,
 	}
+	// TODO: get block hash using chain_getBlockHash
 	return block, nil
 }
 

@@ -54,6 +54,7 @@ func (self Endpoint) prometheusLabels() prometheus.Labels {
 
 func (self Endpoint) incrRelayCount() {
 	metricsEndpointRelayCount.With(prometheus.Labels{
+		"chain":    self.Chain.String(),
 		"endpoint": self.Name,
 	}).Inc()
 }
