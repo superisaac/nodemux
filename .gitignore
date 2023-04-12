@@ -18,3 +18,4 @@ bin/
 tmp/
 build/
 dist/
+.DS_Store

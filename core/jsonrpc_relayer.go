@@ -3,9 +3,9 @@ package nodemuxcore
 // JSONRPC client from http or websocket
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jlib"
 	"github.com/superisaac/jlib/http"
-	log "github.com/sirupsen/logrus"
 	"strings"
 	"time"
 )
@@ -30,12 +30,12 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jlib.RequestMessa
 	self.ensureRPCClient()
 	self.incrRelayCount()
 	start := time.Now()
-	
+
 	res, err := self.rpcClient.Call(rootCtx, reqmsg)
 	// metrics the call time
 	delta := time.Now().Sub(start)
 	self.Log().WithFields(log.Fields{
-		"method": reqmsg.Method,
+		"method":      reqmsg.Method,
 		"timeSpentMS": delta.Milliseconds(),
 	}).Info("replay jsonrpc")
 	return res, err

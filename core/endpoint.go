@@ -41,7 +41,7 @@ func NewEndpoint(name string, epcfg EndpointConfig) *Endpoint {
 func (self Endpoint) Log() *log.Entry {
 	return log.WithFields(log.Fields{
 		"chain": self.Chain.String(),
-		"name":  self.Name,
+		"endpoint":  self.Name,
 	})
 }
 
@@ -111,12 +111,11 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 	}
 	req.Header.Set("X-Forwarded-For", r.RemoteAddr)
 
-	
 	start := time.Now()
 	resp, err := self.client.Do(req)
 	delta := time.Now().Sub(start)
 	self.Log().WithFields(log.Fields{
-		"method": r.Method,
+		"method":      r.Method,
 		"timeSpentMS": delta.Milliseconds(),
 	}).Info("replay http")
 

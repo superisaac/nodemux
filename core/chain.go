@@ -37,6 +37,6 @@ func (self ChainRef) Empty() bool {
 
 func (self ChainRef) Log() *log.Entry {
 	return log.WithFields(log.Fields{
-		"chain":   self.String(),
+		"chain": self.String(),
 	})
 }

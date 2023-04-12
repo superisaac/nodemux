@@ -116,8 +116,11 @@ func (self *BitcoinChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multi
 		if ep.Blockhead == nil || ep.Blockhead.Height != ct.Height {
 			go self.updateBlockPresenceCache(ctx, m, ep, ct.Hash)
 		}
-		if(ep.Config.SyncMempool) {
-			go self.updateMempoolPresenceCache(ctx, m, ep)
+
+		if v, ok := ep.Config.Options["sync_mempool"]; ok {
+			if canSyncMempool, ok := v.(bool); ok && canSyncMempool {
+				go self.updateMempoolPresenceCache(ctx, m, ep)
+			}
 		}
 		return block, nil
 	}

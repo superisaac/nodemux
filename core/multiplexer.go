@@ -15,6 +15,10 @@ var (
 	_instance *Multiplexer
 )
 
+var (
+	ErrNotAvailable = &jlib.RPCError{Code: -32060, Message: "not available"}
+)
+
 func GetMultiplexer() *Multiplexer {
 	if _instance == nil {
 		log.Panicf("Multiplexer instance is nil")
@@ -182,9 +186,9 @@ func (self *Multiplexer) DefaultRelayRPC(rootCtx context.Context, chain ChainRef
 	if !found {
 		if overHeight > 0 {
 			// if not find then relay to any healthy endpoint
-			return self.DefaultRelayRPC(rootCtx, chain, reqmsg, -2);
+			return self.DefaultRelayRPC(rootCtx, chain, reqmsg, -2)
 		}
-		return jlib.ErrMethodNotFound.ToMessage(reqmsg), nil
+		return ErrNotAvailable.ToMessage(reqmsg), nil
 	}
 	resmsg, err := ep.CallRPC(rootCtx, reqmsg)
 	return resmsg, err
@@ -195,7 +199,7 @@ func (self *Multiplexer) DefaultPipeREST(rootCtx context.Context, chain ChainRef
 	if !found {
 		if overHeight > 0 {
 			// if not find then relay to any healthy endpoint
-			return self.DefaultPipeREST(rootCtx, chain, path, w, r, -2);
+			return self.DefaultPipeREST(rootCtx, chain, path, w, r, -2)
 		}
 		w.WriteHeader(404)
 		w.Write([]byte("not found"))
@@ -210,7 +214,7 @@ func (self *Multiplexer) DefaultPipeGraphQL(rootCtx context.Context, chain Chain
 	if !found {
 		if overHeight > 0 {
 			// if not find then relay to any healthy endpoint
-			return self.DefaultPipeGraphQL(rootCtx, chain, path, w, r, -2);
+			return self.DefaultPipeGraphQL(rootCtx, chain, path, w, r, -2)
 		}
 		w.WriteHeader(404)
 		w.Write([]byte("not found"))

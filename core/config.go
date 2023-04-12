@@ -14,10 +14,11 @@ type EndpointConfig struct {
 	Url           string            `yaml:"url"`
 	Headers       map[string]string `yaml:"headers,omitempty"`
 	Weight        int               `yaml:"weight,omitempty"`
-	FetchInterval int               `yaml:"fetch_interval,omitempty"`
-	SyncMempool	  bool				`yaml:"sync_mempool,omitempty"`
 	SkipMethods   []string          `yaml:"skip_methods,omitempty"`
-	Options       map[string]string `yaml:"options,omitempty"`
+	FetchInterval int               `yaml:"fetch_interval,omitempty"`
+
+	// node specific options
+	Options map[string]interface{} `yaml:"options,omitempty"`
 }
 
 type StoreConfig struct {
@@ -78,6 +79,10 @@ func (self *NodemuxConfig) validateValues() error {
 			if skipmtd == "" {
 				return errors.New("empty skip method")
 			}
+		}
+
+		if epcfg.Options == nil {
+			epcfg.Options = make(map[string]interface{})
 		}
 
 		if epcfg.FetchInterval <= 0 {
