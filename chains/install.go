@@ -39,6 +39,7 @@ func InstallAdaptors(factory *nodemuxcore.DelegatorFactory) {
 	factory.RegisterREST(NewAlgorandChain(), "algorand")
 	factory.RegisterREST(NewKadenaChain(), "kadena")
 	factory.RegisterREST(NewSubstrateAPI(), "substrate")
+	factory.RegisterREST(NewAptosAPI(), "aptos")
 
 	// GraphQL handlers
 	factory.RegisterGraphQL(NewFantomChain(), "fantom")

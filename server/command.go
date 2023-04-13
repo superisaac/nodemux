@@ -98,7 +98,7 @@ func watchConfig(rootCtx context.Context, yamlPath string, fetch bool) {
 
 func CommandStartServer() {
 	serverFlags := flag.NewFlagSet("jointrpc-server", flag.ExitOnError)
-	pYamlPath := serverFlags.String("f", "nodemux.yml", "path to nodemux.yml")
+	pYamlPath := serverFlags.String("f", "nodemux.yaml", "path to nodemux.yml")
 	pWatchConfig := serverFlags.Bool("w", false, "watch config changes using fsnotify")
 	pSyncEndpoints := serverFlags.Bool("sync", true, "sync endpoints statuses")
 
@@ -117,7 +117,7 @@ func CommandStartServer() {
 	serverYamlPath := *pServerYmlPath
 	if serverYamlPath != "" {
 		if _, err := os.Stat(serverYamlPath); err != nil && os.IsNotExist(err) {
-			fmt.Fprintf(os.Stderr, "server.yml not exist\n")
+			fmt.Fprintf(os.Stderr, "server yaml not exist\n")
 			os.Exit(1)
 		}
 

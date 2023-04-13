@@ -84,3 +84,8 @@ endpoints:
   # near01:
   #   chain: near/mainnet
   #   url: https://rpc.mainnet.near.org
+
+  # aptos01:
+  #   chain: aptos/mainnet
+  #   url: https://fullnode.mainnet.aptoslabs.com/v1/
+
