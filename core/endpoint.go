@@ -59,6 +59,13 @@ func (self Endpoint) incrRelayCount() {
 	}).Inc()
 }
 
+func (self Endpoint) incrBlockheadCount() {
+	metricsBlockheadCount.With(prometheus.Labels{
+		"chain":    self.Chain.String(),
+		"endpoint": self.Name,
+	}).Inc()
+}
+
 func (self *Endpoint) Connect() {
 	if self.client == nil {
 		tr := &http.Transport{

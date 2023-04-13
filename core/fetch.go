@@ -16,6 +16,8 @@ func (self *Multiplexer) getBlockhead(rootCtx context.Context, ep *Endpoint, las
 	logger := ep.Log()
 	delegator := GetDelegatorFactory().GetBlockheadDelegator(ep.Chain.Namespace)
 	block, err := delegator.GetBlockhead(rootCtx, self, ep)
+	ep.incrBlockheadCount()
+
 	if err != nil {
 		logger.Warnf("mark unhealthy due to block head height error %s", err)
 		ep.connected = false
@@ -29,6 +31,7 @@ func (self *Multiplexer) getBlockhead(rootCtx context.Context, ep *Endpoint, las
 		return nil, err
 	}
 	if block != nil {
+
 		ep.connected = true
 		if !blockIsEqual(lastBlock, block) {
 			bs := ChainStatus{
