@@ -139,8 +139,11 @@ func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multip
 		if h, ok := self.findBlockHeight(reqmsg); ok {
 			return m.DefaultRelayRPC(ctx, chain, reqmsg, h)
 		}
+	} else if reqmsg.Method == "getchaintips" {
+		// select latest chaintips
+		return m.DefaultRelayRPC(ctx, chain, reqmsg, 0)
 	}
-	return m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
+	return m.DefaultRelayRPC(ctx, chain, reqmsg, -1)
 }
 
 func (self *BitcoinChain) findBlockHeight(reqmsg *jlib.RequestMessage) (int, bool) {

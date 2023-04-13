@@ -187,8 +187,10 @@ func (self *EthereumChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multi
 		if h, ok := self.findBlockHeight(reqmsg); ok {
 			return m.DefaultRelayRPC(ctx, chain, reqmsg, h)
 		}
+	} else if reqmsg.Method == "web3_clientVersion" {
+		return jlib.NewResultMessage(reqmsg, "Web3/1.0.0"), nil
 	}
-	return m.DefaultRelayRPC(ctx, chain, reqmsg, -5)
+	return m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
 }
 
 func (self *EthereumChain) findBlockHeight(reqmsg *jlib.RequestMessage) (int, bool) {
