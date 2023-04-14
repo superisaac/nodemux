@@ -29,15 +29,15 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jlib.RequestMessa
 	//self.Connect()
 	self.ensureRPCClient()
 	self.incrRelayCount()
-	start := time.Now()
 
+	start := time.Now()
 	res, err := self.rpcClient.Call(rootCtx, reqmsg)
 	// metrics the call time
 	delta := time.Now().Sub(start)
 	self.Log().WithFields(log.Fields{
 		"method":      reqmsg.Method,
 		"timeSpentMS": delta.Milliseconds(),
-	}).Info("replay jsonrpc")
+	}).Info("relay jsonrpc")
 	return res, err
 } // CallRPC
 

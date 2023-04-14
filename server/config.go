@@ -35,7 +35,9 @@ type EntrypointConfig struct {
 }
 
 type RatelimitConfig struct {
-	IP   int `yaml:"ip"`
+	// requests per IP per hour
+	IP int `yaml:"ip"`
+	// requests per user per hour
 	User int `yaml:"user"`
 }
 

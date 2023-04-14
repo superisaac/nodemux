@@ -2,10 +2,12 @@ package server
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jlib"
 	"github.com/superisaac/jlib/http"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
+	"time"
 )
 
 // JSONRPC Handler
@@ -42,6 +44,7 @@ func (self *JSONRPCRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}, 
 			}
 		}
 	}
+
 	if !msg.IsRequest() {
 		return nil, jlibhttp.SimpleResponse{
 			Code: 400,
@@ -60,7 +63,16 @@ func (self *JSONRPCRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}, 
 		}
 	}
 
+	start := time.Now()
 	resmsg, err := delegator.DelegateRPC(self.rootCtx, m, acc.Chain, reqmsg, r)
+	// metrics the call time
+	delta := time.Now().Sub(start)
+
+	acc.Chain.Log().WithFields(log.Fields{
+		"method":      reqmsg.Method,
+		"timeSpentMS": delta.Milliseconds(),
+		"account":     acc.Name,
+	}).Info("delegate jsonrpc")
 	return resmsg, err
 }
 
