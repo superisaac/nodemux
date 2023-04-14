@@ -44,7 +44,15 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jlib.RequestMessa
 func (self *Endpoint) UnwrapCallRPC(rootCtx context.Context, reqmsg *jlib.RequestMessage, output interface{}) error {
 	//self.Connect()
 	self.ensureRPCClient()
-	return self.rpcClient.UnwrapCall(rootCtx, reqmsg, output)
+	start := time.Now()
+	err := self.rpcClient.UnwrapCall(rootCtx, reqmsg, output)
+	// metrics the call time
+	delta := time.Now().Sub(start)
+	self.Log().WithFields(log.Fields{
+		"method":      reqmsg.Method,
+		"timeSpentMS": delta.Milliseconds(),
+	}).Info("relay jsonrpc")
+	return err
 } // UnwrapCallRPC
 
 func (self Endpoint) IsWebsocket() bool {
