@@ -98,8 +98,11 @@ func (self EndpointSet) WeightLimit() int {
 }
 
 func (self EndpointSet) WeightedRandom() (string, bool) {
-	w := rand.Intn(self.WeightLimit())
-	return self.WeightSearch(w)
+	if lim := self.WeightLimit(); lim > 0 {
+		w := rand.Intn(lim)
+		return self.WeightSearch(w)
+	}
+	return "", false
 }
 
 func (self EndpointSet) WeightSearch(w int) (string, bool) {
