@@ -105,6 +105,8 @@ func CommandStartServer() {
 	pServerYmlPath := serverFlags.String("server", "", "the path to server.yml")
 	pBind := serverFlags.String("b", "", "The http server address and port, default is 127.0.0.1:9000")
 
+	pMetricsBind := serverFlags.String("metrics-bind", "", "The metrics server host and port")
+
 	pLogfile := serverFlags.String("log", "", "path to log output, default is stdout")
 
 	// parse config
@@ -129,6 +131,10 @@ func CommandStartServer() {
 		if bind != "" {
 			serverCfg.Bind = bind
 		}
+	}
+
+	if(*pMetricsBind != "") {
+		serverCfg.Metrics.Bind = *pMetricsBind
 	}
 
 	// parse nodemux.yml
