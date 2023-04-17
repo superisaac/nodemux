@@ -133,7 +133,7 @@ func CommandStartServer() {
 		}
 	}
 
-	if(*pMetricsBind != "") {
+	if *pMetricsBind != "" {
 		serverCfg.Metrics.Bind = *pMetricsBind
 	}
 
