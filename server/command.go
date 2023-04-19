@@ -47,15 +47,15 @@ func setupLogger(logOutput string) {
 	}
 }
 
-func watchConfig(rootCtx context.Context, yamlPath string, fetch bool) {
-	log.Infof("watch the config %s", yamlPath)
+func watchConfig(rootCtx context.Context, configPath string, fetch bool) {
+	log.Infof("watch the config %s", configPath)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		panic(err)
 	}
 	defer watcher.Close()
 
-	err = watcher.Add(yamlPath)
+	err = watcher.Add(configPath)
 	if err != nil {
 		panic(err)
 	}
@@ -74,7 +74,7 @@ func watchConfig(rootCtx context.Context, yamlPath string, fetch bool) {
 			}
 
 			if event.Op&fsnotify.Write == fsnotify.Write {
-				log.Infof("watch config, file %s changed, event %#v", yamlPath, event)
+				log.Infof("watch config, file %s changed, event %#v", configPath, event)
 				nbcfg, err := nodemuxcore.ConfigFromFile(event.Name)
 				if err != nil {
 					log.Warnf("error config %s", err)
@@ -98,11 +98,11 @@ func watchConfig(rootCtx context.Context, yamlPath string, fetch bool) {
 
 func CommandStartServer() {
 	serverFlags := flag.NewFlagSet("jointrpc-server", flag.ExitOnError)
-	pYamlPath := serverFlags.String("f", "nodemux.yaml", "path to nodemux.yml")
+	pConfigPath := serverFlags.String("f", "nodemux.yaml", "path to nodemux.yml or nodemux.json")
 	pWatchConfig := serverFlags.Bool("w", false, "watch config changes using fsnotify")
 	pSyncEndpoints := serverFlags.Bool("sync", true, "sync endpoints statuses")
 
-	pServerYmlPath := serverFlags.String("server", "", "the path to server.yml")
+	pServerConfigPath := serverFlags.String("server", "", "the path to server.yml or server.json")
 	pBind := serverFlags.String("b", "", "The http server address and port, default is 127.0.0.1:9000")
 
 	pMetricsBind := serverFlags.String("metrics-bind", "", "The metrics server host and port")
@@ -116,14 +116,14 @@ func CommandStartServer() {
 
 	// parse server.yml
 	serverCfg := NewServerConfig()
-	serverYamlPath := *pServerYmlPath
-	if serverYamlPath != "" {
-		if _, err := os.Stat(serverYamlPath); err != nil && os.IsNotExist(err) {
-			fmt.Fprintf(os.Stderr, "server yaml not exist\n")
+	serverConfigPath := *pServerConfigPath
+	if serverConfigPath != "" {
+		if _, err := os.Stat(serverConfigPath); err != nil && os.IsNotExist(err) {
+			fmt.Fprintf(os.Stderr, "server config file not exist\n")
 			os.Exit(1)
 		}
 
-		err := serverCfg.Load(serverYamlPath)
+		err := serverCfg.Load(serverConfigPath)
 		if err != nil {
 			panic(err)
 		}
@@ -138,13 +138,13 @@ func CommandStartServer() {
 	}
 
 	// parse nodemux.yml
-	yamlPath := *pYamlPath
-	if _, err := os.Stat(yamlPath); err != nil && os.IsNotExist(err) {
-		fmt.Fprintf(os.Stderr, "config yaml not exist\n")
+	configPath := *pConfigPath
+	if _, err := os.Stat(configPath); err != nil && os.IsNotExist(err) {
+		fmt.Fprintf(os.Stderr, "config file not exist\n")
 		os.Exit(1)
 	}
 
-	nbcfg, err := nodemuxcore.ConfigFromFile(*pYamlPath)
+	nbcfg, err := nodemuxcore.ConfigFromFile(configPath)
 	if err != nil {
 		panic(err)
 	}
@@ -164,7 +164,7 @@ func CommandStartServer() {
 	b.StartSync(rootCtx, *pSyncEndpoints)
 
 	if *pWatchConfig {
-		go watchConfig(rootCtx, *pYamlPath, *pSyncEndpoints)
+		go watchConfig(rootCtx, configPath, *pSyncEndpoints)
 	}
 
 	StartHTTPServer(rootCtx, serverCfg)

@@ -2,13 +2,15 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/superisaac/jlib/http"
-	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/pkg/errors"
+	"github.com/superisaac/jlib/http"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // type TLSConfig struct {
@@ -18,43 +20,43 @@ import (
 
 type MetricsConfig struct {
 	Bind string
-	Auth *jlibhttp.AuthConfig `yaml:"auth,omitempty"`
-	TLS  *jlibhttp.TLSConfig  `yaml:"tls:omitempty"`
+	Auth *jlibhttp.AuthConfig `yaml:"auth,omitempty" json:"auth,omitempty"`
+	TLS  *jlibhttp.TLSConfig  `yaml:"tls:omitempty" json:"tls:omitempty"`
 }
 
 type AdminConfig struct {
-	Auth *jlibhttp.AuthConfig `yaml:"auth,omitempty"`
+	Auth *jlibhttp.AuthConfig `yaml:"auth,omitempty" json:"auth,omitempty"`
 }
 
 type EntrypointConfig struct {
 	Account string
 	Chain   string
 	Bind    string
-	Auth    *jlibhttp.AuthConfig `yaml:"auth,omitempty"`
-	TLS     *jlibhttp.TLSConfig  `yaml:"tls,omitempty"`
+	Auth    *jlibhttp.AuthConfig `yaml:"auth,omitempty" json:"auth,omitempty"`
+	TLS     *jlibhttp.TLSConfig  `yaml:"tls,omitempty" json:"tls,omitempty"`
 }
 
 type RatelimitConfig struct {
 	// requests per IP per hour
-	IP int `yaml:"ip"`
+	IP int `yaml:"ip" json:"ip"`
 	// requests per user per hour
-	User int `yaml:"user"`
+	User int `yaml:"user" json:"user"`
 }
 
 type AccountConfig struct {
-	Username  string          `yaml:"username"`
-	Ratelimit RatelimitConfig `yaml:"ratelimit,omitempty"`
+	Username  string          `yaml:"username" json:"username"`
+	Ratelimit RatelimitConfig `yaml:"ratelimit,omitempty" json:"ratelimit,omitempty"`
 }
 
 type ServerConfig struct {
-	Bind        string                   `yaml:"version,omitempty"`
-	TLS         *jlibhttp.TLSConfig      `yaml:"tls,omitempty"`
-	Admin       *AdminConfig             `yaml:"admin,omitempty"`
-	Metrics     *MetricsConfig           `yaml:"metrics,omitempty"`
-	Auth        *jlibhttp.AuthConfig     `yaml:"auth,omitempty"`
-	Entrypoints []EntrypointConfig       `yaml:"entrypoints,omitempty"`
-	Ratelimit   RatelimitConfig          `yaml:"ratelimit,omitempty"`
-	Accounts    map[string]AccountConfig `yaml:"accounts,omitempty"`
+	Bind        string                   `yaml:"version,omitempty" json:"version,omitempty"`
+	TLS         *jlibhttp.TLSConfig      `yaml:"tls,omitempty" json:"tls,omitempty"`
+	Admin       *AdminConfig             `yaml:"admin,omitempty" json:"admin,omitempty"`
+	Metrics     *MetricsConfig           `yaml:"metrics,omitempty" json:"metrics,omitempty"`
+	Auth        *jlibhttp.AuthConfig     `yaml:"auth,omitempty" json:"auth,omitempty"`
+	Entrypoints []EntrypointConfig       `yaml:"entrypoints,omitempty" json:"entrypoints,omitempty"`
+	Ratelimit   RatelimitConfig          `yaml:"ratelimit,omitempty" json:"ratelimit,omitempty"`
+	Accounts    map[string]AccountConfig `yaml:"accounts,omitempty" json:"accounts,omitempty"`
 }
 
 func NewServerConfig() *ServerConfig {
@@ -86,23 +88,35 @@ func (self *ServerConfig) AddTo(ctx context.Context) context.Context {
 	return context.WithValue(ctx, "serverConfig", self)
 }
 
-func (self *ServerConfig) Load(yamlPath string) error {
-	if _, err := os.Stat(yamlPath); os.IsNotExist(err) {
+func (self *ServerConfig) Load(configPath string) error {
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		if err != nil {
 			return err
 		}
 		return nil
 	}
 
-	data, err := ioutil.ReadFile(yamlPath)
+	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		return err
 	}
-	return self.LoadYamldata(data)
+	if strings.HasSuffix(configPath, ".json") {
+		return self.LoadJsondata(data)
+	} else {
+		return self.LoadYamldata(data)
+	}
 }
 
 func (self *ServerConfig) LoadYamldata(yamlData []byte) error {
 	err := yaml.Unmarshal(yamlData, self)
+	if err != nil {
+		return err
+	}
+	return self.validateValues()
+}
+
+func (self *ServerConfig) LoadJsondata(yamlData []byte) error {
+	err := json.Unmarshal(yamlData, self)
 	if err != nil {
 		return err
 	}

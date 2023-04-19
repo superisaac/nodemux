@@ -1,8 +1,12 @@
 package nodemuxcore
 
 import (
+	"strings"
+
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
+
+	"encoding/json"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -10,19 +14,19 @@ import (
 
 // configs
 type EndpointConfig struct {
-	Chain         string            `yaml:"chain"`
-	Url           string            `yaml:"url"`
-	Headers       map[string]string `yaml:"headers,omitempty"`
-	Weight        int               `yaml:"weight,omitempty"`
-	SkipMethods   []string          `yaml:"skip_methods,omitempty"`
-	FetchInterval int               `yaml:"fetch_interval,omitempty"`
+	Chain         string            `yaml:"chain" json:"chain"`
+	Url           string            `yaml:"url" json:"url"`
+	Headers       map[string]string `yaml:"headers,omitempty" json:"headers,omitempty"`
+	Weight        int               `yaml:"weight,omitempty" json:"weight,omitempty"`
+	SkipMethods   []string          `yaml:"skip_methods,omitempty" json:"skip_methods,omitempty"`
+	FetchInterval int               `yaml:"fetch_interval,omitempty" json:"fetch_interval,omitempty"`
 
 	// node specific options
-	Options map[string]interface{} `yaml:"options,omitempty"`
+	Options map[string]interface{} `yaml:"options,omitempty" json:"options,omitempty"`
 }
 
 type StoreConfig struct {
-	Url string `yaml:"url"`
+	Url string `yaml:"url" json:"url"`
 }
 
 func (self StoreConfig) Scheme() string {
@@ -34,9 +38,9 @@ func (self StoreConfig) Scheme() string {
 }
 
 type NodemuxConfig struct {
-	Version   string                    `yaml:"version,omitempty"`
-	Endpoints map[string]EndpointConfig `yaml:"endpoints"`
-	Stores    map[string]StoreConfig    `yaml:"stores,omitempty"`
+	Version   string                    `yaml:"version,omitempty" json:"version,omitempty"`
+	Endpoints map[string]EndpointConfig `yaml:"endpoints" json:"endpoints"`
+	Stores    map[string]StoreConfig    `yaml:"stores,omitempty" json:"stores,omitempty"`
 }
 
 // methods
@@ -46,9 +50,9 @@ func NewConfig() *NodemuxConfig {
 	return cfg
 }
 
-func ConfigFromFile(yamlPath string) (*NodemuxConfig, error) {
+func ConfigFromFile(configPath string) (*NodemuxConfig, error) {
 	cfg := NewConfig()
-	err := cfg.Load(yamlPath)
+	err := cfg.Load(configPath)
 	if err != nil {
 		return nil, err
 	}
@@ -92,22 +96,34 @@ func (self *NodemuxConfig) validateValues() error {
 	return nil
 }
 
-func (self *NodemuxConfig) Load(yamlPath string) error {
-	if _, err := os.Stat(yamlPath); os.IsNotExist(err) {
+func (self *NodemuxConfig) Load(configPath string) error {
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		if err != nil {
 			return err
 		}
 		return nil
 	}
-	data, err := ioutil.ReadFile(yamlPath)
+	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		return err
 	}
-	return self.LoadYamldata(data)
+	if strings.HasSuffix(configPath, ".json") {
+		return self.LoadJsondata(data)
+	} else {
+		return self.LoadYamldata(data)
+	}
 }
 
-func (self *NodemuxConfig) LoadYamldata(yamlData []byte) error {
-	err := yaml.Unmarshal(yamlData, self)
+func (self *NodemuxConfig) LoadYamldata(data []byte) error {
+	err := yaml.Unmarshal(data, self)
+	if err != nil {
+		return err
+	}
+	return self.validateValues()
+}
+
+func (self *NodemuxConfig) LoadJsondata(data []byte) error {
+	err := json.Unmarshal(data, self)
 	if err != nil {
 		return err
 	}
