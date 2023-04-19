@@ -100,7 +100,7 @@ func CommandStartServer() {
 	serverFlags := flag.NewFlagSet("jointrpc-server", flag.ExitOnError)
 	pConfigPath := serverFlags.String("f", "nodemux.yaml", "path to nodemux.yml or nodemux.json")
 	pWatchConfig := serverFlags.Bool("w", false, "watch config changes using fsnotify")
-	pSyncEndpoints := serverFlags.Bool("sync", true, "sync endpoints statuses")
+	pNoSyncEndpoints := serverFlags.Bool("nosync", false, "sync endpoints statuses")
 
 	pServerConfigPath := serverFlags.String("server", "", "the path to server.yml or server.json")
 	pBind := serverFlags.String("b", "", "The http server address and port, default is 127.0.0.1:9000")
@@ -161,10 +161,11 @@ func CommandStartServer() {
 	rootCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	b.StartSync(rootCtx, *pSyncEndpoints)
+	nosync := *pNoSyncEndpoints
+	b.StartSync(rootCtx, !nosync)
 
 	if *pWatchConfig {
-		go watchConfig(rootCtx, configPath, *pSyncEndpoints)
+		go watchConfig(rootCtx, configPath, !nosync)
 	}
 
 	StartHTTPServer(rootCtx, serverCfg)
