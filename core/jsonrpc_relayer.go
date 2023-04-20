@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jlib"
 	"github.com/superisaac/jlib/http"
@@ -36,17 +37,17 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jlib.RequestMessa
 	res, err := self.rpcClient.Call(rootCtx, reqmsg)
 	// metrics the call time
 	delta := time.Now().Sub(start)
-	errMessage := ""
-	if err != nil {
-		errMessage = err.Error()
-	} else if res.IsError() {
-		errMessage = fmt.Sprintf("%d %s", res.MustError().Code, res.MustError().Message)
-	}
-	self.Log().WithFields(log.Fields{
+
+	fields := log.Fields{
 		"method":      reqmsg.Method,
 		"timeSpentMS": delta.Milliseconds(),
-		"error":       errMessage,
-	}).Info("relay jsonrpc")
+	}
+	if err != nil {
+		fields["err"] = err.Error()
+	} else if res.IsError() {
+		fields["err"] = fmt.Sprintf("RPC %d %s", res.MustError().Code, res.MustError().Message)
+	}
+	self.Log().WithFields(fields).Info("call jsonrpc")
 	return res, err
 } // CallRPC
 
@@ -58,15 +59,17 @@ func (self *Endpoint) UnwrapCallRPC(rootCtx context.Context, reqmsg *jlib.Reques
 
 	// metrics the call time
 	delta := time.Now().Sub(start)
-	errMessage := ""
-	if err != nil {
-		errMessage = err.Error()
-	}
-	self.Log().WithFields(log.Fields{
+	fields := log.Fields{
 		"method":      reqmsg.Method,
 		"timeSpentMS": delta.Milliseconds(),
-		"error":       errMessage,
-	}).Info("relay jsonrpc")
+	}
+	var rpcErr *jlib.RPCError
+	if err != nil {
+		fields["err"] = err.Error()
+	} else if errors.As(err, &rpcErr) {
+		fields["err"] = fmt.Sprintf("RPCError %d %s", rpcErr.Code, rpcErr.Error())
+	}
+	self.Log().WithFields(fields).Info("call jsonrpc")
 	return err
 } // UnwrapCallRPC
 
