@@ -39,7 +39,8 @@ func (self *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(500)
 		w.Write([]byte("server error"))
 	} else if !ok {
-		w.WriteHeader(403)
+		w.WriteHeader(429)
+		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("rate limit exceeded!"))
 	} else {
 		self.next.ServeHTTP(w, r)
