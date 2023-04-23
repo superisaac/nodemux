@@ -15,7 +15,8 @@ import (
 
 func (self *Endpoint) ensureRPCClient() {
 	if self.rpcClient == nil {
-		c, err := jlibhttp.NewClient(self.Config.Url)
+		opts := jlibhttp.ClientOptions{Timeout: self.Config.Timeout}
+		c, err := jlibhttp.NewClient(self.Config.Url, opts)
 		if err != nil {
 			panic(err)
 		}

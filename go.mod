@@ -10,7 +10,7 @@ require (
 	github.com/prometheus/client_golang v1.14.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.0
-	github.com/superisaac/jlib v0.4.1
+	github.com/superisaac/jlib v0.4.2
 	gopkg.in/yaml.v2 v2.4.0
 )
 

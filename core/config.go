@@ -20,6 +20,7 @@ type EndpointConfig struct {
 	Weight        int               `yaml:"weight,omitempty" json:"weight,omitempty"`
 	SkipMethods   []string          `yaml:"skip_methods,omitempty" json:"skip_methods,omitempty"`
 	FetchInterval int               `yaml:"fetch_interval,omitempty" json:"fetch_interval,omitempty"`
+	Timeout       int               `yaml:"timeout,omitempty" json:"timeout,omitempty"`
 
 	// node specific options
 	Options map[string]interface{} `yaml:"options,omitempty" json:"options,omitempty"`
