@@ -122,10 +122,15 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 	start := time.Now()
 	resp, err := self.client.Do(req)
 	delta := time.Now().Sub(start)
-	self.Log().WithFields(log.Fields{
-		"method":      r.Method,
+	fields := log.Fields{
+		"method":      path,
+		"httpMethod":  r.Method,
 		"timeSpentMS": delta.Milliseconds(),
-	}).Info("replay http")
+	}
+	if err != nil {
+		fields["err"] = err.Error()
+	}
+	self.Log().WithFields(fields).Info("relay http")
 
 	if err != nil {
 		return errors.Wrap(err, "http Do")
