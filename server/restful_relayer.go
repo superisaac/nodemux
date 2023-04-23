@@ -17,7 +17,7 @@ type RESTRelayer struct {
 func NewRESTRelayer(rootCtx context.Context) *RESTRelayer {
 	return &RESTRelayer{
 		rootCtx: rootCtx,
-		regex:   regexp.MustCompile(`^/rest/([^/]+/[^/]+)/(.*)$`),
+		regex:   regexp.MustCompile(`^/rest/([^/]+/[^/]+/[^/]+)/(.*)$`),
 	}
 }
 
