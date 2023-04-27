@@ -11,10 +11,9 @@ import (
 	"time"
 )
 
-type bitcoinBlockhead struct {
-	Status string
-	Height int
-	Hash   string
+type bitcoinBlockchainInfo struct {
+	Blocks        int    `json:"blocks"`
+	BestBlockhash string `json:"bestblockhash"`
 }
 
 type bitcoinBlock struct {
@@ -25,7 +24,9 @@ type bitcoinBlock struct {
 
 // see bitcoin-cli getnetworkinfo
 type bitcoinNetworkInfo struct {
-	Version int
+	Version         int    `json:"version"`
+	SubVersion      string `json:"subversion"`
+	ProtocolVersion int    `json:"protocolversion"`
 }
 
 type BitcoinChain struct {
@@ -42,7 +43,7 @@ func (self BitcoinChain) GetClientVersion(ctx context.Context, ep *nodemuxcore.E
 	if err != nil {
 		return "", err
 	}
-	v := fmt.Sprintf("%d", info.Version)
+	v := fmt.Sprintf("%d %s %d", info.Version, info.SubVersion, info.ProtocolVersion)
 	return v, nil
 }
 
@@ -97,34 +98,19 @@ func (self BitcoinChain) updateBlockPresenceCache(ctx context.Context, m *nodemu
 
 func (self *BitcoinChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jlib.NewRequestMessage(
-		1, "getchaintips", nil)
+		1, "getblockchaininfo", nil)
 
-	var chaintips []bitcoinBlockhead
-	err := ep.UnwrapCallRPC(ctx, reqmsg, &chaintips)
+	var chainInfo bitcoinBlockchainInfo
+	err := ep.UnwrapCallRPC(ctx, reqmsg, &chainInfo)
 	if err != nil {
 		return nil, err
 	}
-	for _, ct := range chaintips {
-		if ct.Status != "active" {
-			continue
-		}
-		block := &nodemuxcore.Block{
-			Height: ct.Height,
-			Hash:   ct.Hash,
-		}
 
-		if ep.Blockhead == nil || ep.Blockhead.Height != ct.Height {
-			go self.updateBlockPresenceCache(ctx, m, ep, ct.Hash)
-		}
-
-		if v, ok := ep.Config.Options["sync_mempool"]; ok {
-			if canSyncMempool, ok := v.(bool); ok && canSyncMempool {
-				go self.updateMempoolPresenceCache(ctx, m, ep)
-			}
-		}
-		return block, nil
+	block := &nodemuxcore.Block{
+		Height: chainInfo.Blocks,
+		Hash:   chainInfo.BestBlockhash,
 	}
-	return nil, nil
+	return block, nil
 }
 
 func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
@@ -139,7 +125,7 @@ func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multip
 		if h, ok := self.findBlockHeight(reqmsg); ok {
 			return m.DefaultRelayRPC(ctx, chain, reqmsg, h)
 		}
-	} else if reqmsg.Method == "getchaintips" {
+	} else if reqmsg.Method == "getchaintips" || reqmsg.Method == "getblockchaininfo" {
 		// select latest chaintips
 		return m.DefaultRelayRPC(ctx, chain, reqmsg, 0)
 	}
