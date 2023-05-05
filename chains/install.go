@@ -8,7 +8,7 @@ import (
 
 func InstallAdaptors(factory *nodemuxcore.DelegatorFactory) {
 	// JSON-RPC handlers
-	factory.RegisterRPC(NewEthereumChain(),
+	factory.RegisterRPC(NewWeb3Chain(),
 		"ethereum", "binance-chain", "polygon",
 		"okex-token", "huobi-token", "ethereum-classic",
 		"cardano-kevm",

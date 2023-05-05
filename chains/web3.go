@@ -81,7 +81,7 @@ var (
 	}
 )
 
-type ethereumBlock struct {
+type web3Block struct {
 	Number       string
 	Hash         string
 	Transactions []string `json:"transactions"`
@@ -90,7 +90,7 @@ type ethereumBlock struct {
 	height int
 }
 
-func (self *ethereumBlock) Height() int {
+func (self *web3Block) Height() int {
 	if self.height <= 0 {
 		height, err := hexutil.DecodeUint64(self.Number)
 		if err != nil {
@@ -101,27 +101,27 @@ func (self *ethereumBlock) Height() int {
 	return self.height
 }
 
-type ethereumHeadSub struct {
+type web3HeadSub struct {
 	Subscription string
-	Result       ethereumBlock
+	Result       web3Block
 }
 
-type ethereumSubkey struct {
+type web3Subkey struct {
 	EpName string
 	Token  string
 }
 
-type EthereumChain struct {
-	subTokens map[ethereumSubkey]bool
+type Web3Chain struct {
+	subTokens map[web3Subkey]bool
 }
 
-func NewEthereumChain() *EthereumChain {
-	return &EthereumChain{
-		subTokens: make(map[ethereumSubkey]bool),
+func NewWeb3Chain() *Web3Chain {
+	return &Web3Chain{
+		subTokens: make(map[web3Subkey]bool),
 	}
 }
 
-func (self EthereumChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+func (self Web3Chain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	reqmsg := jlib.NewRequestMessage(
 		1, "web3_clientVersion", nil)
 	var v string
@@ -133,7 +133,7 @@ func (self EthereumChain) GetClientVersion(context context.Context, ep *nodemuxc
 	return v, nil
 }
 
-func (self EthereumChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (self Web3Chain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	if !ep.IsWebsocket() {
 		return true, nil
 	}
@@ -143,12 +143,12 @@ func (self EthereumChain) StartSync(context context.Context, m *nodemuxcore.Mult
 	return false, nil
 }
 
-func (self *EthereumChain) GetBlockhead(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *Web3Chain) GetBlockhead(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jlib.NewRequestMessage(
 		jlib.NewUuid(), "eth_getBlockByNumber",
 		[]interface{}{"latest", false})
 
-	var bt ethereumBlock
+	var bt web3Block
 	err := ep.UnwrapCallRPC(context, reqmsg, &bt)
 	if err != nil {
 		return nil, err
@@ -171,7 +171,7 @@ func (self *EthereumChain) GetBlockhead(context context.Context, m *nodemuxcore.
 	return block, nil
 }
 
-func (self *EthereumChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
+func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
 	if allowed, ok := allowedMethods[reqmsg.Method]; !ok || !allowed {
 		reqmsg.Log().Warnf("relayer method not supported")
 		return jlib.ErrMethodNotFound.ToMessage(reqmsg), nil
@@ -193,7 +193,7 @@ func (self *EthereumChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multi
 	return m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
 }
 
-func (self *EthereumChain) findBlockHeight(reqmsg *jlib.RequestMessage) (int, bool) {
+func (self *Web3Chain) findBlockHeight(reqmsg *jlib.RequestMessage) (int, bool) {
 	// the first argument is a hexlified block number or latest or pending
 	var bh struct {
 		Height string
@@ -209,7 +209,7 @@ func (self *EthereumChain) findBlockHeight(reqmsg *jlib.RequestMessage) (int, bo
 	return 0, false
 }
 
-func (self *EthereumChain) subscribeBlockhead(rootCtx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
+func (self *Web3Chain) subscribeBlockhead(rootCtx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
 	wsClient, ok := ep.JSONRPCRelayer().(*jlibhttp.WSClient)
 
 	if !ok {
@@ -223,13 +223,13 @@ func (self *EthereumChain) subscribeBlockhead(rootCtx context.Context, m *nodemu
 		if !ok && ntf.Method != "eth_subscription" || len(ntf.Params) == 0 {
 			return
 		}
-		var headSub ethereumHeadSub
+		var headSub web3HeadSub
 		err := jlib.DecodeInterface(ntf.Params[0], &headSub)
 		if err != nil {
 			ep.Log().Warnf("decode head sub error %s", err)
 		} else {
 			// match Subscription against sub token
-			subkey := ethereumSubkey{EpName: ep.Name, Token: headSub.Subscription}
+			subkey := web3Subkey{EpName: ep.Name, Token: headSub.Subscription}
 			if _, ok := self.subTokens[subkey]; !ok {
 				ep.Log().Warnf("subscription %s not found amount %#v",
 					headSub.Subscription,
@@ -267,7 +267,7 @@ func (self *EthereumChain) subscribeBlockhead(rootCtx context.Context, m *nodemu
 	}
 }
 
-func (self *EthereumChain) connectAndSub(rootCtx context.Context, wsClient *jlibhttp.WSClient, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) error {
+func (self *Web3Chain) connectAndSub(rootCtx context.Context, wsClient *jlibhttp.WSClient, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) error {
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
@@ -302,7 +302,7 @@ func (self *EthereumChain) connectAndSub(rootCtx context.Context, wsClient *jlib
 	if err != nil {
 		return err
 	}
-	subkey := ethereumSubkey{
+	subkey := web3Subkey{
 		EpName: ep.Name,
 		Token:  subscribeToken,
 	}
