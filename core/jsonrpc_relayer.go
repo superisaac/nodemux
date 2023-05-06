@@ -39,10 +39,16 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jlib.RequestMessa
 	// metrics the call time
 	delta := time.Now().Sub(start)
 
+	msecs := delta.Milliseconds()
+
 	fields := log.Fields{
 		"method":      reqmsg.Method,
-		"timeSpentMS": delta.Milliseconds(),
+		"timeSpentMS": msecs,
 	}
+	if delta.Microseconds() > 1000 {
+		fields["showRequest"] = true
+	}
+
 	if err != nil {
 		fields["err"] = err.Error()
 	} else if res.IsError() {
