@@ -55,7 +55,8 @@ func checkRatelimit(r *http.Request, accName string, ratelimitCfg RatelimitConfi
 			return ratelimit.Incr(
 				r.Context(),
 				c,
-				"u"+accName,
+				//"u"+accName,
+				accName,
 				ratelimitCfg.UserLimit())
 		} else {
 			// per IP based ratelimit
