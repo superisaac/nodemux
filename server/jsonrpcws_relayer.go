@@ -36,7 +36,10 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 		accName := ""
 		var ratelimit RatelimitConfig
 		if acc != nil {
-			accName = acc.Name
+			accName = acc.Config.Username
+			if accName == "" {
+				accName = acc.Name
+			}
 			ratelimit = acc.Config.Ratelimit
 		} else {
 			serverCfg := ServerConfigFromContext(rootCtx)

@@ -26,7 +26,10 @@ func (self *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	var accName string
 	if acc != nil {
 		ratelimit = acc.Config.Ratelimit
-		accName = acc.Name
+		accName = acc.Config.Username
+		if accName == "" {
+			accName = acc.Name
+		}
 	} else {
 		serverCfg := ServerConfigFromContext(self.rootCtx)
 		ratelimit = serverCfg.Ratelimit
