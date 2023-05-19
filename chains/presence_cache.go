@@ -37,7 +37,7 @@ func presenceCacheUpdate(ctx context.Context, c *redis.Client, chain nodemuxcore
 
 // try find from healthy endpoint from redis cache
 func presenceCacheGetEndpoint(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, txid string) (ep *nodemuxcore.Endpoint, hit bool) {
-	c, ok := m.RedisClient(presenceCacheRedisKey(chain))
+	c, ok := m.RedisClient(presenceCacheRedisSelector(chain))
 	if !ok {
 		return
 	}
@@ -95,6 +95,6 @@ func presenceCacheMatchRequest(ctx context.Context, m *nodemuxcore.Multiplexer, 
 	return nil, false
 }
 
-func presenceCacheRedisKey(chain nodemuxcore.ChainRef) string {
+func presenceCacheRedisSelector(chain nodemuxcore.ChainRef) string {
 	return fmt.Sprintf("pcache-%s-%s", chain.Namespace, chain.Network)
 }

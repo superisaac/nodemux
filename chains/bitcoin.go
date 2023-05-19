@@ -5,6 +5,7 @@ package chains
 import (
 	"context"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"github.com/superisaac/jlib"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
@@ -53,7 +54,7 @@ func (self BitcoinChain) StartSync(context context.Context, m *nodemuxcore.Multi
 
 // update txid cache from mempool
 func (self BitcoinChain) updateMempoolPresenceCache(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
-	redisClient, ok := m.RedisClient(presenceCacheRedisKey(ep.Chain))
+	redisClient, ok := m.RedisClient(presenceCacheRedisSelector(ep.Chain))
 	if !ok {
 		return
 	}
@@ -75,7 +76,7 @@ func (self BitcoinChain) updateMempoolPresenceCache(ctx context.Context, m *node
 }
 
 func (self BitcoinChain) updateBlockPresenceCache(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint, blockHash string) {
-	c, ok := m.RedisClient(presenceCacheRedisKey(ep.Chain))
+	c, ok := m.RedisClient(presenceCacheRedisSelector(ep.Chain))
 	if !ok {
 		return
 	}
@@ -114,6 +115,17 @@ func (self *BitcoinChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multi
 }
 
 func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
+	useCache := reqmsg.Method == "gettransaction" || reqmsg.Method == "getrawtransaction" || reqmsg.Method == "decoderawtransaction"
+	var cacheClient *redis.Client = nil
+	var ok bool = false
+	if useCache {
+		if cacheClient, ok = m.RedisClientExact(jsonrpcCacheRedisSelector(chain)); ok {
+			if resFromCache, ok := jsonrpcCacheGet(ctx, cacheClient, chain, reqmsg); ok {
+				return jlib.NewResultMessage(reqmsg, resFromCache), nil
+			}
+		}
+	}
+
 	if ep, ok := presenceCacheMatchRequest(
 		ctx, m, chain, reqmsg,
 		"gettransaction",
@@ -129,7 +141,12 @@ func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multip
 		// select latest chaintips
 		return m.DefaultRelayRPC(ctx, chain, reqmsg, 0)
 	}
-	return m.DefaultRelayRPC(ctx, chain, reqmsg, -1)
+
+	retmsg, err := m.DefaultRelayRPC(ctx, chain, reqmsg, -1)
+	if err == nil && useCache && retmsg.IsResult() && cacheClient != nil {
+		jsonrpcCacheUpdate(ctx, cacheClient, chain, reqmsg, retmsg.(*jlib.ResultMessage), time.Second*600)
+	}
+	return retmsg, nil
 }
 
 func (self *BitcoinChain) findBlockHeight(reqmsg *jlib.RequestMessage) (int, bool) {

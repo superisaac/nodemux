@@ -5,6 +5,7 @@ package chains
 import (
 	"context"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/go-redis/redis/v8"
 	"github.com/superisaac/jlib"
 	"github.com/superisaac/jlib/http"
 	"github.com/superisaac/nodemux/core"
@@ -160,7 +161,7 @@ func (self *Web3Chain) GetBlockhead(context context.Context, m *nodemuxcore.Mult
 	}
 
 	if ep.Blockhead == nil || ep.Blockhead.Height != bt.Height() {
-		if c, ok := m.RedisClient(presenceCacheRedisKey(ep.Chain)); ok {
+		if c, ok := m.RedisClient(presenceCacheRedisSelector(ep.Chain)); ok {
 			go presenceCacheUpdate(
 				context, c,
 				ep.Chain,
@@ -173,9 +174,25 @@ func (self *Web3Chain) GetBlockhead(context context.Context, m *nodemuxcore.Mult
 
 func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
 	if allowed, ok := allowedMethods[reqmsg.Method]; !ok || !allowed {
-		reqmsg.Log().Warnf("relayer method not supported")
+		reqmsg.Log().Warnf("relayer method not supported %s", reqmsg.Method)
 		return jlib.ErrMethodNotFound.ToMessage(reqmsg), nil
 	}
+
+	if reqmsg.Method == "web3_clientVersion" {
+		return jlib.NewResultMessage(reqmsg, "Web3/1.0.0"), nil
+	}
+
+	useCache := reqmsg.Method == "eth_getTransactionByHash" || reqmsg.Method == "eth_getTransactionReceipt"
+	var cacheClient *redis.Client = nil
+	var ok bool = false
+	if useCache {
+		if cacheClient, ok = m.RedisClientExact(jsonrpcCacheRedisSelector(chain)); ok {
+			if resFromCache, ok := jsonrpcCacheGet(ctx, cacheClient, chain, reqmsg); ok {
+				return jlib.NewResultMessage(reqmsg, resFromCache), nil
+			}
+		}
+	}
+
 	if endpoint, ok := presenceCacheMatchRequest(
 		ctx, m, chain, reqmsg,
 		"eth_getTransactionByHash",
@@ -187,10 +204,13 @@ func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplex
 		if h, ok := self.findBlockHeight(reqmsg); ok {
 			return m.DefaultRelayRPC(ctx, chain, reqmsg, h)
 		}
-	} else if reqmsg.Method == "web3_clientVersion" {
-		return jlib.NewResultMessage(reqmsg, "Web3/1.0.0"), nil
 	}
-	return m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
+	//return m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
+	retmsg, err := m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
+	if err == nil && useCache && retmsg.IsResult() && cacheClient != nil {
+		jsonrpcCacheUpdate(ctx, cacheClient, chain, reqmsg, retmsg.(*jlib.ResultMessage), time.Second*600)
+	}
+	return retmsg, nil
 }
 
 func (self *Web3Chain) findBlockHeight(reqmsg *jlib.RequestMessage) (int, bool) {
