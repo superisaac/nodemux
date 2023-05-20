@@ -54,12 +54,23 @@ func jsonrpcCacheRedisSelector(chain nodemuxcore.ChainRef) string {
 	return fmt.Sprintf("jsonrpc-cache-%s-%s", chain.Namespace, chain.Network)
 }
 
-func jsonrpcCacheFetch(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage) (*jlib.ResultMessage, bool) {
-	if c, ok := m.RedisClientExact(jsonrpcCacheRedisSelector(chain)); ok {
-		if resFromCache, ok := jsonrpcCacheGet(ctx, c, chain, reqmsg); ok {
-			return jlib.NewResultMessage(reqmsg, resFromCache), true
+func jsonrpcCacheFetchForMethods(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, methods ...string) (bool, *jlib.ResultMessage) {
+	useCache := false
+	for _, method := range methods {
+		if reqmsg.Method == method {
+			useCache = true
 		}
 	}
-	return nil, false
+	if !useCache {
+		return false, nil
+	}
+	if c, ok := m.RedisClientExact(jsonrpcCacheRedisSelector(chain)); ok {
+		if resFromCache, ok := jsonrpcCacheGet(ctx, c, chain, reqmsg); ok {
+			return useCache, jlib.NewResultMessage(reqmsg, resFromCache)
+		} else {
+			return useCache, nil
+		}
+	}
+	return false, nil
 
 }

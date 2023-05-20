@@ -181,12 +181,14 @@ func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplex
 		return jlib.NewResultMessage(reqmsg, "Web3/1.0.0"), nil
 	}
 
-	useCache := reqmsg.Method == "eth_getTransactionByHash" || reqmsg.Method == "eth_getTransactionReceipt"
+	//useCache := reqmsg.Method == "eth_getTransactionByHash" || reqmsg.Method == "eth_getTransactionReceipt"
+	useCache, resmsgFromCache := jsonrpcCacheFetchForMethods(
+		ctx, m, chain, reqmsg,
+		"eth_getTransactionByHash",
+		"eth_getTransactionReceipt")
 
-	if useCache {
-		if resmsg, cacheHit := jsonrpcCacheFetch(ctx, m, chain, reqmsg); cacheHit {
-			return resmsg, nil
-		}
+	if resmsgFromCache != nil {
+		return resmsgFromCache, nil
 	}
 
 	if endpoint, ok := presenceCacheMatchRequest(

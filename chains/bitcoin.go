@@ -114,11 +114,15 @@ func (self *BitcoinChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multi
 }
 
 func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
-	useCache := reqmsg.Method == "gettransaction" || reqmsg.Method == "getrawtransaction" || reqmsg.Method == "decoderawtransaction"
-	if useCache {
-		if resmsg, cacheHit := jsonrpcCacheFetch(ctx, m, chain, reqmsg); cacheHit {
-			return resmsg, nil
-		}
+	//useCache := reqmsg.Method == "gettransaction" || reqmsg.Method == "getrawtransaction" || reqmsg.Method == "decoderawtransaction"
+	useCache, resmsgFromCache := jsonrpcCacheFetchForMethods(
+		ctx, m, chain, reqmsg,
+		"gettransaction",
+		"getrawtransaction",
+		"decoderawtransaction")
+
+	if resmsgFromCache != nil {
+		return resmsgFromCache, nil
 	}
 
 	if ep, ok := presenceCacheMatchRequest(
@@ -139,7 +143,7 @@ func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multip
 
 	retmsg, err := m.DefaultRelayRPC(ctx, chain, reqmsg, -1)
 	if err == nil && useCache && retmsg.IsResult() {
-		jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jlib.ResultMessage), time.Second*600)
+		jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jlib.ResultMessage), time.Minute*10)
 	}
 	return retmsg, nil
 }
