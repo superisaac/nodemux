@@ -5,7 +5,6 @@ package chains
 import (
 	"context"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/go-redis/redis/v8"
 	"github.com/superisaac/jlib"
 	"github.com/superisaac/jlib/http"
 	"github.com/superisaac/nodemux/core"
@@ -183,13 +182,10 @@ func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplex
 	}
 
 	useCache := reqmsg.Method == "eth_getTransactionByHash" || reqmsg.Method == "eth_getTransactionReceipt"
-	var cacheClient *redis.Client = nil
-	var ok bool = false
+
 	if useCache {
-		if cacheClient, ok = m.RedisClientExact(jsonrpcCacheRedisSelector(chain)); ok {
-			if resFromCache, ok := jsonrpcCacheGet(ctx, cacheClient, chain, reqmsg); ok {
-				return jlib.NewResultMessage(reqmsg, resFromCache), nil
-			}
+		if resmsg, cacheHit := jsonrpcCacheFetch(ctx, m, chain, reqmsg); cacheHit {
+			return resmsg, nil
 		}
 	}
 
@@ -207,8 +203,8 @@ func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplex
 	}
 	//return m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
 	retmsg, err := m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
-	if err == nil && useCache && retmsg.IsResult() && cacheClient != nil {
-		jsonrpcCacheUpdate(ctx, cacheClient, chain, reqmsg, retmsg.(*jlib.ResultMessage), time.Second*600)
+	if err == nil && useCache && retmsg.IsResult() {
+		jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jlib.ResultMessage), time.Second*600)
 	}
 	return retmsg, nil
 }

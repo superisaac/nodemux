@@ -33,21 +33,33 @@ func jsonrpcCacheGet(ctx context.Context, c *redis.Client, chain nodemuxcore.Cha
 	return res, true
 }
 
-func jsonrpcCacheUpdate(ctx context.Context, c *redis.Client, chain nodemuxcore.ChainRef, req *jlib.RequestMessage, res *jlib.ResultMessage, expiration time.Duration) {
-	cacheKey := req.CacheKey(fmt.Sprintf("CC:%s", chain))
-	data, err := json.Marshal(res.Result)
-	if err != nil {
-		log.Warnf("josnrpcCacheUpdate() json.Marshal %s: %#v", cacheKey, err)
-		return
-	}
+func jsonrpcCacheUpdate(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, req *jlib.RequestMessage, res *jlib.ResultMessage, expiration time.Duration) {
+	if c, ok := m.RedisClientExact(jsonrpcCacheRedisSelector(chain)); ok {
+		cacheKey := req.CacheKey(fmt.Sprintf("CC:%s", chain))
+		data, err := json.Marshal(res.Result)
+		if err != nil {
+			log.Warnf("josnrpcCacheUpdate() json.Marshal %s: %#v", cacheKey, err)
+			return
+		}
 
-	_, err = c.Set(ctx, cacheKey, string(data), expiration).Result()
-	if err != nil {
-		log.Warnf("josnrpcCacheUpdate() redis.Set %s: %#v", cacheKey, err)
-		return
+		_, err = c.Set(ctx, cacheKey, string(data), expiration).Result()
+		if err != nil {
+			log.Warnf("josnrpcCacheUpdate() redis.Set %s: %#v", cacheKey, err)
+			return
+		}
 	}
 }
 
 func jsonrpcCacheRedisSelector(chain nodemuxcore.ChainRef) string {
 	return fmt.Sprintf("jsonrpc-cache-%s-%s", chain.Namespace, chain.Network)
+}
+
+func jsonrpcCacheFetch(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage) (*jlib.ResultMessage, bool) {
+	if c, ok := m.RedisClientExact(jsonrpcCacheRedisSelector(chain)); ok {
+		if resFromCache, ok := jsonrpcCacheGet(ctx, c, chain, reqmsg); ok {
+			return jlib.NewResultMessage(reqmsg, resFromCache), true
+		}
+	}
+	return nil, false
+
 }

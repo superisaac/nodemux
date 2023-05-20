@@ -1,10 +1,11 @@
 package nodemuxcore
 
 import (
-	"github.com/go-redis/redis/v8"
-	log "github.com/sirupsen/logrus"
 	"net/url"
 	"strconv"
+
+	"github.com/go-redis/redis/v8"
+	log "github.com/sirupsen/logrus"
 )
 
 func GetRedisOptions(redisUrl string) (*redis.Options, error) {

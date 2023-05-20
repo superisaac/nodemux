@@ -5,7 +5,6 @@ package chains
 import (
 	"context"
 	"fmt"
-	"github.com/go-redis/redis/v8"
 	"github.com/superisaac/jlib"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
@@ -116,13 +115,9 @@ func (self *BitcoinChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multi
 
 func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
 	useCache := reqmsg.Method == "gettransaction" || reqmsg.Method == "getrawtransaction" || reqmsg.Method == "decoderawtransaction"
-	var cacheClient *redis.Client = nil
-	var ok bool = false
 	if useCache {
-		if cacheClient, ok = m.RedisClientExact(jsonrpcCacheRedisSelector(chain)); ok {
-			if resFromCache, ok := jsonrpcCacheGet(ctx, cacheClient, chain, reqmsg); ok {
-				return jlib.NewResultMessage(reqmsg, resFromCache), nil
-			}
+		if resmsg, cacheHit := jsonrpcCacheFetch(ctx, m, chain, reqmsg); cacheHit {
+			return resmsg, nil
 		}
 	}
 
@@ -143,8 +138,8 @@ func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multip
 	}
 
 	retmsg, err := m.DefaultRelayRPC(ctx, chain, reqmsg, -1)
-	if err == nil && useCache && retmsg.IsResult() && cacheClient != nil {
-		jsonrpcCacheUpdate(ctx, cacheClient, chain, reqmsg, retmsg.(*jlib.ResultMessage), time.Second*600)
+	if err == nil && useCache && retmsg.IsResult() {
+		jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jlib.ResultMessage), time.Second*600)
 	}
 	return retmsg, nil
 }
