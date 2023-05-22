@@ -129,7 +129,11 @@ func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multip
 		ctx, m, chain, reqmsg,
 		"gettransaction",
 		"getrawtransaction"); ok {
-		return ep.CallRPC(ctx, reqmsg)
+		retmsg, err := ep.CallRPC(ctx, reqmsg)
+		if err == nil && useCache && retmsg.IsResult() {
+			jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jlib.ResultMessage), time.Minute*10)
+		}
+		return retmsg, err
 	}
 
 	if reqmsg.Method == "getblockhash" {

@@ -195,7 +195,11 @@ func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplex
 		ctx, m, chain, reqmsg,
 		"eth_getTransactionByHash",
 		"eth_getTransactionReceipt"); ok {
-		return endpoint.CallRPC(ctx, reqmsg)
+		retmsg, err := endpoint.CallRPC(ctx, reqmsg)
+		if err == nil && useCache && retmsg.IsResult() {
+			jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jlib.ResultMessage), time.Second*600)
+		}
+		return retmsg, nil
 	}
 
 	if reqmsg.Method == "eth_getBlockByNumber" {
