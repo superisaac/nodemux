@@ -22,7 +22,7 @@ jobs:
       run: git submodule update --init --recursive
   
     - name: Go lint
-      run: make golint
+      run: cd nodemux && make golint
   
     - name: Test
-      run: make test
+      run: cd nodeemux && make test

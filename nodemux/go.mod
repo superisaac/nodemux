@@ -40,7 +40,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace (
-	github.com/superisaac/jlib => ./vendors/jlib/
-	github.com/superisaac/jlib/http => ./vendors/jlib/http/
-)
+// replace (
+// 	github.com/superisaac/jlib => ./vendors/jlib/
+// 	github.com/superisaac/jlib/http => ./vendors/jlib/http/
+// )
