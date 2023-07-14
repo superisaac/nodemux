@@ -25,4 +25,4 @@ jobs:
       run: cd nodemux && make golint
   
     - name: Test
-      run: cd nodeemux && make test
+      run: cd nodemux && make test
