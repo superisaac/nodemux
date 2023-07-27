@@ -130,6 +130,11 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 	if err != nil {
 		fields["err"] = err.Error()
 	}
+
+	if resp != nil {
+		fields["status"] = resp.StatusCode
+	}
+
 	self.Log().WithFields(fields).Info("relay http")
 
 	if err != nil {
