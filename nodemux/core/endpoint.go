@@ -75,7 +75,7 @@ func (self *Endpoint) Connect() {
 		}
 		self.client = &http.Client{
 			Transport: tr,
-			Timeout:   5 * time.Second,
+			Timeout:   30 * time.Second,
 		}
 	}
 }
