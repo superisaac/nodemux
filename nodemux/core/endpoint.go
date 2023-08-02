@@ -5,15 +5,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jlib/http"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"strings"
-	"time"
 )
 
 // / Create an endpoint instance
@@ -142,6 +144,12 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 	self.Log().WithFields(fields).Info("relay http")
 
 	if err != nil {
+		if os.IsTimeout(err) {
+			w.WriteHeader(http.StatusRequestTimeout)
+			w.Write([]byte("timeout"))
+			return nil
+
+		}
 		return errors.Wrap(err, "http Do")
 	}
 
