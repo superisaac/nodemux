@@ -73,9 +73,13 @@ func (self *Endpoint) Connect() {
 			MaxIdleConnsPerHost: 10,
 			IdleConnTimeout:     30 * time.Second,
 		}
+		timeout := self.Config.Timeout
+		if timeout <= 0 {
+			timeout = 90
+		}
 		self.client = &http.Client{
 			Transport: tr,
-			Timeout:   90 * time.Second,
+			Timeout:   time.Duration(timeout) * time.Second,
 		}
 	}
 }
