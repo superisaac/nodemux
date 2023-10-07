@@ -5,18 +5,21 @@ GOBUILD := go build -v
 GOARCHS := linux-amd64 linux-arm64 darwin-amd64 darwin-arm64
 buildarchdirs := $(foreach a,$(GOARCHS),build/arch/nodemux-$a)
 
-build: bin/nodemux
+build: bin/nodemux bin/nodemux-dail
 
 all: test build
 
 bin/nodemux: ${GOFILES}
-	${GOBUILD} ${GOFLAG} -o $@ nodemux.go
+	${GOBUILD} ${GOFLAG} -o $@ cmds/nodemux/main.go
+
+bin/nodemux-dail: ${GOFILES}
+	${GOBUILD} ${GOFLAG} -o $@ cmds/dail/main.go
 
 test:
 	go test -v ./...
 
 clean:
-	rm -rf build dist bin/nodemux
+	rm -rf build dist bin/nodemux bin/nodemux-dail
 
 golint:
 	go fmt ./...

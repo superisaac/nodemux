@@ -97,7 +97,7 @@ func watchConfig(rootCtx context.Context, configPath string, fetch bool) {
 }
 
 func CommandStartServer() {
-	serverFlags := flag.NewFlagSet("jointrpc-server", flag.ExitOnError)
+	serverFlags := flag.NewFlagSet("nodemux", flag.ExitOnError)
 	pConfigPath := serverFlags.String("f", "nodemux.yaml", "path to nodemux.yml or nodemux.json")
 	pWatchConfig := serverFlags.Bool("w", false, "watch config changes using fsnotify")
 	pNoSyncEndpoints := serverFlags.Bool("nosync", false, "sync endpoints statuses")
