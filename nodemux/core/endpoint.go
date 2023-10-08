@@ -98,6 +98,59 @@ func (self Endpoint) FullUrl(path string) string {
 
 // RESTful methods
 func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.ResponseWriter, r *http.Request) error {
+	resp, err := self.RespondRequest(rootCtx, path, r)
+	if err != nil {
+		if os.IsTimeout(err) {
+			w.WriteHeader(http.StatusRequestTimeout)
+			w.Write([]byte("timeout"))
+			return nil
+		}
+		return errors.Wrap(err, "http Do")
+	}
+
+	// pipe the response
+	for hn, hvs := range resp.Header {
+		for _, hv := range hvs {
+			w.Header().Add(hn, hv)
+		}
+	}
+	w.WriteHeader(resp.StatusCode)
+	io.Copy(w, resp.Body)
+	return nil
+}
+
+func (self *Endpoint) PipeTeeRequest(rootCtx context.Context, path string, w http.ResponseWriter, r *http.Request) ([]byte, error) {
+	resp, err := self.RespondRequest(rootCtx, path, r)
+	if err != nil {
+		if os.IsTimeout(err) {
+			w.WriteHeader(http.StatusRequestTimeout)
+			w.Write([]byte("timeout"))
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "http Do")
+	}
+
+	// pipe the response
+	for hn, hvs := range resp.Header {
+		for _, hv := range hvs {
+			w.Header().Add(hn, hv)
+		}
+	}
+	w.WriteHeader(resp.StatusCode)
+	if resp.StatusCode == http.StatusOK {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return body, err
+		}
+		io.Copy(w, io.NopCloser(bytes.NewBuffer(body)))
+		return body, nil
+	} else {
+		io.Copy(w, resp.Body)
+		return nil, nil
+	}
+}
+
+func (self *Endpoint) RespondRequest(rootCtx context.Context, path string, r *http.Request) (*http.Response, error) {
 	self.Connect()
 	self.incrRelayCount()
 	ctx, cancel := context.WithCancel(rootCtx)
@@ -108,7 +161,7 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 	url := self.FullUrl(path)
 	req, err := http.NewRequestWithContext(ctx, r.Method, url, r.Body)
 	if err != nil {
-		return errors.Wrap(err, "http.NewRequestWithContext")
+		return nil, errors.Wrap(err, "http.NewRequestWithContext")
 	}
 
 	// copy request headers
@@ -142,26 +195,8 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 	}
 
 	self.Log().WithFields(fields).Info("relay http")
+	return resp, err
 
-	if err != nil {
-		if os.IsTimeout(err) {
-			w.WriteHeader(http.StatusRequestTimeout)
-			w.Write([]byte("timeout"))
-			return nil
-
-		}
-		return errors.Wrap(err, "http Do")
-	}
-
-	// pipe the response
-	for hn, hvs := range resp.Header {
-		for _, hv := range hvs {
-			w.Header().Add(hn, hv)
-		}
-	}
-	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
-	return nil
 }
 
 // Perform a GET request and process the response as JSON

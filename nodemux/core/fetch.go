@@ -31,21 +31,30 @@ func (self *Multiplexer) getBlockhead(rootCtx context.Context, ep *Endpoint, las
 		return nil, err
 	}
 	if block != nil {
-
 		ep.connected = true
 		if !blockIsEqual(lastBlock, block) {
-			bs := ChainStatus{
-				EndpointName: ep.Name,
-				Chain:        ep.Chain,
-				Healthy:      true,
-				Blockhead:    block,
-			}
-			self.chainHub.Pub() <- bs
+			self.UpdateBlock(ep, block)
 		}
 	} else {
 		logger.Warnf("got nil head block when accessing %s %s", ep.Name, ep.Config.Url)
 	}
 	return block, nil
+}
+
+func (self *Multiplexer) UpdateBlock(ep *Endpoint, block *Block) {
+	bs := ChainStatus{
+		EndpointName: ep.Name,
+		Chain:        ep.Chain,
+		Healthy:      true,
+		Blockhead:    block,
+	}
+	self.chainHub.Pub() <- bs
+}
+
+func (self *Multiplexer) UpdateBlockIfChanged(ep *Endpoint, block *Block) {
+	if !blockIsEqual(ep.Blockhead, block) {
+		self.UpdateBlock(ep, block)
+	}
 }
 
 func (self *Multiplexer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {

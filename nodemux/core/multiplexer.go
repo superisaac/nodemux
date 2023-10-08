@@ -181,7 +181,11 @@ func (self *Multiplexer) LoadFromConfig(nbcfg *NodemuxConfig) {
 	}
 }
 
-func (self *Multiplexer) DefaultRelayRPC(rootCtx context.Context, chain ChainRef, reqmsg *jlib.RequestMessage, overHeight int) (jlib.Message, error) {
+func (self *Multiplexer) DefaultRelayRPC(
+	rootCtx context.Context,
+	chain ChainRef,
+	reqmsg *jlib.RequestMessage,
+	overHeight int) (jlib.Message, error) {
 	ep, found := self.SelectOverHeight(chain, reqmsg.Method, overHeight)
 	if !found {
 		if overHeight > 0 {
@@ -194,6 +198,30 @@ func (self *Multiplexer) DefaultRelayRPC(rootCtx context.Context, chain ChainRef
 	return resmsg, err
 }
 
+// Pipe the request to response and tee the choosed endpoint and the response body
+// for possible caching and handlers
+func (self *Multiplexer) DefaultPipeTeeREST(
+	rootCtx context.Context,
+	chain ChainRef,
+	path string,
+	w http.ResponseWriter,
+	r *http.Request, overHeight int) (*Endpoint, []byte, error) {
+
+	ep, found := self.SelectOverHeight(chain, path, overHeight)
+	if !found {
+		if overHeight > 0 {
+			// if not find then relay to any healthy endpoint
+			return self.DefaultPipeTeeREST(rootCtx, chain, path, w, r, -2)
+		}
+		w.WriteHeader(404)
+		w.Write([]byte("not found"))
+		return ep, nil, nil
+	}
+	body, err := ep.PipeTeeRequest(rootCtx, path, w, r)
+	return ep, body, err
+}
+
+// Pipe the request to response
 func (self *Multiplexer) DefaultPipeREST(rootCtx context.Context, chain ChainRef, path string, w http.ResponseWriter, r *http.Request, overHeight int) error {
 	ep, found := self.SelectOverHeight(chain, path, overHeight)
 	if !found {

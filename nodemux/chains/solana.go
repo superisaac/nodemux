@@ -33,7 +33,7 @@ func (self SolanaChain) StartSync(context context.Context, m *nodemuxcore.Multip
 	return true, nil
 }
 
-func (self *SolanaChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (self *SolanaChain) GetBlockhead(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jlib.NewRequestMessage(
 		1, "getLatestBlockhash", []interface{}{})
 
@@ -49,7 +49,7 @@ func (self *SolanaChain) GetBlockhead(context context.Context, b *nodemuxcore.Mu
 	return block, nil
 }
 
-func (self *SolanaChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
+func (self *SolanaChain) DelegateRPC(rootCtx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
 	// Custom relay methods can be defined here
-	return b.DefaultRelayRPC(rootCtx, chain, reqmsg, -10)
+	return m.DefaultRelayRPC(rootCtx, chain, reqmsg, -10)
 }

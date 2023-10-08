@@ -34,24 +34,23 @@ func (self EosChain) StartSync(context context.Context, m *nodemuxcore.Multiplex
 }
 
 func (self *EosChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	var res eosChainInfo
+	var chainInfo eosChainInfo
 	err := ep.PostJson(context,
 		"/v1/chain/get_info",
-		nil, nil, &res)
+		nil, nil, &chainInfo)
 	if err != nil {
 		return nil, err
 	}
 
 	block := &nodemuxcore.Block{
-		Height: res.LastBlockNum,
-		Hash:   res.LastBlockId,
+		Height: chainInfo.LastBlockNum,
+		Hash:   chainInfo.LastBlockId,
 	}
 	return block, nil
 }
 
-func (self *EosChain) DelegateREST(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
-	// Custom relay methods can be defined here
-	h := -10
+func (self *EosChain) DelegateREST(rootCtx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+	requiredHeight := -10
 	if path == "/v1/chain/get_block" {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -59,12 +58,27 @@ func (self *EosChain) DelegateREST(rootCtx context.Context, b *nodemuxcore.Multi
 		}
 		getBlockReq := eosChainGetBlockReq{}
 		if err := json.Unmarshal(body, &getBlockReq); err == nil {
-			h = getBlockReq.BlockNumOrId
-			chain.Log().Infof("retrieved block number %d from get_block request", h)
+			requiredHeight = getBlockReq.BlockNumOrId
+			chain.Log().Infof("retrieved block number %d from get_block request", requiredHeight)
 		}
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
 	} else if path == "/v1/chain/get_info" {
-		h = 0
+		requiredHeight = 0
+		ep, body, err := m.DefaultPipeTeeREST(rootCtx, chain, path, w, r, requiredHeight)
+		if err != nil || ep == nil || body == nil {
+			return err
+		}
+
+		var chainInfo eosChainInfo
+		if err := json.Unmarshal(body, &chainInfo); err != nil {
+			chain.Log().Warnf("json unmarshal body %#v", err)
+		}
+		block := &nodemuxcore.Block{
+			Height: chainInfo.LastBlockNum,
+			Hash:   chainInfo.LastBlockId,
+		}
+		m.UpdateBlockIfChanged(ep, block)
+		return nil
 	}
-	return b.DefaultPipeREST(rootCtx, chain, path, w, r, h)
+	return m.DefaultPipeREST(rootCtx, chain, path, w, r, requiredHeight)
 }
