@@ -159,7 +159,11 @@ func (self *Endpoint) RespondRequest(rootCtx context.Context, path string, r *ht
 	// prepare request
 	// TODO: join the server url and method
 	url := self.FullUrl(path)
-	req, err := http.NewRequestWithContext(ctx, r.Method, url, r.Body)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, r.Method, url, io.NopCloser(bytes.NewBuffer(body)))
 	if err != nil {
 		return nil, errors.Wrap(err, "http.NewRequestWithContext")
 	}
