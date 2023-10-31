@@ -1,10 +1,13 @@
 package server
 
 import (
+	"bytes"
 	"context"
-	"github.com/superisaac/nodemux/core"
+	"io"
 	"net/http"
 	"regexp"
+
+	"github.com/superisaac/nodemux/core"
 )
 
 // REST Handler
@@ -49,6 +52,17 @@ func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(404)
 		w.Write([]byte("backend not found"))
 		return
+	}
+
+	if r.Method == "POST" || r.Method == "PUT" {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			requestLog(r).Warnf("error reading request body %#v", err)
+			w.WriteHeader(400)
+			w.Write([]byte("bad request"))
+			return
+		}
+		r.Body = io.NopCloser(bytes.NewBuffer(body))
 	}
 
 	err := delegator.DelegateREST(self.rootCtx, m, acc.Chain, method, w, r)

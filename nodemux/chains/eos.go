@@ -50,7 +50,7 @@ func (self *EosChain) GetBlockhead(context context.Context, b *nodemuxcore.Multi
 }
 
 func (self *EosChain) DelegateREST(rootCtx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
-	requiredHeight := -10
+	requiredHeight := -200
 	if path == "/v1/chain/get_block" {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
