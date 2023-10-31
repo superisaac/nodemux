@@ -54,7 +54,7 @@ func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method == "POST" || r.Method == "PUT" {
+	if r.Method == http.MethodPost || r.Method == http.MethodPut {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			requestLog(r).Warnf("error reading request body %#v", err)
