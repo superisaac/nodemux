@@ -45,12 +45,12 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 			serverCfg := ServerConfigFromContext(rootCtx)
 			ratelimit = serverCfg.Ratelimit
 		}
-		ok, err := checkRatelimit(r, accName, ratelimit)
+		ok, err := checkRatelimit(r, accName, ratelimit, true)
 		if err != nil {
 			return nil, err
 		} else if !ok {
 			return nil, jlibhttp.SimpleResponse{
-				Code: 403,
+				Code: 429,
 				Body: []byte("rate limit exceeded!"),
 			}
 		}
@@ -102,6 +102,9 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}
 		destWs := jlibhttp.NewWSClient(u)
 		destWs.OnMessage(func(m jlib.Message) {
 			session.Send(m)
+		})
+		destWs.OnClose(func() {
+			self.onClose(r, session)
 		})
 		wsPairs[session.SessionID()] = destWs
 		metricsWSPairsCount.Set(float64(len(wsPairs)))

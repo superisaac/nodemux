@@ -36,7 +36,7 @@ func (self *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		accName = ""
 	}
 
-	ok, err := checkRatelimit(r, accName, ratelimit)
+	ok, err := checkRatelimit(r, accName, ratelimit, false)
 	if err != nil {
 		requestLog(r).Errorf("error while checking ratelimit %s", err)
 		w.WriteHeader(500)
@@ -50,23 +50,27 @@ func (self *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func checkRatelimit(r *http.Request, accName string, ratelimitCfg RatelimitConfig) (bool, error) {
+func checkRatelimit(r *http.Request, accountName string, ratelimitCfg RatelimitConfig, fromWebsocket bool) (bool, error) {
 	m := nodemuxcore.GetMultiplexer()
+	factor := 1
+	if fromWebsocket {
+		factor = 2
+	}
 	if c, ok := m.RedisClient("ratelimit"); ok {
-		if accName != "" {
+		if accountName != "" {
 			// use account based limit
 			return ratelimit.Incr(
 				r.Context(),
 				c,
 				//"u"+accName,
-				accName,
-				ratelimitCfg.UserLimit())
+				accountName,
+				ratelimitCfg.UserLimit()*factor)
 		} else {
 			// per IP based ratelimit
 			return ratelimit.Incr(
 				r.Context(),
 				c, r.RemoteAddr,
-				ratelimitCfg.IPLimit())
+				ratelimitCfg.IPLimit()*factor)
 		}
 	}
 	return true, nil
