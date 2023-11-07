@@ -9,32 +9,32 @@ import (
 	"net/http"
 )
 
-type eosChainInfo struct {
+type eosapiChainInfo struct {
 	LastBlockNum int    `json:"last_irreversible_block_num"`
 	LastBlockId  string `json:"last_irreversible_block_id"`
 }
 
-type eosChainGetBlockReq struct {
+type eosapiChainGetBlockReq struct {
 	BlockNumOrId int `json:"block_num_or_id"`
 }
 
-type EosChain struct {
+type EOSAPI struct {
 }
 
-func NewEosChain() *EosChain {
-	return &EosChain{}
+func NewEOSAPI() *EOSAPI {
+	return &EOSAPI{}
 }
 
-func (self EosChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+func (self EOSAPI) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	return "", nil
 }
 
-func (self EosChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (self EOSAPI) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 
-func (self *EosChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	var chainInfo eosChainInfo
+func (self *EOSAPI) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+	var chainInfo eosapiChainInfo
 	err := ep.PostJson(context,
 		"/v1/chain/get_info",
 		nil, nil, &chainInfo)
@@ -49,14 +49,14 @@ func (self *EosChain) GetBlockhead(context context.Context, b *nodemuxcore.Multi
 	return block, nil
 }
 
-func (self *EosChain) DelegateREST(rootCtx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+func (self *EOSAPI) DelegateREST(rootCtx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	requiredHeight := -200
 	if path == "/v1/chain/get_block" {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			return err
 		}
-		getBlockReq := eosChainGetBlockReq{}
+		getBlockReq := eosapiChainGetBlockReq{}
 		if err := json.Unmarshal(body, &getBlockReq); err == nil {
 			requiredHeight = getBlockReq.BlockNumOrId
 			chain.Log().Infof("retrieved block number %d from get_block request", requiredHeight)
@@ -69,7 +69,7 @@ func (self *EosChain) DelegateREST(rootCtx context.Context, m *nodemuxcore.Multi
 			return err
 		}
 
-		var chainInfo eosChainInfo
+		var chainInfo eosapiChainInfo
 		if err := json.Unmarshal(body, &chainInfo); err != nil {
 			chain.Log().Warnf("json unmarshal body %#v", err)
 		}
