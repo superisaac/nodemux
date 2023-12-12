@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/jlib"
+	"github.com/superisaac/jsoff"
 	"net/http"
 	//"sync"
 )
@@ -16,7 +16,7 @@ var (
 )
 
 var (
-	ErrNotAvailable = &jlib.RPCError{Code: -32060, Message: "not available"}
+	ErrNotAvailable = &jsoff.RPCError{Code: -32060, Message: "not available"}
 )
 
 func GetMultiplexer() *Multiplexer {
@@ -184,8 +184,8 @@ func (self *Multiplexer) LoadFromConfig(nbcfg *NodemuxConfig) {
 func (self *Multiplexer) DefaultRelayRPC(
 	rootCtx context.Context,
 	chain ChainRef,
-	reqmsg *jlib.RequestMessage,
-	overHeight int) (jlib.Message, error) {
+	reqmsg *jsoff.RequestMessage,
+	overHeight int) (jsoff.Message, error) {
 	ep, found := self.SelectOverHeight(chain, reqmsg.Method, overHeight)
 	if !found {
 		if overHeight > 0 {

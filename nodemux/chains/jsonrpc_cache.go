@@ -7,13 +7,13 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/jlib"
+	"github.com/superisaac/jsoff"
 	"github.com/superisaac/nodemux/core"
 	"strings"
 	"time"
 )
 
-func jsonrpcCacheGet(ctx context.Context, c *redis.Client, chain nodemuxcore.ChainRef, req *jlib.RequestMessage) (interface{}, bool) {
+func jsonrpcCacheGet(ctx context.Context, c *redis.Client, chain nodemuxcore.ChainRef, req *jsoff.RequestMessage) (interface{}, bool) {
 	cacheKey := req.CacheKey(fmt.Sprintf("CC:%s", chain))
 	data, err := c.Get(ctx, cacheKey).Result()
 	if err != nil {
@@ -33,7 +33,7 @@ func jsonrpcCacheGet(ctx context.Context, c *redis.Client, chain nodemuxcore.Cha
 	return res, true
 }
 
-func jsonrpcCacheUpdate(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, req *jlib.RequestMessage, res *jlib.ResultMessage, expiration time.Duration) {
+func jsonrpcCacheUpdate(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, req *jsoff.RequestMessage, res *jsoff.ResultMessage, expiration time.Duration) {
 	if c, ok := m.RedisClientExact(jsonrpcCacheRedisSelector(chain)); ok {
 		cacheKey := req.CacheKey(fmt.Sprintf("CC:%s", chain))
 		data, err := json.Marshal(res.Result)
@@ -54,7 +54,7 @@ func jsonrpcCacheRedisSelector(chain nodemuxcore.ChainRef) string {
 	return fmt.Sprintf("jsonrpc-cache-%s-%s", chain.Namespace, chain.Network)
 }
 
-func jsonrpcCacheFetchForMethods(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, methods ...string) (bool, *jlib.ResultMessage) {
+func jsonrpcCacheFetchForMethods(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, methods ...string) (bool, *jsoff.ResultMessage) {
 	useCache := false
 	for _, method := range methods {
 		if reqmsg.Method == method {
@@ -66,7 +66,7 @@ func jsonrpcCacheFetchForMethods(ctx context.Context, m *nodemuxcore.Multiplexer
 	}
 	if c, ok := m.RedisClientExact(jsonrpcCacheRedisSelector(chain)); ok {
 		if resFromCache, ok := jsonrpcCacheGet(ctx, c, chain, reqmsg); ok {
-			return useCache, jlib.NewResultMessage(reqmsg, resFromCache)
+			return useCache, jsoff.NewResultMessage(reqmsg, resFromCache)
 		} else {
 			return useCache, nil
 		}

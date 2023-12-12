@@ -3,22 +3,22 @@ package server
 import (
 	"context"
 	"github.com/pkg/errors"
-	"github.com/superisaac/jlib"
-	"github.com/superisaac/jlib/http"
+	"github.com/superisaac/jsoff"
+	"github.com/superisaac/jsoff/net"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 	"net/url"
 )
 
 var (
-	wsPairs = make(map[string]*jlibhttp.WSClient)
+	wsPairs = make(map[string]*jsoffnet.WSClient)
 )
 
 // JSONRPC Handler
 type JSONRPCWSRelayer struct {
 	rootCtx    context.Context
 	acc        *Acc
-	rpcHandler *jlibhttp.WSHandler
+	rpcHandler *jsoffnet.WSHandler
 }
 
 func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
@@ -26,11 +26,11 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 		rootCtx: rootCtx,
 	}
 
-	rpcHandler := jlibhttp.NewWSHandler(rootCtx, nil)
-	rpcHandler.Actor.OnClose(func(r *http.Request, s jlibhttp.RPCSession) {
-		relayer.onClose(r, s)
+	rpcHandler := jsoffnet.NewWSHandler(rootCtx, nil)
+	rpcHandler.Actor.OnClose(func(s jsoffnet.RPCSession) {
+		relayer.onClose(s)
 	})
-	rpcHandler.Actor.OnMissing(func(req *jlibhttp.RPCRequest) (interface{}, error) {
+	rpcHandler.Actor.OnMissing(func(req *jsoffnet.RPCRequest) (interface{}, error) {
 		r := req.HttpRequest()
 		acc := AccFromContext(r.Context())
 		accName := ""
@@ -49,7 +49,7 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 		if err != nil {
 			return nil, err
 		} else if !ok {
-			return nil, jlibhttp.SimpleResponse{
+			return nil, jsoffnet.SimpleResponse{
 				Code: 429,
 				Body: []byte("rate limit exceeded!"),
 			}
@@ -60,12 +60,12 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 	return relayer
 }
 
-func (self *JSONRPCWSRelayer) onClose(r *http.Request, s jlibhttp.RPCSession) {
+func (self *JSONRPCWSRelayer) onClose(s jsoffnet.RPCSession) {
 	delete(wsPairs, s.SessionID())
 	metricsWSPairsCount.Set(float64(len(wsPairs)))
 }
 
-func (self *JSONRPCWSRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}, error) {
+func (self *JSONRPCWSRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}, error) {
 	r := req.HttpRequest()
 	msg := req.Msg()
 
@@ -78,7 +78,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}
 	if acc == nil {
 		acc = AccFromContext(r.Context())
 		if acc == nil {
-			return nil, jlibhttp.SimpleResponse{
+			return nil, jsoffnet.SimpleResponse{
 				Code: 404,
 				Body: []byte("acc not found"),
 			}
@@ -99,12 +99,12 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}
 		if err != nil {
 			return nil, err
 		}
-		destWs := jlibhttp.NewWSClient(u)
-		destWs.OnMessage(func(m jlib.Message) {
+		destWs := jsoffnet.NewWSClient(u)
+		destWs.OnMessage(func(m jsoff.Message) {
 			session.Send(m)
 		})
 		destWs.OnClose(func() {
-			self.onClose(r, session)
+			self.onClose(session)
 		})
 		wsPairs[session.SessionID()] = destWs
 		metricsWSPairsCount.Set(float64(len(wsPairs)))
@@ -114,9 +114,9 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}
 		// if no dest websocket connection is available and msg is a request message
 		// it's still ok to deliver the message to http endpoints
 		delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(acc.Chain.Namespace)
-		reqmsg, _ := msg.(*jlib.RequestMessage)
+		reqmsg, _ := msg.(*jsoff.RequestMessage)
 		if delegator == nil {
-			return nil, jlibhttp.SimpleResponse{
+			return nil, jsoffnet.SimpleResponse{
 				Code: 404,
 				Body: []byte("backend not found"),
 			}
@@ -126,7 +126,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}
 		return resmsg, err
 	} else {
 		// the last way, return back
-		return nil, jlibhttp.SimpleResponse{
+		return nil, jsoffnet.SimpleResponse{
 			Code: 400,
 			Body: []byte("no websocket upstreams"),
 		}

@@ -3,7 +3,7 @@ package chains
 import (
 	"context"
 	"github.com/pkg/errors"
-	"github.com/superisaac/jlib"
+	"github.com/superisaac/jsoff"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 	"strconv"
@@ -32,7 +32,7 @@ func (self StarcoinChain) StartSync(context context.Context, m *nodemuxcore.Mult
 }
 
 func (self *StarcoinChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	reqmsg := jlib.NewRequestMessage(
+	reqmsg := jsoff.NewRequestMessage(
 		1, "chain.info", nil)
 
 	var bt starcoinBlock
@@ -52,7 +52,7 @@ func (self *StarcoinChain) GetBlockhead(context context.Context, b *nodemuxcore.
 	return block, nil
 }
 
-func (self *StarcoinChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
+func (self *StarcoinChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayRPC(rootCtx, chain, reqmsg, -3)
 }

@@ -3,8 +3,8 @@ package nodemuxcore
 import (
 	"context"
 	"github.com/go-redis/redis/v8"
-	"github.com/superisaac/jlib"
-	"github.com/superisaac/jlib/http"
+	"github.com/superisaac/jsoff"
+	"github.com/superisaac/jsoff/net"
 	"net/http"
 )
 
@@ -41,7 +41,7 @@ type Endpoint struct {
 	Blockhead *Block
 
 	client    *http.Client
-	rpcClient jlibhttp.Client
+	rpcClient jsoffnet.Client
 
 	// sync status
 	connected bool
@@ -100,7 +100,7 @@ type BlockheadDelegator interface {
 
 type RPCDelegator interface {
 	BlockheadDelegator
-	DelegateRPC(ctx context.Context, b *Multiplexer, chain ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error)
+	DelegateRPC(ctx context.Context, b *Multiplexer, chain ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error)
 }
 
 type RESTDelegator interface {

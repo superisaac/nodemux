@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/superisaac/jlib"
+	"github.com/superisaac/jsoff"
 	nodemuxcore "github.com/superisaac/nodemux/core"
 )
 
@@ -43,7 +43,7 @@ func NewSuiChain() *SuiChain {
 }
 
 func (self SuiChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
-	reqmsg := jlib.NewRequestMessage(
+	reqmsg := jsoff.NewRequestMessage(
 		1, "rpc.discover", []interface{}{})
 	var rpc rpcDiscover
 	err := ep.UnwrapCallRPC(context, reqmsg, &rpc)
@@ -62,7 +62,7 @@ func (self *SuiChain) GetBlockhead(context context.Context, b *nodemuxcore.Multi
 	query := &txQuery{}
 	query.Options.ShowRawInput = true
 
-	reqmsg := jlib.NewRequestMessage(
+	reqmsg := jsoff.NewRequestMessage(
 		1, "suix_queryTransactionBlocks",
 		[]interface{}{query, nil, 2, true})
 
@@ -85,7 +85,7 @@ func (self *SuiChain) GetBlockhead(context context.Context, b *nodemuxcore.Multi
 	return block, nil
 }
 
-func (self *SuiChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
+func (self *SuiChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayRPC(rootCtx, chain, reqmsg, -3)
 }

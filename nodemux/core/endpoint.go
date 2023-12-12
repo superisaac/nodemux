@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/jlib/http"
+	"github.com/superisaac/jsoff/net"
 )
 
 // / Create an endpoint instance
@@ -276,7 +276,7 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 
 	if resp.StatusCode != 200 {
 		self.Log().Warnf("invalid response status %d", resp.StatusCode)
-		abnResp := &jlibhttp.WrappedResponse{
+		abnResp := &jsoffnet.WrappedResponse{
 			Response: resp,
 		}
 		return errors.Wrap(abnResp, "abnormal response")

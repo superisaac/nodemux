@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/superisaac/jlib/http"
+	"github.com/superisaac/jsoff/net"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -20,20 +20,20 @@ import (
 
 type MetricsConfig struct {
 	Bind string
-	Auth *jlibhttp.AuthConfig `yaml:"auth,omitempty" json:"auth,omitempty"`
-	TLS  *jlibhttp.TLSConfig  `yaml:"tls:omitempty" json:"tls:omitempty"`
+	Auth *jsoffnet.AuthConfig `yaml:"auth,omitempty" json:"auth,omitempty"`
+	TLS  *jsoffnet.TLSConfig  `yaml:"tls:omitempty" json:"tls:omitempty"`
 }
 
 type AdminConfig struct {
-	Auth *jlibhttp.AuthConfig `yaml:"auth,omitempty" json:"auth,omitempty"`
+	Auth *jsoffnet.AuthConfig `yaml:"auth,omitempty" json:"auth,omitempty"`
 }
 
 type EntrypointConfig struct {
 	Account string
 	Chain   string
 	Bind    string
-	Auth    *jlibhttp.AuthConfig `yaml:"auth,omitempty" json:"auth,omitempty"`
-	TLS     *jlibhttp.TLSConfig  `yaml:"tls,omitempty" json:"tls,omitempty"`
+	Auth    *jsoffnet.AuthConfig `yaml:"auth,omitempty" json:"auth,omitempty"`
+	TLS     *jsoffnet.TLSConfig  `yaml:"tls,omitempty" json:"tls,omitempty"`
 }
 
 type RatelimitConfig struct {
@@ -50,10 +50,10 @@ type AccountConfig struct {
 
 type ServerConfig struct {
 	Bind        string                   `yaml:"version,omitempty" json:"version,omitempty"`
-	TLS         *jlibhttp.TLSConfig      `yaml:"tls,omitempty" json:"tls,omitempty"`
+	TLS         *jsoffnet.TLSConfig      `yaml:"tls,omitempty" json:"tls,omitempty"`
 	Admin       *AdminConfig             `yaml:"admin,omitempty" json:"admin,omitempty"`
 	Metrics     *MetricsConfig           `yaml:"metrics,omitempty" json:"metrics,omitempty"`
-	Auth        *jlibhttp.AuthConfig     `yaml:"auth,omitempty" json:"auth,omitempty"`
+	Auth        *jsoffnet.AuthConfig     `yaml:"auth,omitempty" json:"auth,omitempty"`
 	Entrypoints []EntrypointConfig       `yaml:"entrypoints,omitempty" json:"entrypoints,omitempty"`
 	Ratelimit   RatelimitConfig          `yaml:"ratelimit,omitempty" json:"ratelimit,omitempty"`
 	Accounts    map[string]AccountConfig `yaml:"accounts,omitempty" json:"accounts,omitempty"`

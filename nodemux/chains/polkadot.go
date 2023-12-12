@@ -3,7 +3,7 @@ package chains
 import (
 	"context"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/superisaac/jlib"
+	"github.com/superisaac/jsoff"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 )
@@ -42,7 +42,7 @@ func (self PolkadotChain) StartSync(context context.Context, m *nodemuxcore.Mult
 }
 
 func (self *PolkadotChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	reqmsg := jlib.NewRequestMessage(
+	reqmsg := jsoff.NewRequestMessage(
 		1, "chain_getHeader", []interface{}{})
 
 	var bt polkadotBlock
@@ -58,7 +58,7 @@ func (self *PolkadotChain) GetBlockhead(context context.Context, b *nodemuxcore.
 	return block, nil
 }
 
-func (self *PolkadotChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
+func (self *PolkadotChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayRPC(rootCtx, chain, reqmsg, -2)
 }

@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/jlib"
-	"github.com/superisaac/jlib/http"
+	"github.com/superisaac/jsoff"
+	"github.com/superisaac/jsoff/net"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 	"time"
@@ -14,7 +14,7 @@ import (
 type JSONRPCRelayer struct {
 	rootCtx    context.Context
 	acc        *Acc
-	rpcHandler *jlibhttp.H1Handler
+	rpcHandler *jsoffnet.Http1Handler
 }
 
 func NewJSONRPCRelayer(rootCtx context.Context) *JSONRPCRelayer {
@@ -22,15 +22,15 @@ func NewJSONRPCRelayer(rootCtx context.Context) *JSONRPCRelayer {
 		rootCtx: rootCtx,
 	}
 
-	rpcHandler := jlibhttp.NewH1Handler(nil)
-	rpcHandler.Actor.OnMissing(func(req *jlibhttp.RPCRequest) (interface{}, error) {
+	rpcHandler := jsoffnet.NewHttp1Handler(nil)
+	rpcHandler.Actor.OnMissing(func(req *jsoffnet.RPCRequest) (interface{}, error) {
 		return relayer.delegateRPC(req)
 	})
 	relayer.rpcHandler = rpcHandler
 	return relayer
 }
 
-func (self *JSONRPCRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}, error) {
+func (self *JSONRPCRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}, error) {
 	r := req.HttpRequest()
 	msg := req.Msg()
 	acc := self.acc
@@ -38,7 +38,7 @@ func (self *JSONRPCRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}, 
 	if acc == nil {
 		acc = AccFromContext(r.Context())
 		if acc == nil {
-			return nil, jlibhttp.SimpleResponse{
+			return nil, jsoffnet.SimpleResponse{
 				Code: 404,
 				Body: []byte("acc not found"),
 			}
@@ -46,18 +46,18 @@ func (self *JSONRPCRelayer) delegateRPC(req *jlibhttp.RPCRequest) (interface{}, 
 	}
 
 	if !msg.IsRequest() {
-		return nil, jlibhttp.SimpleResponse{
+		return nil, jsoffnet.SimpleResponse{
 			Code: 400,
 			Body: []byte("bad request"),
 		}
 	}
 
-	reqmsg, _ := msg.(*jlib.RequestMessage)
+	reqmsg, _ := msg.(*jsoff.RequestMessage)
 	m := nodemuxcore.GetMultiplexer()
 
 	delegator := nodemuxcore.GetDelegatorFactory().GetRPCDelegator(acc.Chain.Namespace)
 	if delegator == nil {
-		return nil, jlibhttp.SimpleResponse{
+		return nil, jsoffnet.SimpleResponse{
 			Code: 404,
 			Body: []byte("backend not found"),
 		}

@@ -2,7 +2,7 @@ package chains
 
 import (
 	"context"
-	"github.com/superisaac/jlib"
+	"github.com/superisaac/jsoff"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 )
@@ -32,7 +32,7 @@ func (self EOSRPC) StartSync(context context.Context, m *nodemuxcore.Multiplexer
 }
 
 func (self *EOSRPC) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	reqmsg := jlib.NewRequestMessage(
+	reqmsg := jsoff.NewRequestMessage(
 		1, "get_info", nil)
 
 	var info eosrpcChainInfo
@@ -48,7 +48,7 @@ func (self *EOSRPC) GetBlockhead(context context.Context, b *nodemuxcore.Multipl
 	return block, nil
 }
 
-func (self *EOSRPC) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
+func (self *EOSRPC) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayRPC(rootCtx, chain, reqmsg, -300)
 }

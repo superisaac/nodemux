@@ -1,14 +1,14 @@
 package server
 
 import (
-	"github.com/superisaac/jlib/http"
+	"github.com/superisaac/jsoff/net"
 	"github.com/superisaac/nodemux/core"
 	"sort"
 )
 
-func NewAdminHandler() *jlibhttp.H1Handler {
-	actor := jlibhttp.NewActor()
-	actor.OnTyped("nodemux_listEndpoints", func(request *jlibhttp.RPCRequest) ([]nodemuxcore.EndpointInfo, error) {
+func NewAdminHandler() *jsoffnet.Http1Handler {
+	actor := jsoffnet.NewActor()
+	actor.OnTyped("nodemux_listEndpoints", func(request *jsoffnet.RPCRequest) ([]nodemuxcore.EndpointInfo, error) {
 		m := nodemuxcore.GetMultiplexer()
 		infos := m.ListEndpointInfos()
 
@@ -19,5 +19,5 @@ func NewAdminHandler() *jlibhttp.H1Handler {
 		return infos, nil
 	})
 
-	return jlibhttp.NewH1Handler(actor)
+	return jsoffnet.NewHttp1Handler(actor)
 }

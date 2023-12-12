@@ -2,7 +2,7 @@ package chains
 
 import (
 	"context"
-	"github.com/superisaac/jlib"
+	"github.com/superisaac/jsoff"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 )
@@ -34,7 +34,7 @@ func (self SolanaChain) StartSync(context context.Context, m *nodemuxcore.Multip
 }
 
 func (self *SolanaChain) GetBlockhead(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	reqmsg := jlib.NewRequestMessage(
+	reqmsg := jsoff.NewRequestMessage(
 		1, "getLatestBlockhash", []interface{}{})
 
 	var bt solanaBlock
@@ -49,7 +49,7 @@ func (self *SolanaChain) GetBlockhead(context context.Context, m *nodemuxcore.Mu
 	return block, nil
 }
 
-func (self *SolanaChain) DelegateRPC(rootCtx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
+func (self *SolanaChain) DelegateRPC(rootCtx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	// Custom relay methods can be defined here
 	return m.DefaultRelayRPC(rootCtx, chain, reqmsg, -10)
 }

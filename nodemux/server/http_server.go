@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/jlib/http"
+	"github.com/superisaac/jsoff/net"
 	"net/http"
 )
 
@@ -14,8 +14,8 @@ func requestLog(r *http.Request) *log.Entry {
 	})
 }
 
-func startServer(rootCtx context.Context, bind string, handler http.Handler, tlsConfigs ...*jlibhttp.TLSConfig) error {
-	return jlibhttp.ListenAndServe(
+func startServer(rootCtx context.Context, bind string, handler http.Handler, tlsConfigs ...*jsoffnet.TLSConfig) error {
+	return jsoffnet.ListenAndServe(
 		rootCtx, bind,
 		handler,
 		tlsConfigs...)
@@ -28,7 +28,7 @@ func startMetricsServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		return
 	}
 
-	handler := jlibhttp.NewAuthHandler(
+	handler := jsoffnet.NewAuthHandler(
 		serverCfg.Metrics.Auth,
 		promhttp.Handler())
 	err := startServer(
@@ -40,15 +40,15 @@ func startMetricsServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	}
 }
 
-func adminHandler(rootCtx context.Context, authCfg *jlibhttp.AuthConfig, next http.Handler) http.Handler {
-	h1 := jlibhttp.NewAuthHandler(authCfg, next)
+func adminHandler(rootCtx context.Context, authCfg *jsoffnet.AuthConfig, next http.Handler) http.Handler {
+	h1 := jsoffnet.NewAuthHandler(authCfg, next)
 	return h1
 }
 
-func relayHandler(rootCtx context.Context, authCfg *jlibhttp.AuthConfig, next http.Handler) http.Handler {
+func relayHandler(rootCtx context.Context, authCfg *jsoffnet.AuthConfig, next http.Handler) http.Handler {
 	h0 := NewRatelimitHandler(rootCtx, next)
 	h1 := NewAccHandler(rootCtx, h0)
-	h2 := jlibhttp.NewAuthHandler(authCfg, h1)
+	h2 := jsoffnet.NewAuthHandler(authCfg, h1)
 	return h2
 }
 
@@ -59,7 +59,7 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	}
 	log.Infof("start http proxy at %s", bind)
 
-	var adminAuth *jlibhttp.AuthConfig
+	var adminAuth *jsoffnet.AuthConfig
 	if serverCfg.Admin != nil {
 		adminAuth = serverCfg.Admin.Auth
 	}

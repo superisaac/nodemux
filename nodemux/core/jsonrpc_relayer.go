@@ -9,14 +9,14 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/jlib"
-	"github.com/superisaac/jlib/http"
+	"github.com/superisaac/jsoff"
+	"github.com/superisaac/jsoff/net"
 )
 
 func (self *Endpoint) ensureRPCClient() {
 	if self.rpcClient == nil {
-		opts := jlibhttp.ClientOptions{Timeout: self.Config.Timeout}
-		c, err := jlibhttp.NewClient(self.Config.Url, opts)
+		opts := jsoffnet.ClientOptions{Timeout: self.Config.Timeout}
+		c, err := jsoffnet.NewClient(self.Config.Url, opts)
 		if err != nil {
 			panic(err)
 		}
@@ -24,12 +24,12 @@ func (self *Endpoint) ensureRPCClient() {
 	}
 }
 
-func (self *Endpoint) JSONRPCRelayer() jlibhttp.Client {
+func (self *Endpoint) JSONRPCRelayer() jsoffnet.Client {
 	self.ensureRPCClient()
 	return self.rpcClient
 }
 
-func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jlib.RequestMessage) (jlib.Message, error) {
+func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsoff.RequestMessage) (jsoff.Message, error) {
 	//self.Connect()
 	self.ensureRPCClient()
 	self.incrRelayCount()
@@ -58,7 +58,7 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jlib.RequestMessa
 	return res, err
 } // CallRPC
 
-func (self *Endpoint) UnwrapCallRPC(rootCtx context.Context, reqmsg *jlib.RequestMessage, output interface{}) error {
+func (self *Endpoint) UnwrapCallRPC(rootCtx context.Context, reqmsg *jsoff.RequestMessage, output interface{}) error {
 	//self.Connect()
 	self.ensureRPCClient()
 	start := time.Now()
@@ -70,7 +70,7 @@ func (self *Endpoint) UnwrapCallRPC(rootCtx context.Context, reqmsg *jlib.Reques
 		"method":      reqmsg.Method,
 		"timeSpentMS": delta.Milliseconds(),
 	}
-	var rpcErr *jlib.RPCError
+	var rpcErr *jsoff.RPCError
 	if err != nil {
 		fields["err"] = err.Error()
 	} else if errors.As(err, &rpcErr) {

@@ -4,7 +4,7 @@ package chains
 
 import (
 	"context"
-	"github.com/superisaac/jlib"
+	"github.com/superisaac/jsoff"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 )
@@ -34,7 +34,7 @@ func NewHandshakeChain() *HandshakeChain {
 }
 
 func (self HandshakeChain) GetClientVersion(ctx context.Context, ep *nodemuxcore.Endpoint) (string, error) {
-	reqmsg := jlib.NewRequestMessage(1, "getinfo", nil)
+	reqmsg := jsoff.NewRequestMessage(1, "getinfo", nil)
 	var info handshakeInfo
 	err := ep.UnwrapCallRPC(ctx, reqmsg, &info)
 	if err != nil {
@@ -48,7 +48,7 @@ func (self HandshakeChain) StartSync(context context.Context, m *nodemuxcore.Mul
 }
 
 func (self *HandshakeChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	reqmsg := jlib.NewRequestMessage(
+	reqmsg := jsoff.NewRequestMessage(
 		1, "getchaintips", nil)
 
 	var chaintips []handshakeBlockhead
@@ -69,6 +69,6 @@ func (self *HandshakeChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Mul
 	return nil, nil
 }
 
-func (self *HandshakeChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
+func (self *HandshakeChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	return m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
 }

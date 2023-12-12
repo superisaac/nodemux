@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
-	"github.com/superisaac/jlib"
+	"github.com/superisaac/jsoff"
 	"github.com/superisaac/nodemux/core"
 	"math/rand"
 	"time"
@@ -69,7 +69,7 @@ func presenceCacheGetEndpoint(ctx context.Context, m *nodemuxcore.Multiplexer, c
 // match a request message against a given methods list, if matched
 // and the firsst param is txid then query the cache for an
 // endpoint that has the txid.
-func presenceCacheMatchRequest(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, methods ...string) (*nodemuxcore.Endpoint, bool) {
+func presenceCacheMatchRequest(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, methods ...string) (*nodemuxcore.Endpoint, bool) {
 	found := false
 	for _, mth := range methods {
 		if reqmsg.Method == mth {
@@ -86,7 +86,7 @@ func presenceCacheMatchRequest(ctx context.Context, m *nodemuxcore.Multiplexer, 
 		Txid string
 		// Other params are skiped
 	}
-	err := jlib.DecodeParams(reqmsg.Params, &txidExtractor)
+	err := jsoff.DecodeParams(reqmsg.Params, &txidExtractor)
 	if err != nil {
 		reqmsg.Log().Warnf("error decoding params for txid: %s", err)
 	} else if txidExtractor.Txid != "" {

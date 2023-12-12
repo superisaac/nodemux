@@ -5,7 +5,7 @@ package chains
 import (
 	"context"
 	"fmt"
-	"github.com/superisaac/jlib"
+	"github.com/superisaac/jsoff"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
 	"time"
@@ -37,7 +37,7 @@ func NewBitcoinChain() *BitcoinChain {
 }
 
 func (self BitcoinChain) GetClientVersion(ctx context.Context, ep *nodemuxcore.Endpoint) (string, error) {
-	reqmsg := jlib.NewRequestMessage(1, "getnetworkinfo", nil)
+	reqmsg := jsoff.NewRequestMessage(1, "getnetworkinfo", nil)
 	var info bitcoinNetworkInfo
 	err := ep.UnwrapCallRPC(ctx, reqmsg, &info)
 	if err != nil {
@@ -57,7 +57,7 @@ func (self BitcoinChain) updateMempoolPresenceCache(ctx context.Context, m *node
 	if !ok {
 		return
 	}
-	reqmsg := jlib.NewRequestMessage(
+	reqmsg := jsoff.NewRequestMessage(
 		1, "getrawmempool", nil)
 
 	var txids []string
@@ -79,7 +79,7 @@ func (self BitcoinChain) updateBlockPresenceCache(ctx context.Context, m *nodemu
 	if !ok {
 		return
 	}
-	reqmsg := jlib.NewRequestMessage(
+	reqmsg := jsoff.NewRequestMessage(
 		1, "getblock", []interface{}{blockHash})
 
 	var blk bitcoinBlock
@@ -97,7 +97,7 @@ func (self BitcoinChain) updateBlockPresenceCache(ctx context.Context, m *nodemu
 }
 
 func (self *BitcoinChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
-	reqmsg := jlib.NewRequestMessage(
+	reqmsg := jsoff.NewRequestMessage(
 		1, "getblockchaininfo", nil)
 
 	var chainInfo bitcoinBlockchainInfo
@@ -113,7 +113,7 @@ func (self *BitcoinChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multi
 	return block, nil
 }
 
-func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jlib.RequestMessage, r *http.Request) (jlib.Message, error) {
+func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	//useCache := reqmsg.Method == "gettransaction" || reqmsg.Method == "getrawtransaction" || reqmsg.Method == "decoderawtransaction"
 	useCache, resmsgFromCache := jsonrpcCacheFetchForMethods(
 		ctx, m, chain, reqmsg,
@@ -131,7 +131,7 @@ func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multip
 		"getrawtransaction"); ok {
 		retmsg, err := ep.CallRPC(ctx, reqmsg)
 		if err == nil && useCache && retmsg.IsResult() {
-			jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jlib.ResultMessage), time.Minute*10)
+			jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jsoff.ResultMessage), time.Minute*10)
 		}
 		return retmsg, err
 	}
@@ -147,17 +147,17 @@ func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multip
 
 	retmsg, err := m.DefaultRelayRPC(ctx, chain, reqmsg, -1)
 	if err == nil && useCache && retmsg.IsResult() {
-		jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jlib.ResultMessage), time.Minute*10)
+		jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jsoff.ResultMessage), time.Minute*10)
 	}
 	return retmsg, nil
 }
 
-func (self *BitcoinChain) findBlockHeight(reqmsg *jlib.RequestMessage) (int, bool) {
+func (self *BitcoinChain) findBlockHeight(reqmsg *jsoff.RequestMessage) (int, bool) {
 	// the first argument is a integer number
 	var bh struct {
 		Height int
 	}
-	if err := jlib.DecodeParams(reqmsg.Params, &bh); err == nil && bh.Height > 0 {
+	if err := jsoff.DecodeParams(reqmsg.Params, &bh); err == nil && bh.Height > 0 {
 		return bh.Height, true
 	}
 	return 0, false
