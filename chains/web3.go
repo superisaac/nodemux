@@ -9,7 +9,6 @@ import (
 	"github.com/superisaac/jsoff/net"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
-	"reflect"
 	"time"
 )
 
@@ -134,7 +133,7 @@ func (self Web3Chain) GetClientVersion(context context.Context, ep *nodemuxcore.
 }
 
 func (self Web3Chain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
-	if !ep.IsWebsocket() {
+	if !ep.HasWebsocket() {
 		return true, nil
 	}
 
@@ -232,12 +231,10 @@ func (self *Web3Chain) findBlockHeight(reqmsg *jsoff.RequestMessage) (int, bool)
 }
 
 func (self *Web3Chain) subscribeBlockhead(rootCtx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
-	wsClient, ok := ep.JSONRPCRelayer().(*jsoffnet.WSClient)
-
+	wsClient, ok := ep.NewJSONRPCWSClient()
 	if !ok {
-		ep.Log().Panicf("client is not websocket, client is %s", reflect.TypeOf(ep.JSONRPCRelayer()))
+		ep.Log().Panicf("endpoint has no websocket client, %s", ep.Name)
 		return
-		//return errors.New("client is not websocket")
 	}
 
 	wsClient.OnMessage(func(msg jsoff.Message) {
@@ -290,17 +287,17 @@ func (self *Web3Chain) subscribeBlockhead(rootCtx context.Context, m *nodemuxcor
 }
 
 func (self *Web3Chain) connectAndSub(rootCtx context.Context, wsClient *jsoffnet.WSClient, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) error {
-	ctx, cancel := context.WithCancel(rootCtx)
+	connectCtx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
 	// connect websocket
-	err := wsClient.Connect(ctx)
+	err := wsClient.Connect(connectCtx)
 	if err != nil {
 		return err
 	}
 
 	// request chaintip
-	headBlock, err := self.GetBlockhead(ctx, m, ep)
+	headBlock, err := self.GetBlockhead(connectCtx, m, ep)
 	if err != nil {
 		return err
 	}
@@ -320,7 +317,7 @@ func (self *Web3Chain) connectAndSub(rootCtx context.Context, wsClient *jsoffnet
 		jsoff.NewUuid(), "eth_subscribe",
 		[]interface{}{"newHeads"})
 
-	err = ep.UnwrapCallRPC(ctx, submsg, &subscribeToken)
+	err = ep.UnwrapCallRPC(connectCtx, submsg, &subscribeToken)
 	if err != nil {
 		return err
 	}
@@ -336,5 +333,4 @@ func (self *Web3Chain) connectAndSub(rootCtx context.Context, wsClient *jsoffnet
 	}()
 
 	return wsClient.Wait()
-
 }

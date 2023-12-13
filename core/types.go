@@ -40,8 +40,9 @@ type Endpoint struct {
 	Healthy   bool
 	Blockhead *Block
 
-	client    *http.Client
-	rpcClient jsoffnet.Client
+	client        *http.Client
+	rpcHttpClient jsoffnet.Client
+	rpcWSClient   *jsoffnet.WSClient
 
 	// sync status
 	connected bool

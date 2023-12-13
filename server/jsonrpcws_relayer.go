@@ -95,7 +95,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}
 		// the first time a websocket connection connects
 		// select an available dest websocket connection
 		// make a pair (session, destWs)
-		u, err := url.Parse(ep.Config.Url)
+		u, err := url.Parse(ep.Config.StreamingUrl)
 		if err != nil {
 			return nil, err
 		}

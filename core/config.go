@@ -7,7 +7,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"encoding/json"
-	"io/ioutil"
 	"net/url"
 	"os"
 )
@@ -16,6 +15,7 @@ import (
 type EndpointConfig struct {
 	Chain         string            `yaml:"chain" json:"chain"`
 	Url           string            `yaml:"url" json:"url"`
+	StreamingUrl  string            `yaml:"streaming_url,omitempty" json:"streaming_url:omitempty"`
 	Headers       map[string]string `yaml:"headers,omitempty" json:"headers,omitempty"`
 	Weight        int               `yaml:"weight,omitempty" json:"weight,omitempty"`
 	SkipMethods   []string          `yaml:"skip_methods,omitempty" json:"skip_methods,omitempty"`
@@ -79,7 +79,16 @@ func (self *NodemuxConfig) validateValues() error {
 		}
 		if epcfg.Url == "" {
 			return errors.New("empty server url")
+		} else if _, err := url.Parse(epcfg.Url); err != nil {
+			return errors.Wrap(err, "parse endpoint url")
 		}
+
+		if epcfg.StreamingUrl != "" {
+			if _, err := url.Parse(epcfg.StreamingUrl); err != nil {
+				return errors.Wrap(err, "parse endpoint streaming url")
+			}
+		}
+
 		for _, skipmtd := range epcfg.SkipMethods {
 			if skipmtd == "" {
 				return errors.New("empty skip method")
@@ -104,7 +113,7 @@ func (self *NodemuxConfig) Load(configPath string) error {
 		}
 		return nil
 	}
-	data, err := ioutil.ReadFile(configPath)
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return err
 	}

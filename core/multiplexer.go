@@ -133,11 +133,11 @@ func (self *Multiplexer) SelectWebsocketEndpoint(chain ChainRef, method string, 
 
 		if epName, ok := endpoints.WeightedRandom(); ok {
 			ep := endpoints.MustGet(epName)
-			if ep.IsWebsocket() && ep.Available(method, height) {
+			if ep.HasWebsocket() && ep.Available(method, height) {
 				return ep, true
 			}
 			for _, ep := range endpoints.items {
-				if ep.IsWebsocket() && ep.Available(method, height) {
+				if ep.HasWebsocket() && ep.Available(method, height) {
 					return ep, true
 				}
 			}
