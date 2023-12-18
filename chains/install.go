@@ -30,7 +30,7 @@ func InstallAdaptors(factory *nodemuxcore.DelegatorFactory) {
 	factory.RegisterRPC(NewPolkadotChain(), "polkadot", "kusama")
 	factory.RegisterRPC(NewNearChain(), "near")
 	factory.RegisterRPC(NewSuiChain(), "sui")
-	factory.RegisterRPC(NewEOSRPC(), "eosio", "enu")
+	factory.RegisterRPC(NewEOSRPC(), "eosio-rpc", "enu")
 
 	// REST handlers
 	factory.RegisterREST(NewRippleChain(), "ripple")
