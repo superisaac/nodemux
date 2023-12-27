@@ -7,17 +7,6 @@ import (
 	"net/http"
 )
 
-type solanaBlock struct {
-	Value struct {
-		Blockhash            string
-		LastValidBlockHeight int `json:"lastValidBlockHeight"`
-	}
-
-	Context struct {
-		Slot int
-	}
-}
-
 type SolanaChain struct {
 }
 
@@ -34,17 +23,17 @@ func (self SolanaChain) StartSync(context context.Context, m *nodemuxcore.Multip
 }
 
 func (self *SolanaChain) GetBlockhead(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+	config := map[string]string{"commitement": "confirmed"}
 	reqmsg := jsoff.NewRequestMessage(
-		1, "getLatestBlockhash", []interface{}{})
+		1, "getSlot", []interface{}{config})
 
-	var bt solanaBlock
-	err := ep.UnwrapCallRPC(context, reqmsg, &bt)
+	var slot int
+	err := ep.UnwrapCallRPC(context, reqmsg, &slot)
 	if err != nil {
 		return nil, err
 	}
 	block := &nodemuxcore.Block{
-		Height: bt.Value.LastValidBlockHeight,
-		Hash:   bt.Value.Blockhash,
+		Height: slot,
 	}
 	return block, nil
 }
