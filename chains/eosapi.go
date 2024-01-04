@@ -62,25 +62,24 @@ func (self *EOSAPI) DelegateREST(rootCtx context.Context, m *nodemuxcore.Multipl
 			chain.Log().Infof("retrieved block number %d from get_block request", requiredHeight)
 		}
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
-		_, _, err0 := m.DefaultPipeTeeREST(rootCtx, chain, path, w, r, requiredHeight)
-		return err0
-	} else if path == "/v1/chain/get_info" {
-		requiredHeight = 0
-		ep, body, err := m.DefaultPipeTeeREST(rootCtx, chain, path, w, r, requiredHeight)
-		if err != nil || ep == nil || body == nil {
-			return err
-		}
-
-		var chainInfo eosapiChainInfo
-		if err := json.Unmarshal(body, &chainInfo); err != nil {
-			chain.Log().Warnf("json unmarshal body %#v", err)
-		}
-		block := &nodemuxcore.Block{
-			Height: chainInfo.LastBlockNum,
-			Hash:   chainInfo.LastBlockId,
-		}
-		m.UpdateBlockIfChanged(ep, block)
-		return nil
 	}
+	// } else if path == "/v1/chain/get_infoxx" {
+	// 	requiredHeight = 0
+	// 	ep, body, err := m.DefaultPipeTeeREST(rootCtx, chain, path, w, r, requiredHeight)
+	// 	if err != nil || ep == nil || body == nil {
+	// 		return err
+	// 	}
+
+	// 	var chainInfo eosapiChainInfo
+	// 	if err := json.Unmarshal(body, &chainInfo); err != nil {
+	// 		chain.Log().Warnf("json unmarshal body %#v", err)
+	// 	}
+	// 	block := &nodemuxcore.Block{
+	// 		Height: chainInfo.LastBlockNum,
+	// 		Hash:   chainInfo.LastBlockId,
+	// 	}
+	// 	m.UpdateBlockIfChanged(ep, block)
+	// 	return nil
+	// }
 	return m.DefaultPipeREST(rootCtx, chain, path, w, r, requiredHeight)
 }

@@ -109,17 +109,26 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 	}
 
 	// pipe the response
+
+	w.WriteHeader(resp.StatusCode)
+	//w.Header().Add("content-type", resp.Header.Get("content-type"))
+
 	for hn, hvs := range resp.Header {
 		for _, hv := range hvs {
 			w.Header().Add(hn, hv)
 		}
 	}
-	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+	if written, err := io.Copy(w, resp.Body); err != nil {
+		self.Log().WithFields(log.Fields{
+			"written": written,
+			"path":    path,
+		}).Warnf("io copy error %#v", err)
+		return err
+	}
 	return nil
 }
 
-func (self *Endpoint) PipeTeeRequest(rootCtx context.Context, path string, w http.ResponseWriter, r *http.Request) ([]byte, error) {
+func (self *Endpoint) xxPipeTeeRequest(rootCtx context.Context, path string, w http.ResponseWriter, r *http.Request) ([]byte, error) {
 	resp, err := self.RespondRequest(rootCtx, path, r)
 	if err != nil {
 		if os.IsTimeout(err) {
@@ -132,6 +141,7 @@ func (self *Endpoint) PipeTeeRequest(rootCtx context.Context, path string, w htt
 
 	// pipe the response
 	w.WriteHeader(resp.StatusCode)
+
 	if resp.StatusCode == http.StatusOK {
 		for hn, hvs := range resp.Header {
 			if strings.ToLower(hn) == "content-type" {
@@ -160,8 +170,11 @@ func (self *Endpoint) PipeTeeRequest(rootCtx context.Context, path string, w htt
 func (self *Endpoint) RespondRequest(rootCtx context.Context, path string, r *http.Request) (*http.Response, error) {
 	self.Connect()
 	self.incrRelayCount()
-	ctx, cancel := context.WithCancel(rootCtx)
-	defer cancel()
+	//ctx, _ := context.WithCancel(rootCtx)
+	//defer cancel()
+
+	// ctx, cancel := context.WithTimeout(rootCtx, time.Second * 600)
+	// defer cancel()
 
 	// prepare request
 	// TODO: join the server url and method
@@ -170,7 +183,7 @@ func (self *Endpoint) RespondRequest(rootCtx context.Context, path string, r *ht
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, r.Method, url, io.NopCloser(bytes.NewBuffer(body)))
+	req, err := http.NewRequestWithContext(rootCtx, r.Method, url, io.NopCloser(bytes.NewBuffer(body)))
 	if err != nil {
 		return nil, errors.Wrap(err, "http.NewRequestWithContext")
 	}
