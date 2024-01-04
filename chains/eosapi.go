@@ -62,6 +62,8 @@ func (self *EOSAPI) DelegateREST(rootCtx context.Context, m *nodemuxcore.Multipl
 			chain.Log().Infof("retrieved block number %d from get_block request", requiredHeight)
 		}
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
+		_, _, err0 := m.DefaultPipeTeeREST(rootCtx, chain, path, w, r, requiredHeight)
+		return err0
 	} else if path == "/v1/chain/get_info" {
 		requiredHeight = 0
 		ep, body, err := m.DefaultPipeTeeREST(rootCtx, chain, path, w, r, requiredHeight)

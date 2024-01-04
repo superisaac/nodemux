@@ -131,13 +131,15 @@ func (self *Endpoint) PipeTeeRequest(rootCtx context.Context, path string, w htt
 	}
 
 	// pipe the response
-	for hn, hvs := range resp.Header {
-		for _, hv := range hvs {
-			w.Header().Add(hn, hv)
-		}
-	}
 	w.WriteHeader(resp.StatusCode)
 	if resp.StatusCode == http.StatusOK {
+		for hn, hvs := range resp.Header {
+			if strings.ToLower(hn) == "content-type" {
+				for _, hv := range hvs {
+					w.Header().Add(hn, hv)
+				}
+			}
+		}
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return body, err
@@ -145,6 +147,11 @@ func (self *Endpoint) PipeTeeRequest(rootCtx context.Context, path string, w htt
 		io.Copy(w, io.NopCloser(bytes.NewBuffer(body)))
 		return body, nil
 	} else {
+		for hn, hvs := range resp.Header {
+			for _, hv := range hvs {
+				w.Header().Add(hn, hv)
+			}
+		}
 		io.Copy(w, resp.Body)
 		return nil, nil
 	}
