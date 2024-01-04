@@ -110,11 +110,12 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 
 	// pipe the response
 
-	w.WriteHeader(resp.StatusCode)
+	//w.WriteHeader(resp.StatusCode)
 	//w.Header().Add("content-type", resp.Header.Get("content-type"))
-	if resp.Header.Get("content-encoding") == "gzip" {
-		self.Log().Infof("is gzip")
-		w.Header().Add("content-type", resp.Header.Get("content-type"))
+	if false { //resp.Header.Get("content-encoding") == "gzip" {
+		//w.Header().Add("content-type", resp.Header.Get("content-type"))
+		w.Header().Add("content-type", "application/json")
+		w.WriteHeader(resp.StatusCode)
 		reader, err := gzip.NewReader(resp.Body)
 		//body, err :=  io.ReadAll(resp.Body)
 		defer reader.Close()
@@ -125,9 +126,10 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 	} else {
 		for hn, hvs := range resp.Header {
 			for _, hv := range hvs {
-				w.Header().Add(hn, hv)
+				w.Header().Set(hn, hv)
 			}
 		}
+		w.WriteHeader(resp.StatusCode)
 		if written, err := io.Copy(w, resp.Body); err != nil {
 			self.Log().WithFields(log.Fields{
 				"written": written,
