@@ -2,7 +2,6 @@ package nodemuxcore
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -89,7 +88,7 @@ func (self *Endpoint) Connect() {
 func (self Endpoint) FullUrl(path string) string {
 	if path == "" {
 		return self.Config.Url
-	} else if strings.HasSuffix(self.Config.Url, "/") {
+	} else if strings.HasSuffix(self.Config.Url, "/") && strings.HasPrefix(path, "/") {
 		return self.Config.Url + path[1:]
 	} else {
 		return self.Config.Url + path
@@ -98,7 +97,7 @@ func (self Endpoint) FullUrl(path string) string {
 
 // RESTful methods
 func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.ResponseWriter, r *http.Request) error {
-	resp, err := self.RespondRequest(rootCtx, path, r)
+	resp, err := self.doResponse(rootCtx, path, r)
 	if err != nil {
 		if os.IsTimeout(err) {
 			w.WriteHeader(http.StatusRequestTimeout)
@@ -109,88 +108,32 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 	}
 
 	// pipe the response
-
-	//w.WriteHeader(resp.StatusCode)
-	//w.Header().Add("content-type", resp.Header.Get("content-type"))
-	if false { //resp.Header.Get("content-encoding") == "gzip" {
-		//w.Header().Add("content-type", resp.Header.Get("content-type"))
-		w.Header().Add("content-type", "application/json")
-		w.WriteHeader(resp.StatusCode)
-		reader, err := gzip.NewReader(resp.Body)
-		//body, err :=  io.ReadAll(resp.Body)
-		defer reader.Close()
-		if err != nil {
-			return err
-		}
-		io.Copy(w, reader) //io.NopCloser(bytes.NewBuffer(body)))
-	} else {
-		for hn, hvs := range resp.Header {
+	for hn, hvs := range resp.Header {
+		if strings.ToLower(hn) == "server" {
+			w.Header().Set("Server", "nodemux")
+		} else {
 			for _, hv := range hvs {
 				w.Header().Set(hn, hv)
 			}
 		}
-		w.WriteHeader(resp.StatusCode)
-		if written, err := io.Copy(w, resp.Body); err != nil {
-			self.Log().WithFields(log.Fields{
-				"written": written,
-				"path":    path,
-			}).Warnf("io copy error %#v", err)
-			return err
-		}
 	}
+	w.WriteHeader(resp.StatusCode)
+	if written, err := io.Copy(w, resp.Body); err != nil {
+		self.Log().WithFields(log.Fields{
+			"written": written,
+			"path":    path,
+		}).Warnf("io copy error %#v", err)
+		return err
+	}
+
 	return nil
 }
 
-func (self *Endpoint) xxPipeTeeRequest(rootCtx context.Context, path string, w http.ResponseWriter, r *http.Request) ([]byte, error) {
-	resp, err := self.RespondRequest(rootCtx, path, r)
-	if err != nil {
-		if os.IsTimeout(err) {
-			w.WriteHeader(http.StatusRequestTimeout)
-			w.Write([]byte("timeout"))
-			return nil, nil
-		}
-		return nil, errors.Wrap(err, "http Do")
-	}
-
-	// pipe the response
-	w.WriteHeader(resp.StatusCode)
-
-	if resp.StatusCode == http.StatusOK {
-		for hn, hvs := range resp.Header {
-			if strings.ToLower(hn) == "content-type" {
-				for _, hv := range hvs {
-					w.Header().Add(hn, hv)
-				}
-			}
-		}
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return body, err
-		}
-		io.Copy(w, io.NopCloser(bytes.NewBuffer(body)))
-		return body, nil
-	} else {
-		for hn, hvs := range resp.Header {
-			for _, hv := range hvs {
-				w.Header().Add(hn, hv)
-			}
-		}
-		io.Copy(w, resp.Body)
-		return nil, nil
-	}
-}
-
-func (self *Endpoint) RespondRequest(rootCtx context.Context, path string, r *http.Request) (*http.Response, error) {
+func (self *Endpoint) doResponse(rootCtx context.Context, path string, r *http.Request) (*http.Response, error) {
 	self.Connect()
 	self.incrRelayCount()
-	//ctx, _ := context.WithCancel(rootCtx)
-	//defer cancel()
-
-	// ctx, cancel := context.WithTimeout(rootCtx, time.Second * 600)
-	// defer cancel()
-
 	// prepare request
-	// TODO: join the server url and method
+
 	url := self.FullUrl(path)
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
