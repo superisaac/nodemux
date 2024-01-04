@@ -2,11 +2,11 @@ package nodemuxcore
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -112,18 +112,29 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 
 	w.WriteHeader(resp.StatusCode)
 	//w.Header().Add("content-type", resp.Header.Get("content-type"))
-
-	for hn, hvs := range resp.Header {
-		for _, hv := range hvs {
-			w.Header().Add(hn, hv)
+	if resp.Header.Get("content-encoding") == "gzip" {
+		self.Log().Infof("is gzip")
+		w.Header().Add("content-type", resp.Header.Get("content-type"))
+		reader, err := gzip.NewReader(resp.Body)
+		//body, err :=  io.ReadAll(resp.Body)
+		defer reader.Close()
+		if err != nil {
+			return err
 		}
-	}
-	if written, err := io.Copy(w, resp.Body); err != nil {
-		self.Log().WithFields(log.Fields{
-			"written": written,
-			"path":    path,
-		}).Warnf("io copy error %#v", err)
-		return err
+		io.Copy(w, reader) //io.NopCloser(bytes.NewBuffer(body)))
+	} else {
+		for hn, hvs := range resp.Header {
+			for _, hv := range hvs {
+				w.Header().Add(hn, hv)
+			}
+		}
+		if written, err := io.Copy(w, resp.Body); err != nil {
+			self.Log().WithFields(log.Fields{
+				"written": written,
+				"path":    path,
+			}).Warnf("io copy error %#v", err)
+			return err
+		}
 	}
 	return nil
 }
@@ -302,9 +313,9 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 		return errors.Wrap(abnResp, "abnormal response")
 	}
 
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return errors.Wrap(err, "ioutil.ReadAll")
+		return errors.Wrap(err, "io.ReadAll")
 	}
 
 	err = json.Unmarshal(respBody, output)
