@@ -21,6 +21,7 @@ func GetRedisOptions(redisUrl string) (*redis.Options, error) {
 			return nil, err
 		}
 	}
+
 	pwd, ok := u.User.Password()
 	if !ok {
 		pwd = ""
@@ -28,6 +29,7 @@ func GetRedisOptions(redisUrl string) (*redis.Options, error) {
 
 	opt := &redis.Options{
 		Addr:     u.Host,
+		Username: u.User.Username(),
 		Password: pwd,
 		DB:       db,
 	}
