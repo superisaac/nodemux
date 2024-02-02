@@ -40,6 +40,25 @@ func NewMultiplexer() *Multiplexer {
 	return m
 }
 
+func MultiplexerFromConfig(nbcfg *NodemuxConfig) *Multiplexer {
+	m := NewMultiplexer()
+	m.LoadFromConfig(nbcfg)
+
+	if rdb, ok := m.RedisClient("default"); ok {
+		// sync source must be a redis URL
+		log.Infof("using redis stream store")
+		chainHub, err := NewRedisStreamChainhub(rdb)
+		//chainHub, err := NewRedisChainhub(rdb)
+		if err != nil {
+			panic(err)
+		}
+		m.chainHub = chainHub
+	} else {
+		log.Info("using memory store")
+	}
+	return m
+}
+
 func (self *Multiplexer) Reset() {
 	self.nameIndex = make(map[string]*Endpoint)
 	self.chainIndex = make(map[ChainRef]*EndpointSet)
@@ -146,25 +165,6 @@ func (self *Multiplexer) SelectWebsocketEndpoint(chain ChainRef, method string, 
 	return nil, false
 }
 
-func MultiplexerFromConfig(nbcfg *NodemuxConfig) *Multiplexer {
-	m := NewMultiplexer()
-	m.LoadFromConfig(nbcfg)
-
-	if rdb, ok := m.RedisClient("default"); ok {
-		// sync source must be a redis URL
-		log.Infof("using redis stream store")
-		chainHub, err := NewRedisStreamChainhub(rdb)
-		//chainHub, err := NewRedisChainhub(rdb)
-		if err != nil {
-			panic(err)
-		}
-		m.chainHub = chainHub
-	} else {
-		log.Info("using memory store")
-	}
-	return m
-}
-
 func (self *Multiplexer) LoadFromConfig(nbcfg *NodemuxConfig) {
 	self.cfg = nbcfg
 	for name, epcfg := range nbcfg.Endpoints {
@@ -195,31 +195,11 @@ func (self *Multiplexer) DefaultRelayRPC(
 		return ErrNotAvailable.ToMessage(reqmsg), nil
 	}
 	resmsg, err := ep.CallRPC(rootCtx, reqmsg)
+	if responseMsg, ok := resmsg.(jsoff.ResponseMessage); ok {
+		responseMsg.ResponseHeader().Set("X-Real-Endpoint", ep.Name)
+	}
 	return resmsg, err
 }
-
-// Pipe the request to response and tee the choosed endpoint and the response body
-// for possible caching and handlers
-// func (self *Multiplexer) DefaultPipeTeeREST(
-// 	rootCtx context.Context,
-// 	chain ChainRef,
-// 	path string,
-// 	w http.ResponseWriter,
-// 	r *http.Request, overHeight int) (*Endpoint, []byte, error) {
-
-// 	ep, found := self.SelectOverHeight(chain, path, overHeight)
-// 	if !found {
-// 		if overHeight > 0 {
-// 			// if not find then relay to any healthy endpoint
-// 			return self.DefaultPipeTeeREST(rootCtx, chain, path, w, r, -2)
-// 		}
-// 		w.WriteHeader(404)
-// 		w.Write([]byte("not found"))
-// 		return ep, nil, nil
-// 	}
-// 	body, err := ep.xxPipeTeeRequest(rootCtx, path, w, r)
-// 	return ep, body, err
-// }
 
 // Pipe the request to response
 func (self *Multiplexer) DefaultPipeREST(rootCtx context.Context, chain ChainRef, path string, w http.ResponseWriter, r *http.Request, overHeight int) error {
