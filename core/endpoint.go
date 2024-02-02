@@ -117,6 +117,7 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 			}
 		}
 	}
+	w.Header().Set("X-Real-Endpoint", self.Name)
 	w.WriteHeader(resp.StatusCode)
 	if written, err := io.Copy(w, resp.Body); err != nil {
 		self.Log().WithFields(log.Fields{
