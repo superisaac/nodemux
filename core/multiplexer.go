@@ -195,6 +195,9 @@ func (self *Multiplexer) DefaultRelayRPC(
 		return ErrNotAvailable.ToMessage(reqmsg), nil
 	}
 	resmsg, err := ep.CallRPC(rootCtx, reqmsg)
+	if err != nil {
+		return resmsg, err
+	}
 	if responseMsg, ok := resmsg.(jsoff.ResponseMessage); ok {
 		responseMsg.ResponseHeader().Set("X-Real-Endpoint", ep.Name)
 	}

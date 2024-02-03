@@ -211,7 +211,7 @@ func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplex
 	if err == nil && useCache && retmsg.IsResult() {
 		jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jsoff.ResultMessage), time.Second*600)
 	}
-	return retmsg, nil
+	return retmsg, err
 }
 
 func (self *Web3Chain) findBlockHeight(reqmsg *jsoff.RequestMessage) (int, bool) {

@@ -149,7 +149,7 @@ func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multip
 	if err == nil && useCache && retmsg.IsResult() {
 		jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jsoff.ResultMessage), time.Minute*10)
 	}
-	return retmsg, nil
+	return retmsg, err
 }
 
 func (self *BitcoinChain) findBlockHeight(reqmsg *jsoff.RequestMessage) (int, bool) {
