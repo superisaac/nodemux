@@ -184,7 +184,8 @@ func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplex
 	useCache, resmsgFromCache := jsonrpcCacheFetchForMethods(
 		ctx, m, chain, reqmsg,
 		"eth_getTransactionByHash",
-		"eth_getTransactionReceipt")
+		//"eth_getTransactionReceipt",
+	)
 
 	if resmsgFromCache != nil {
 		return resmsgFromCache, nil
@@ -193,7 +194,8 @@ func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplex
 	if endpoint, ok := presenceCacheMatchRequest(
 		ctx, m, chain, reqmsg,
 		"eth_getTransactionByHash",
-		"eth_getTransactionReceipt"); ok {
+	//"eth_getTransactionReceipt",
+	); ok {
 		retmsg, err := endpoint.CallRPC(ctx, reqmsg)
 		if err == nil && useCache && retmsg.IsResult() {
 			jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jsoff.ResultMessage), time.Second*600)
@@ -205,6 +207,15 @@ func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplex
 		if h, ok := self.findBlockHeight(reqmsg); ok {
 			return m.DefaultRelayRPC(ctx, chain, reqmsg, h)
 		}
+	} else if reqmsg.Method == "eth_getTransactionReceipt" {
+		retmsg, err := m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
+		if err != nil {
+			return retmsg, err
+		} else if respMsg, ok := retmsg.(*jsoff.ResultMessage); ok && respMsg.Result == nil {
+			viaEp := respMsg.ResponseHeader().Get("X-Real-Endpoint")
+			respMsg.Log().Infof("null transaction receipt %s", viaEp)
+		}
+		return retmsg, err
 	}
 	//return m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
 	retmsg, err := m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
