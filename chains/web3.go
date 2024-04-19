@@ -89,15 +89,15 @@ type web3Block struct {
 	height int
 }
 
-func (self *web3Block) Height() int {
-	if self.height <= 0 {
-		height, err := hexutil.DecodeUint64(self.Number)
+func (blk *web3Block) Height() int {
+	if blk.height <= 0 {
+		height, err := hexutil.DecodeUint64(blk.Number)
 		if err != nil {
 			panic(err)
 		}
-		self.height = int(height)
+		blk.height = int(height)
 	}
-	return self.height
+	return blk.height
 }
 
 type web3HeadSub struct {
@@ -120,7 +120,7 @@ func NewWeb3Chain() *Web3Chain {
 	}
 }
 
-func (self Web3Chain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+func (c Web3Chain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	reqmsg := jsoff.NewRequestMessage(
 		1, "web3_clientVersion", nil)
 	var v string
@@ -132,17 +132,17 @@ func (self Web3Chain) GetClientVersion(context context.Context, ep *nodemuxcore.
 	return v, nil
 }
 
-func (self Web3Chain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (c Web3Chain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	if !ep.HasWebsocket() {
 		return true, nil
 	}
 
 	// subscribe chaintip from is websocket
-	go self.subscribeBlockhead(context, m, ep)
+	go c.subscribeBlockhead(context, m, ep)
 	return false, nil
 }
 
-func (self *Web3Chain) GetBlockhead(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (c *Web3Chain) GetBlockhead(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsoff.NewRequestMessage(
 		jsoff.NewUuid(), "eth_getBlockByNumber",
 		[]interface{}{"latest", false})
@@ -170,7 +170,7 @@ func (self *Web3Chain) GetBlockhead(context context.Context, m *nodemuxcore.Mult
 	return block, nil
 }
 
-func (self *Web3Chain) sendRawTransaction(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
+func (c *Web3Chain) sendRawTransaction(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage) (jsoff.Message, error) {
 	resMsgs := m.BroadcastRPC(ctx, chain, reqmsg, -10)
 	if len(resMsgs) == 0 {
 		return m.DefaultRelayRPC(ctx, chain, reqmsg, -5)
@@ -208,7 +208,7 @@ func (self *Web3Chain) sendRawTransaction(ctx context.Context, m *nodemuxcore.Mu
 	return nil, resMsgs[0].Err
 }
 
-func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
+func (c *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	if allowed, ok := allowedMethods[reqmsg.Method]; !ok || !allowed {
 		reqmsg.Log().Warnf("relayer method not supported %s", reqmsg.Method)
 		return jsoff.ErrMethodNotFound.ToMessage(reqmsg), nil
@@ -242,9 +242,9 @@ func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplex
 	}
 
 	if reqmsg.Method == "eth_sendRawTransaction" {
-		return self.sendRawTransaction(ctx, m, chain, reqmsg, r)
+		return c.sendRawTransaction(ctx, m, chain, reqmsg)
 	} else if reqmsg.Method == "eth_getBlockByNumber" {
-		if h, ok := self.findBlockHeight(reqmsg); ok {
+		if h, ok := c.findBlockHeight(reqmsg); ok {
 			return m.DefaultRelayRPC(ctx, chain, reqmsg, h)
 		}
 	} else if reqmsg.Method == "eth_getTransactionReceipt" {
@@ -265,7 +265,7 @@ func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplex
 	return retmsg, err
 }
 
-func (self *Web3Chain) findBlockHeight(reqmsg *jsoff.RequestMessage) (int, bool) {
+func (c *Web3Chain) findBlockHeight(reqmsg *jsoff.RequestMessage) (int, bool) {
 	// the first argument is a hexlified block number or latest or pending
 	var bh struct {
 		Height string
@@ -281,7 +281,7 @@ func (self *Web3Chain) findBlockHeight(reqmsg *jsoff.RequestMessage) (int, bool)
 	return 0, false
 }
 
-func (self *Web3Chain) subscribeBlockhead(rootCtx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
+func (c *Web3Chain) subscribeBlockhead(rootCtx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
 	wsClient, ok := ep.NewJSONRPCWSClient()
 	if !ok {
 		ep.Log().Panicf("endpoint has no websocket client, %s", ep.Name)
@@ -290,7 +290,10 @@ func (self *Web3Chain) subscribeBlockhead(rootCtx context.Context, m *nodemuxcor
 
 	wsClient.OnMessage(func(msg jsoff.Message) {
 		ntf, ok := msg.(*jsoff.NotifyMessage)
-		if !ok && ntf.Method != "eth_subscription" || len(ntf.Params) == 0 {
+		if !ok || ntf == nil {
+			return
+		}
+		if ntf.Method != "eth_subscription" || len(ntf.Params) == 0 {
 			return
 		}
 		var headSub web3HeadSub
@@ -300,10 +303,10 @@ func (self *Web3Chain) subscribeBlockhead(rootCtx context.Context, m *nodemuxcor
 		} else {
 			// match Subscription against sub token
 			subkey := web3Subkey{EpName: ep.Name, Token: headSub.Subscription}
-			if _, ok := self.subTokens[subkey]; !ok {
+			if _, ok := c.subTokens[subkey]; !ok {
 				ep.Log().Warnf("subscription %s not found amount %#v",
 					headSub.Subscription,
-					self.subTokens)
+					c.subTokens)
 				return
 			}
 			headBlock := &nodemuxcore.Block{
@@ -321,7 +324,7 @@ func (self *Web3Chain) subscribeBlockhead(rootCtx context.Context, m *nodemuxcor
 	}) // end of wsClient.OnMessage
 
 	for {
-		err := self.connectAndSub(rootCtx, wsClient, m, ep)
+		err := c.connectAndSub(rootCtx, wsClient, m, ep)
 		if err != nil {
 			ep.Log().Warnf("connsub error %s, retrying", err)
 			bs := nodemuxcore.ChainStatus{
@@ -337,7 +340,7 @@ func (self *Web3Chain) subscribeBlockhead(rootCtx context.Context, m *nodemuxcor
 	}
 }
 
-func (self *Web3Chain) connectAndSub(rootCtx context.Context, wsClient *jsoffnet.WSClient, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) error {
+func (c *Web3Chain) connectAndSub(rootCtx context.Context, wsClient *jsoffnet.WSClient, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) error {
 	connectCtx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
@@ -348,7 +351,7 @@ func (self *Web3Chain) connectAndSub(rootCtx context.Context, wsClient *jsoffnet
 	}
 
 	// request chaintip
-	headBlock, err := self.GetBlockhead(connectCtx, m, ep)
+	headBlock, err := c.GetBlockhead(connectCtx, m, ep)
 	if err != nil {
 		return err
 	}
@@ -377,10 +380,10 @@ func (self *Web3Chain) connectAndSub(rootCtx context.Context, wsClient *jsoffnet
 		Token:  subscribeToken,
 	}
 
-	self.subTokens[subkey] = true
+	c.subTokens[subkey] = true
 	ep.Log().Infof("eth got subscrib token %s", subscribeToken)
 	defer func() {
-		delete(self.subTokens, subkey)
+		delete(c.subTokens, subkey)
 	}()
 
 	return wsClient.Wait()

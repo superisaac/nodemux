@@ -25,15 +25,15 @@ func NewEOSAPI() *EOSAPI {
 	return &EOSAPI{}
 }
 
-func (self EOSAPI) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+func (api EOSAPI) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	return "", nil
 }
 
-func (self EOSAPI) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (api EOSAPI) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 
-func (self *EOSAPI) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (api *EOSAPI) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var chainInfo eosapiChainInfo
 	err := ep.PostJson(context,
 		"/v1/chain/get_info",
@@ -49,7 +49,7 @@ func (self *EOSAPI) GetBlockhead(context context.Context, b *nodemuxcore.Multipl
 	return block, nil
 }
 
-func (self *EOSAPI) DelegateREST(rootCtx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+func (api *EOSAPI) DelegateREST(rootCtx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	requiredHeight := -200
 	if path == "/v1/chain/get_block" {
 		body, err := io.ReadAll(r.Body)

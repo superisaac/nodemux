@@ -47,7 +47,7 @@ type Endpoint struct {
 
 	client        *http.Client
 	rpcHttpClient jsoffnet.Client
-	rpcWSClient   *jsoffnet.WSClient
+	//rpcWSClient   *jsoffnet.WSClient
 
 	// sync status
 	connected bool

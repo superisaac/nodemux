@@ -27,16 +27,16 @@ func MustParseChain(chainRepr string) ChainRef {
 	return chain
 }
 
-func (self ChainRef) String() string {
-	return fmt.Sprintf("%s/%s", self.Namespace, self.Network)
+func (c ChainRef) String() string {
+	return fmt.Sprintf("%s/%s", c.Namespace, c.Network)
 }
 
-func (self ChainRef) Empty() bool {
-	return self.Namespace == "" || self.Network == ""
+func (c ChainRef) Empty() bool {
+	return c.Namespace == "" || c.Network == ""
 }
 
-func (self ChainRef) Log() *log.Entry {
+func (c ChainRef) Log() *log.Entry {
 	return log.WithFields(log.Fields{
-		"chain": self.String(),
+		"chain": c.String(),
 	})
 }

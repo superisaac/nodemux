@@ -14,15 +14,15 @@ func NewSolanaChain() *SolanaChain {
 	return &SolanaChain{}
 }
 
-func (self SolanaChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+func (c SolanaChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	return "", nil
 }
 
-func (self SolanaChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (c SolanaChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 
-func (self *SolanaChain) GetBlockhead(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (c *SolanaChain) GetBlockhead(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	config := map[string]string{"commitement": "confirmed"}
 	reqmsg := jsoff.NewRequestMessage(
 		1, "getSlot", []interface{}{config})
@@ -38,7 +38,7 @@ func (self *SolanaChain) GetBlockhead(context context.Context, m *nodemuxcore.Mu
 	return block, nil
 }
 
-func (self *SolanaChain) DelegateRPC(rootCtx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
+func (c *SolanaChain) DelegateRPC(rootCtx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	// Custom relay methods can be defined here
 	return m.DefaultRelayRPC(rootCtx, chain, reqmsg, -10)
 }

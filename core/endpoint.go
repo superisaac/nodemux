@@ -39,65 +39,65 @@ func NewEndpoint(name string, epcfg EndpointConfig) *Endpoint {
 	return ep
 }
 
-func (self Endpoint) Log() *log.Entry {
+func (ep Endpoint) Log() *log.Entry {
 	return log.WithFields(log.Fields{
-		"chain":    self.Chain.String(),
-		"endpoint": self.Name,
+		"chain":    ep.Chain.String(),
+		"endpoint": ep.Name,
 	})
 }
 
-func (self Endpoint) prometheusLabels() prometheus.Labels {
+func (ep Endpoint) prometheusLabels() prometheus.Labels {
 	return prometheus.Labels{
-		"chain":    self.Chain.String(),
-		"endpoint": self.Name,
+		"chain":    ep.Chain.String(),
+		"endpoint": ep.Name,
 	}
 }
 
-func (self Endpoint) incrRelayCount() {
+func (ep Endpoint) incrRelayCount() {
 	metricsEndpointRelayCount.With(prometheus.Labels{
-		"chain":    self.Chain.String(),
-		"endpoint": self.Name,
+		"chain":    ep.Chain.String(),
+		"endpoint": ep.Name,
 	}).Inc()
 }
 
-func (self Endpoint) incrBlockheadCount() {
+func (ep Endpoint) incrBlockheadCount() {
 	metricsBlockheadCount.With(prometheus.Labels{
-		"chain":    self.Chain.String(),
-		"endpoint": self.Name,
+		"chain":    ep.Chain.String(),
+		"endpoint": ep.Name,
 	}).Inc()
 }
 
-func (self *Endpoint) Connect() {
-	if self.client == nil {
+func (ep *Endpoint) Connect() {
+	if ep.client == nil {
 		tr := &http.Transport{
 			MaxIdleConns:        30,
 			MaxIdleConnsPerHost: 10,
 			IdleConnTimeout:     30 * time.Second,
 		}
-		timeout := self.Config.Timeout
+		timeout := ep.Config.Timeout
 		if timeout <= 0 {
 			timeout = 90
 		}
-		self.client = &http.Client{
+		ep.client = &http.Client{
 			Transport: tr,
 			Timeout:   time.Duration(timeout) * time.Second,
 		}
 	}
 }
 
-func (self Endpoint) FullUrl(path string) string {
+func (ep Endpoint) FullUrl(path string) string {
 	if path == "" {
-		return self.Config.Url
-	} else if strings.HasSuffix(self.Config.Url, "/") && strings.HasPrefix(path, "/") {
-		return self.Config.Url + path[1:]
+		return ep.Config.Url
+	} else if strings.HasSuffix(ep.Config.Url, "/") && strings.HasPrefix(path, "/") {
+		return ep.Config.Url + path[1:]
 	} else {
-		return self.Config.Url + path
+		return ep.Config.Url + path
 	}
 }
 
 // RESTful methods
-func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.ResponseWriter, r *http.Request) error {
-	resp, err := self.doResponse(rootCtx, path, r)
+func (ep *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.ResponseWriter, r *http.Request) error {
+	resp, err := ep.doResponse(rootCtx, path, r)
 	if err != nil {
 		if os.IsTimeout(err) {
 			w.WriteHeader(http.StatusRequestTimeout)
@@ -117,10 +117,10 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 			}
 		}
 	}
-	w.Header().Set("X-Real-Endpoint", self.Name)
+	w.Header().Set("X-Real-Endpoint", ep.Name)
 	w.WriteHeader(resp.StatusCode)
 	if written, err := io.Copy(w, resp.Body); err != nil {
-		self.Log().WithFields(log.Fields{
+		ep.Log().WithFields(log.Fields{
 			"written": written,
 			"path":    path,
 		}).Warnf("io copy error %#v", err)
@@ -130,12 +130,12 @@ func (self *Endpoint) PipeRequest(rootCtx context.Context, path string, w http.R
 	return nil
 }
 
-func (self *Endpoint) doResponse(rootCtx context.Context, path string, r *http.Request) (*http.Response, error) {
-	self.Connect()
-	self.incrRelayCount()
+func (ep *Endpoint) doResponse(rootCtx context.Context, path string, r *http.Request) (*http.Response, error) {
+	ep.Connect()
+	ep.incrRelayCount()
 	// prepare request
 
-	url := self.FullUrl(path)
+	url := ep.FullUrl(path)
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, err
@@ -152,16 +152,16 @@ func (self *Endpoint) doResponse(rootCtx context.Context, path string, r *http.R
 		}
 	}
 
-	if self.Config.Headers != nil {
-		for k, v := range self.Config.Headers {
+	if ep.Config.Headers != nil {
+		for k, v := range ep.Config.Headers {
 			req.Header.Set(k, v)
 		}
 	}
 	req.Header.Set("X-Forwarded-For", r.RemoteAddr)
 
 	start := time.Now()
-	resp, err := self.client.Do(req)
-	delta := time.Now().Sub(start)
+	resp, err := ep.client.Do(req)
+	delta := time.Since(start)
 	fields := log.Fields{
 		"method":      path,
 		"httpMethod":  r.Method,
@@ -175,20 +175,20 @@ func (self *Endpoint) doResponse(rootCtx context.Context, path string, r *http.R
 		fields["status"] = resp.StatusCode
 	}
 
-	self.Log().WithFields(fields).Info("relay http")
+	ep.Log().WithFields(fields).Info("relay http")
 	return resp, err
 
 }
 
 // Perform a GET request and process the response as JSON
-func (self *Endpoint) GetJson(rootCtx context.Context, path string, headers map[string]string, output interface{}) error {
-	return self.RequestJson(rootCtx, "GET", path, nil, headers, output)
+func (ep *Endpoint) GetJson(rootCtx context.Context, path string, headers map[string]string, output interface{}) error {
+	return ep.RequestJson(rootCtx, "GET", path, nil, headers, output)
 }
 
 // encode types of body to bytes
 // case body is []byte then return it intactly
 // case body is struct then return JSON marshalling
-func (self Endpoint) encodeBody(body interface{}) ([]byte, string, error) {
+func (ep Endpoint) encodeBody(body interface{}) ([]byte, string, error) {
 	if body == nil {
 		return nil, "", nil
 	} else if data, ok := body.([]byte); ok {
@@ -205,8 +205,8 @@ func (self Endpoint) encodeBody(body interface{}) ([]byte, string, error) {
 
 // Post body and parse JSON result, the request body can be in form of
 // bytes, map and golang struct
-func (self *Endpoint) PostJson(rootCtx context.Context, path string, body interface{}, headers map[string]string, output interface{}) error {
-	data, ctype, err := self.encodeBody(body)
+func (ep *Endpoint) PostJson(rootCtx context.Context, path string, body interface{}, headers map[string]string, output interface{}) error {
+	data, ctype, err := ep.encodeBody(body)
 	if err != nil {
 		return errors.Wrap(err, "encodeBody")
 	}
@@ -216,19 +216,19 @@ func (self *Endpoint) PostJson(rootCtx context.Context, path string, body interf
 		}
 		headers["Content-Type"] = ctype
 	}
-	return self.RequestJson(rootCtx, "POST", path, data, headers, output)
+	return ep.RequestJson(rootCtx, "POST", path, data, headers, output)
 }
 
 // Generic way of performing a HTTP request and shift the response as JSON
-func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path string, data []byte, headers map[string]string, output interface{}) error {
-	self.Connect()
+func (ep *Endpoint) RequestJson(rootCtx context.Context, method string, path string, data []byte, headers map[string]string, output interface{}) error {
+	ep.Connect()
 
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
 	// prepare request
 	// TODO: join the server url and path
-	url := self.FullUrl(path)
+	url := ep.FullUrl(path)
 	var reader io.Reader = nil
 	if data != nil {
 		reader = bytes.NewReader(data)
@@ -239,20 +239,19 @@ func (self *Endpoint) RequestJson(rootCtx context.Context, method string, path s
 	}
 
 	req.Header.Set("Accept", "application/json")
-	if headers != nil {
-		for k, v := range headers {
-			req.Header.Set(k, v)
-		}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 
-	resp, err := self.client.Do(req)
+	resp, err := ep.client.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "get Do")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		self.Log().Warnf("invalid response status %d", resp.StatusCode)
+		ep.Log().Warnf("invalid response status %d", resp.StatusCode)
 		abnResp := &jsoffnet.WrappedResponse{
 			Response: resp,
 		}
@@ -286,17 +285,17 @@ type GqlErrors struct {
 	Errors interface{}
 }
 
-func (self GqlErrors) Error() string {
-	return fmt.Sprintf("%#v\n", self.Errors)
+func (err GqlErrors) Error() string {
+	return fmt.Sprintf("%#v\n", err.Errors)
 }
 
-func (self *Endpoint) RequestGraphQL(ctx context.Context, query string, variables map[string]interface{}, headers map[string]string, output interface{}) error {
+func (ep *Endpoint) RequestGraphQL(ctx context.Context, query string, variables map[string]interface{}, headers map[string]string, output interface{}) error {
 	req := gqlRequest{
 		Query:     query,
 		Variables: variables,
 	}
 	var resp gqlResponse
-	err := self.PostJson(ctx, "", req, headers, &resp)
+	err := ep.PostJson(ctx, "", req, headers, &resp)
 	if err != nil {
 		return err
 	}
@@ -312,40 +311,40 @@ func (self *Endpoint) RequestGraphQL(ctx context.Context, query string, variable
 
 }
 
-func (self *Endpoint) GetClientVersion(ctx context.Context) {
-	delegator := GetDelegatorFactory().GetBlockheadDelegator(self.Chain.Namespace)
-	version, err := delegator.GetClientVersion(ctx, self)
+func (ep *Endpoint) GetClientVersion(ctx context.Context) {
+	delegator := GetDelegatorFactory().GetBlockheadDelegator(ep.Chain.Namespace)
+	version, err := delegator.GetClientVersion(ctx, ep)
 	if err != nil {
-		self.Log().Warnf("error while getting client version %s", err)
+		ep.Log().Warnf("error while getting client version %s", err)
 	} else if version != "" {
-		self.Log().Infof("client version set to %s", version)
-		self.ClientVersion = version
+		ep.Log().Infof("client version set to %s", version)
+		ep.ClientVersion = version
 	}
 }
 
-func (self Endpoint) Info() EndpointInfo {
+func (ep Endpoint) Info() EndpointInfo {
 	return EndpointInfo{
-		Name:          self.Name,
-		Chain:         self.Chain.String(),
-		Healthy:       self.Healthy,
-		Blockhead:     self.Blockhead,
-		ClientVersion: self.ClientVersion,
+		Name:          ep.Name,
+		Chain:         ep.Chain.String(),
+		Healthy:       ep.Healthy,
+		Blockhead:     ep.Blockhead,
+		ClientVersion: ep.ClientVersion,
 	}
 }
 
-func (self Endpoint) Available(method string, minHeight int) bool {
-	if !self.Healthy {
+func (ep Endpoint) Available(method string, minHeight int) bool {
+	if !ep.Healthy {
 		return false
 	}
 
 	if minHeight > 0 {
-		if self.Blockhead == nil || self.Blockhead.Height < minHeight {
+		if ep.Blockhead == nil || ep.Blockhead.Height < minHeight {
 			return false
 		}
 	}
 
-	if method != "" && self.SkipMethods != nil {
-		if _, ok := self.SkipMethods[method]; ok {
+	if method != "" && ep.SkipMethods != nil {
+		if _, ok := ep.SkipMethods[method]; ok {
 			// the method is not provided by the endpoint, so skip it
 			return false
 		}

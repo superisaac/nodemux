@@ -18,23 +18,23 @@ type substrateBlock struct {
 	height int `json:"-"`
 }
 
-func (self *substrateBlock) Height() int {
-	if self.height == 0 {
-		if strings.HasPrefix(self.Number, "0x") {
-			h, err := hexutil.DecodeUint64(self.Number)
+func (blk *substrateBlock) Height() int {
+	if blk.height == 0 {
+		if strings.HasPrefix(blk.Number, "0x") {
+			h, err := hexutil.DecodeUint64(blk.Number)
 			if err != nil {
 				panic(err)
 			}
-			self.height = int(h)
+			blk.height = int(h)
 		} else {
-			h, err := strconv.Atoi(self.Number)
+			h, err := strconv.Atoi(blk.Number)
 			if err != nil {
 				panic(err)
 			}
-			self.height = h
+			blk.height = h
 		}
 	}
-	return self.height
+	return blk.height
 }
 
 type SubstrateAPI struct {
@@ -44,15 +44,15 @@ func NewSubstrateAPI() *SubstrateAPI {
 	return &SubstrateAPI{}
 }
 
-func (self SubstrateAPI) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+func (c SubstrateAPI) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	return "", nil
 }
 
-func (self SubstrateAPI) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (c SubstrateAPI) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 
-func (self *SubstrateAPI) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (c *SubstrateAPI) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res substrateBlock
 	err := ep.GetJson(context,
 		"/blocks/head",
@@ -68,7 +68,7 @@ func (self *SubstrateAPI) GetBlockhead(context context.Context, b *nodemuxcore.M
 	return block, nil
 }
 
-func (self *SubstrateAPI) DelegateREST(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+func (c *SubstrateAPI) DelegateREST(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
 	return b.DefaultPipeREST(rootCtx, chain, path, w, r, -2)
 }

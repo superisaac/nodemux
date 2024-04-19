@@ -30,8 +30,8 @@ type StoreConfig struct {
 	Url string `yaml:"url" json:"url"`
 }
 
-func (self StoreConfig) Scheme() string {
-	u, err := url.Parse(self.Url)
+func (cfg StoreConfig) Scheme() string {
+	u, err := url.Parse(cfg.Url)
 	if err != nil {
 		panic(err)
 	}
@@ -60,20 +60,20 @@ func ConfigFromFile(configPath string) (*NodemuxConfig, error) {
 	return cfg, nil
 }
 
-func (self *NodemuxConfig) validateValues() error {
-	if self.Version == "" {
-		self.Version = "1.0"
+func (cfg *NodemuxConfig) validateValues() error {
+	if cfg.Version == "" {
+		cfg.Version = "1.0"
 	}
 
 	// currently nodemux store uses redis
-	for _, store := range self.Stores {
+	for _, store := range cfg.Stores {
 		_, err := url.Parse(store.Url)
 		if err != nil {
 			return err
 		}
 	}
 
-	for _, epcfg := range self.Endpoints {
+	for _, epcfg := range cfg.Endpoints {
 		if epcfg.Chain == "" {
 			return errors.New("empty chain")
 		}
@@ -106,7 +106,7 @@ func (self *NodemuxConfig) validateValues() error {
 	return nil
 }
 
-func (self *NodemuxConfig) Load(configPath string) error {
+func (cfg *NodemuxConfig) Load(configPath string) error {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		if err != nil {
 			return err
@@ -118,24 +118,24 @@ func (self *NodemuxConfig) Load(configPath string) error {
 		return err
 	}
 	if strings.HasSuffix(configPath, ".json") {
-		return self.LoadJsondata(data)
+		return cfg.LoadJsondata(data)
 	} else {
-		return self.LoadYamldata(data)
+		return cfg.LoadYamldata(data)
 	}
 }
 
-func (self *NodemuxConfig) LoadYamldata(data []byte) error {
-	err := yaml.Unmarshal(data, self)
+func (cfg *NodemuxConfig) LoadYamldata(data []byte) error {
+	err := yaml.Unmarshal(data, cfg)
 	if err != nil {
 		return err
 	}
-	return self.validateValues()
+	return cfg.validateValues()
 }
 
-func (self *NodemuxConfig) LoadJsondata(data []byte) error {
-	err := json.Unmarshal(data, self)
+func (cfg *NodemuxConfig) LoadJsondata(data []byte) error {
+	err := json.Unmarshal(data, cfg)
 	if err != nil {
 		return err
 	}
-	return self.validateValues()
+	return cfg.validateValues()
 }

@@ -29,15 +29,15 @@ type cosmosBlock struct {
 	height int `json:"-"`
 }
 
-func (self *cosmosBlock) Height() int {
-	if self.height == 0 {
-		h, err := strconv.Atoi(self.Block.Header.Height)
+func (blk *cosmosBlock) Height() int {
+	if blk.height == 0 {
+		h, err := strconv.Atoi(blk.Block.Header.Height)
 		if err != nil {
 			panic(err)
 		}
-		self.height = h
+		blk.height = h
 	}
-	return self.height
+	return blk.height
 }
 
 type cosmosNodeInfo struct {
@@ -49,8 +49,8 @@ type cosmosNodeInfo struct {
 	} `json:"application_version"`
 }
 
-func (self cosmosNodeInfo) String() string {
-	av := self.ApplicationVersion
+func (info cosmosNodeInfo) String() string {
+	av := info.ApplicationVersion
 	return fmt.Sprintf("%s-%s-%s", av.AppName, av.Version, av.CosmosSDKVersion)
 }
 
@@ -61,7 +61,7 @@ func NewCosmosChain() *CosmosChain {
 	return &CosmosChain{}
 }
 
-func (self CosmosChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+func (c CosmosChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	var info cosmosNodeInfo
 	err := ep.GetJson(context,
 		"/cosmos/base/tendermint/v1beta1/node_info",
@@ -72,11 +72,11 @@ func (self CosmosChain) GetClientVersion(context context.Context, ep *nodemuxcor
 	return info.String(), nil
 }
 
-func (self CosmosChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (c CosmosChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 
-func (self *CosmosChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (c *CosmosChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res cosmosBlock
 	err := ep.GetJson(context,
 		"/cosmos/base/tendermint/v1beta1/blocks/latest",
@@ -92,7 +92,7 @@ func (self *CosmosChain) GetBlockhead(context context.Context, b *nodemuxcore.Mu
 	return block, nil
 }
 
-func (self *CosmosChain) DelegateREST(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+func (c *CosmosChain) DelegateREST(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
 	return b.DefaultPipeREST(rootCtx, chain, path, w, r, -2)
 }

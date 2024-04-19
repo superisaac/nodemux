@@ -13,25 +13,25 @@ import (
 	"github.com/superisaac/jsoff/net"
 )
 
-func (self *Endpoint) ensureRPCClient() {
-	if self.rpcHttpClient == nil {
-		opts := jsoffnet.ClientOptions{Timeout: self.Config.Timeout}
-		c, err := jsoffnet.NewClient(self.Config.Url, opts)
+func (ep *Endpoint) ensureRPCClient() {
+	if ep.rpcHttpClient == nil {
+		opts := jsoffnet.ClientOptions{Timeout: ep.Config.Timeout}
+		c, err := jsoffnet.NewClient(ep.Config.Url, opts)
 		if err != nil {
 			panic(err)
 		}
-		self.rpcHttpClient = c
+		ep.rpcHttpClient = c
 	}
 }
 
-func (self *Endpoint) JSONRPCClient() jsoffnet.Client {
-	self.ensureRPCClient()
-	return self.rpcHttpClient
+func (ep *Endpoint) JSONRPCClient() jsoffnet.Client {
+	ep.ensureRPCClient()
+	return ep.rpcHttpClient
 }
 
-func (self *Endpoint) NewJSONRPCWSClient() (*jsoffnet.WSClient, bool) {
-	if self.HasWebsocket() {
-		c, err := jsoffnet.NewClient(self.Config.StreamingUrl)
+func (ep *Endpoint) NewJSONRPCWSClient() (*jsoffnet.WSClient, bool) {
+	if ep.HasWebsocket() {
+		c, err := jsoffnet.NewClient(ep.Config.StreamingUrl)
 		if err != nil {
 			panic(err)
 		}
@@ -41,15 +41,15 @@ func (self *Endpoint) NewJSONRPCWSClient() (*jsoffnet.WSClient, bool) {
 	}
 }
 
-func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsoff.RequestMessage) (jsoff.Message, error) {
-	//self.Connect()
-	self.ensureRPCClient()
-	self.incrRelayCount()
+func (ep *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsoff.RequestMessage) (jsoff.Message, error) {
+	//ep.Connect()
+	ep.ensureRPCClient()
+	ep.incrRelayCount()
 
 	start := time.Now()
-	res, err := self.rpcHttpClient.Call(rootCtx, reqmsg)
+	res, err := ep.rpcHttpClient.Call(rootCtx, reqmsg)
 	// metrics the call time
-	delta := time.Now().Sub(start)
+	delta := time.Since(start)
 
 	msecs := delta.Milliseconds()
 
@@ -66,18 +66,18 @@ func (self *Endpoint) CallRPC(rootCtx context.Context, reqmsg *jsoff.RequestMess
 	} else if res.IsError() {
 		fields["err"] = fmt.Sprintf("RPC %d %s", res.MustError().Code, res.MustError().Message)
 	}
-	self.Log().WithFields(fields).Info("call jsonrpc")
+	ep.Log().WithFields(fields).Info("call jsonrpc")
 	return res, err
 } // CallRPC
 
-func (self *Endpoint) UnwrapCallRPC(rootCtx context.Context, reqmsg *jsoff.RequestMessage, output interface{}) error {
-	//self.Connect()
-	self.ensureRPCClient()
+func (ep *Endpoint) UnwrapCallRPC(rootCtx context.Context, reqmsg *jsoff.RequestMessage, output interface{}) error {
+	//ep.Connect()
+	ep.ensureRPCClient()
 	start := time.Now()
-	err := self.rpcHttpClient.UnwrapCall(rootCtx, reqmsg, output)
+	err := ep.rpcHttpClient.UnwrapCall(rootCtx, reqmsg, output)
 
 	// metrics the call time
-	delta := time.Now().Sub(start)
+	delta := time.Since(start)
 	fields := log.Fields{
 		"method":      reqmsg.Method,
 		"timeSpentMS": delta.Milliseconds(),
@@ -88,13 +88,13 @@ func (self *Endpoint) UnwrapCallRPC(rootCtx context.Context, reqmsg *jsoff.Reque
 	} else if errors.As(err, &rpcErr) {
 		fields["err"] = fmt.Sprintf("RPCError %d %s", rpcErr.Code, rpcErr.Error())
 	}
-	self.Log().WithFields(fields).Info("call jsonrpc")
+	ep.Log().WithFields(fields).Info("call jsonrpc")
 	return err
 } // UnwrapCallRPC
 
-func (self Endpoint) HasWebsocket() bool {
-	if self.Config.StreamingUrl == "" {
+func (ep Endpoint) HasWebsocket() bool {
+	if ep.Config.StreamingUrl == "" {
 		return false
 	}
-	return strings.HasPrefix(self.Config.StreamingUrl, "wss://") || strings.HasPrefix(self.Config.StreamingUrl, "ws://")
+	return strings.HasPrefix(ep.Config.StreamingUrl, "wss://") || strings.HasPrefix(ep.Config.StreamingUrl, "ws://")
 }

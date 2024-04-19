@@ -59,49 +59,49 @@ func MultiplexerFromConfig(nbcfg *NodemuxConfig) *Multiplexer {
 	return m
 }
 
-func (self *Multiplexer) Reset() {
-	self.nameIndex = make(map[string]*Endpoint)
-	self.chainIndex = make(map[ChainRef]*EndpointSet)
-	self.redisClients = make(map[string]*redis.Client)
+func (m *Multiplexer) Reset() {
+	m.nameIndex = make(map[string]*Endpoint)
+	m.chainIndex = make(map[ChainRef]*EndpointSet)
+	m.redisClients = make(map[string]*redis.Client)
 }
 
-func (self Multiplexer) Get(epName string) (*Endpoint, bool) {
-	ep, ok := self.nameIndex[epName]
+func (m Multiplexer) Get(epName string) (*Endpoint, bool) {
+	ep, ok := m.nameIndex[epName]
 	return ep, ok
 }
 
-func (self Multiplexer) MustGet(epName string) *Endpoint {
-	if ep, ok := self.Get(epName); ok {
+func (m Multiplexer) MustGet(epName string) *Endpoint {
+	if ep, ok := m.Get(epName); ok {
 		return ep
 	}
 	log.Panicf("fail to get endpoint %s", epName)
 	return nil
 }
 
-func (self Multiplexer) Chainhub() Chainhub {
-	return self.chainHub
+func (m Multiplexer) Chainhub() Chainhub {
+	return m.chainHub
 }
 
-func (self *Multiplexer) Add(endpoint *Endpoint) bool {
-	if _, exist := self.nameIndex[endpoint.Name]; exist {
+func (m *Multiplexer) Add(endpoint *Endpoint) bool {
+	if _, exist := m.nameIndex[endpoint.Name]; exist {
 		// already exist
 		log.Warnf("endpoint %s already exist", endpoint.Name)
 		return false
 	}
-	self.nameIndex[endpoint.Name] = endpoint
+	m.nameIndex[endpoint.Name] = endpoint
 
-	if eps, ok := self.chainIndex[endpoint.Chain]; ok {
+	if eps, ok := m.chainIndex[endpoint.Chain]; ok {
 		eps.Add(endpoint)
 	} else {
 		eps := NewEndpointSet()
-		self.chainIndex[endpoint.Chain] = eps
+		m.chainIndex[endpoint.Chain] = eps
 		eps.Add(endpoint)
 	}
 	return true
 }
 
-func (self *Multiplexer) Select(chain ChainRef, method string) (*Endpoint, bool) {
-	if eps, ok := self.chainIndex[chain]; ok {
+func (m *Multiplexer) Select(chain ChainRef, method string) (*Endpoint, bool) {
+	if eps, ok := m.chainIndex[chain]; ok {
 		if epName, ok := eps.WeightedRandom(); ok {
 			ep := eps.MustGet(epName)
 			if ep.Available(method, 0) {
@@ -119,20 +119,21 @@ func (self *Multiplexer) Select(chain ChainRef, method string) (*Endpoint, bool)
 	return nil, false
 }
 
-func (self *Multiplexer) AllHealthyEndpoints(chain ChainRef, method string, height int) []*Endpoint {
-	if endpoints, ok := self.chainIndex[chain]; ok {
+func (m *Multiplexer) AllHealthyEndpoints(chain ChainRef, method string, height int) []*Endpoint {
+	if endpoints, ok := m.chainIndex[chain]; ok {
 		healthyEndpoints := make([]*Endpoint, 0)
 		for _, ep := range endpoints.items {
 			if ep.Available(method, height) {
 				healthyEndpoints = append(healthyEndpoints, ep)
 			}
 		}
+		return healthyEndpoints
 	}
 	return nil
 }
 
-func (self *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightSpec int) (*Endpoint, bool) {
-	if endpoints, ok := self.chainIndex[chain]; ok {
+func (m *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightSpec int) (*Endpoint, bool) {
+	if endpoints, ok := m.chainIndex[chain]; ok {
 		height := heightSpec
 		if heightSpec <= 0 {
 			height = endpoints.maxTipHeight + heightSpec
@@ -155,8 +156,8 @@ func (self *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightS
 	return nil, false
 }
 
-func (self *Multiplexer) SelectWebsocketEndpoint(chain ChainRef, method string, heightSpec int) (ep1 *Endpoint, found bool) {
-	if endpoints, ok := self.chainIndex[chain]; ok {
+func (m *Multiplexer) SelectWebsocketEndpoint(chain ChainRef, method string, heightSpec int) (ep1 *Endpoint, found bool) {
+	if endpoints, ok := m.chainIndex[chain]; ok {
 		height := heightSpec
 		if heightSpec < 0 {
 			height = endpoints.maxTipHeight + heightSpec
@@ -177,8 +178,8 @@ func (self *Multiplexer) SelectWebsocketEndpoint(chain ChainRef, method string, 
 	return nil, false
 }
 
-func (self *Multiplexer) LoadFromConfig(nbcfg *NodemuxConfig) {
-	self.cfg = nbcfg
+func (m *Multiplexer) LoadFromConfig(nbcfg *NodemuxConfig) {
+	m.cfg = nbcfg
 	for name, epcfg := range nbcfg.Endpoints {
 		chainref, err := ParseChain(epcfg.Chain)
 		if err != nil {
@@ -189,16 +190,16 @@ func (self *Multiplexer) LoadFromConfig(nbcfg *NodemuxConfig) {
 		}
 
 		ep := NewEndpoint(name, epcfg)
-		self.Add(ep)
+		m.Add(ep)
 	}
 }
 
-func (self *Multiplexer) BroadcastRPC(
+func (m *Multiplexer) BroadcastRPC(
 	rootCtx context.Context,
 	chain ChainRef,
 	reqmsg *jsoff.RequestMessage,
 	overHeight int) []RpcResult {
-	eps := self.AllHealthyEndpoints(chain, reqmsg.Method, overHeight)
+	eps := m.AllHealthyEndpoints(chain, reqmsg.Method, overHeight)
 	if len(eps) == 0 {
 		return nil
 	}
@@ -224,16 +225,16 @@ func (self *Multiplexer) BroadcastRPC(
 	return results
 }
 
-func (self *Multiplexer) DefaultRelayRPC(
+func (m *Multiplexer) DefaultRelayRPC(
 	rootCtx context.Context,
 	chain ChainRef,
 	reqmsg *jsoff.RequestMessage,
 	overHeight int) (jsoff.Message, error) {
-	ep, found := self.SelectOverHeight(chain, reqmsg.Method, overHeight)
+	ep, found := m.SelectOverHeight(chain, reqmsg.Method, overHeight)
 	if !found {
 		if overHeight > 0 {
 			// if not find then relay to any healthy endpoint
-			return self.DefaultRelayRPC(rootCtx, chain, reqmsg, -2)
+			return m.DefaultRelayRPC(rootCtx, chain, reqmsg, -2)
 		}
 		return ErrNotAvailable.ToMessage(reqmsg), nil
 	}
@@ -248,12 +249,12 @@ func (self *Multiplexer) DefaultRelayRPC(
 }
 
 // Pipe the request to response
-func (self *Multiplexer) DefaultPipeREST(rootCtx context.Context, chain ChainRef, path string, w http.ResponseWriter, r *http.Request, overHeight int) error {
-	ep, found := self.SelectOverHeight(chain, path, overHeight)
+func (m *Multiplexer) DefaultPipeREST(rootCtx context.Context, chain ChainRef, path string, w http.ResponseWriter, r *http.Request, overHeight int) error {
+	ep, found := m.SelectOverHeight(chain, path, overHeight)
 	if !found {
 		if overHeight > 0 {
 			// if not find then relay to any healthy endpoint
-			return self.DefaultPipeREST(rootCtx, chain, path, w, r, -2)
+			return m.DefaultPipeREST(rootCtx, chain, path, w, r, -2)
 		}
 		w.WriteHeader(404)
 		w.Write([]byte("not found"))
@@ -263,12 +264,12 @@ func (self *Multiplexer) DefaultPipeREST(rootCtx context.Context, chain ChainRef
 	return err
 }
 
-func (self *Multiplexer) DefaultPipeGraphQL(rootCtx context.Context, chain ChainRef, path string, w http.ResponseWriter, r *http.Request, overHeight int) error {
-	ep, found := self.SelectOverHeight(chain, "", overHeight)
+func (m *Multiplexer) DefaultPipeGraphQL(rootCtx context.Context, chain ChainRef, path string, w http.ResponseWriter, r *http.Request, overHeight int) error {
+	ep, found := m.SelectOverHeight(chain, "", overHeight)
 	if !found {
 		if overHeight > 0 {
 			// if not find then relay to any healthy endpoint
-			return self.DefaultPipeGraphQL(rootCtx, chain, path, w, r, -2)
+			return m.DefaultPipeGraphQL(rootCtx, chain, path, w, r, -2)
 		}
 		w.WriteHeader(404)
 		w.Write([]byte("not found"))
@@ -278,9 +279,9 @@ func (self *Multiplexer) DefaultPipeGraphQL(rootCtx context.Context, chain Chain
 	return err
 }
 
-func (self Multiplexer) ListEndpointInfos() []EndpointInfo {
+func (m Multiplexer) ListEndpointInfos() []EndpointInfo {
 	infos := make([]EndpointInfo, 0)
-	for _, ep := range self.nameIndex {
+	for _, ep := range m.nameIndex {
 		infos = append(infos, ep.Info())
 	}
 	return infos

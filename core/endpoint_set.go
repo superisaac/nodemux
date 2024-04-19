@@ -13,42 +13,42 @@ func NewEndpointSet() *EndpointSet {
 		weights: make([]Weight, 0),
 	}
 }
-func (self *EndpointSet) resetMaxTipHeight() {
+func (epset *EndpointSet) resetMaxTipHeight() {
 	maxHeight := 0
-	for _, epItem := range self.items {
+	for _, epItem := range epset.items {
 		if epItem.Blockhead != nil && epItem.Blockhead.Height > maxHeight {
 			maxHeight = epItem.Blockhead.Height
 		}
 	}
-	self.maxTipHeight = maxHeight
+	epset.maxTipHeight = maxHeight
 }
 
-func (self EndpointSet) Get(epName string) (*Endpoint, bool) {
-	ep, ok := self.items[epName]
+func (epset EndpointSet) Get(epName string) (*Endpoint, bool) {
+	ep, ok := epset.items[epName]
 	return ep, ok
 }
 
-func (self EndpointSet) MustGet(epName string) *Endpoint {
-	if ep, ok := self.Get(epName); ok {
+func (epset EndpointSet) MustGet(epName string) *Endpoint {
+	if ep, ok := epset.Get(epName); ok {
 		return ep
 	}
 	log.Panicf("fail to get endpoint %s", epName)
 	return nil
 }
 
-func (self EndpointSet) prometheusLabels(chain ChainRef) prometheus.Labels {
+func (epset EndpointSet) prometheusLabels(chain ChainRef) prometheus.Labels {
 	return prometheus.Labels{
 		"chain": chain.String(),
 	}
 }
 
-func (self *EndpointSet) Add(endpoint *Endpoint) {
-	//self.items = append(self.items, endpoint)
-	self.items[endpoint.Name] = endpoint
-	self.appendWeights(endpoint)
+func (epset *EndpointSet) Add(endpoint *Endpoint) {
+	//epset.items = append(epset.items, endpoint)
+	epset.items[endpoint.Name] = endpoint
+	epset.appendWeights(endpoint)
 }
 
-func (self *EndpointSet) appendWeights(endpoint *Endpoint) {
+func (epset *EndpointSet) appendWeights(endpoint *Endpoint) {
 	if !endpoint.Healthy {
 		return
 	}
@@ -58,18 +58,18 @@ func (self *EndpointSet) appendWeights(endpoint *Endpoint) {
 		// 100 is the default weight
 		w = 100
 	}
-	if len(self.weights) > 0 {
-		w = self.weights[len(self.weights)-1].AggregateValue + w
+	if len(epset.weights) > 0 {
+		w = epset.weights[len(epset.weights)-1].AggregateValue + w
 	}
-	self.weights = append(self.weights, Weight{
+	epset.weights = append(epset.weights, Weight{
 		EpName:         endpoint.Name,
 		AggregateValue: w,
 	})
 }
 
-func (self *EndpointSet) resetWeights() {
+func (epset *EndpointSet) resetWeights() {
 	weights := []Weight{}
-	for _, ep := range self.items {
+	for _, ep := range epset.items {
 		if !ep.Healthy {
 			continue
 		}
@@ -86,35 +86,35 @@ func (self *EndpointSet) resetWeights() {
 			AggregateValue: w,
 		})
 	}
-	self.weights = weights
+	epset.weights = weights
 }
 
-func (self EndpointSet) WeightLimit() int {
-	if len(self.weights) > 0 {
-		return self.weights[len(self.weights)-1].AggregateValue
+func (epset EndpointSet) WeightLimit() int {
+	if len(epset.weights) > 0 {
+		return epset.weights[len(epset.weights)-1].AggregateValue
 	} else {
 		return 0
 	}
 }
 
-func (self EndpointSet) WeightedRandom() (string, bool) {
-	if lim := self.WeightLimit(); lim > 0 {
+func (epset EndpointSet) WeightedRandom() (string, bool) {
+	if lim := epset.WeightLimit(); lim > 0 {
 		w := rand.Intn(lim)
-		return self.WeightSearch(w)
+		return epset.WeightSearch(w)
 	}
 	return "", false
 }
 
-func (self EndpointSet) WeightSearch(w int) (string, bool) {
+func (epset EndpointSet) WeightSearch(w int) (string, bool) {
 	if w < 0 {
 		return "", false
 	}
-	selected := sort.Search(len(self.weights), func(i int) bool {
-		return self.weights[i].AggregateValue > w
+	selected := sort.Search(len(epset.weights), func(i int) bool {
+		return epset.weights[i].AggregateValue > w
 	})
 
-	if selected < len(self.weights) {
-		return self.weights[selected].EpName, true
+	if selected < len(epset.weights) {
+		return epset.weights[selected].EpName, true
 	} else {
 		return "", false
 	}

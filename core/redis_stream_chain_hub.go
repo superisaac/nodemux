@@ -36,22 +36,22 @@ func NewRedisStreamChainhub(rdb *redis.Client) (*RedisStreamChainhub, error) {
 	}, nil
 }
 
-func (self *RedisStreamChainhub) Sub(ch chan ChainStatus) {
-	self.cmdSub <- ChCmdChainStatus{Ch: ch}
+func (h *RedisStreamChainhub) Sub(ch chan ChainStatus) {
+	h.cmdSub <- ChCmdChainStatus{Ch: ch}
 }
 
-func (self *RedisStreamChainhub) subscribe(ctx context.Context, ch chan ChainStatus) error {
-	self.subs = append(self.subs, ch)
+func (h *RedisStreamChainhub) subscribe(ctx context.Context, ch chan ChainStatus) error {
+	h.subs = append(h.subs, ch)
 
 	// got the last 100 items
-	revmsgs, err := self.rdb.XRevRangeN(ctx, streamsKey, "+", "-", 100).Result()
+	revmsgs, err := h.rdb.XRevRangeN(ctx, streamsKey, "+", "-", 100).Result()
 	if err != nil {
 		return errors.Wrap(err, "redis.XRevRangeN(100)")
 	}
 
 	sent := make(map[string]bool)
 	for _, xmsg := range revmsgs {
-		chainSt, err := self.decodeChainStatus(&xmsg)
+		chainSt, err := h.decodeChainStatus(&xmsg)
 		if err != nil {
 			return err
 		}
@@ -63,7 +63,7 @@ func (self *RedisStreamChainhub) subscribe(ctx context.Context, ch chan ChainSta
 	return nil
 }
 
-func (self RedisStreamChainhub) decodeChainStatus(xmsg *redis.XMessage) (ChainStatus, error) {
+func (h RedisStreamChainhub) decodeChainStatus(xmsg *redis.XMessage) (ChainStatus, error) {
 	val, ok := xmsg.Values["cst"]
 	if !ok {
 		return ChainStatus{}, errors.New("stream item has no cst")
@@ -80,28 +80,28 @@ func (self RedisStreamChainhub) decodeChainStatus(xmsg *redis.XMessage) (ChainSt
 	return chainSt, nil
 }
 
-func (self *RedisStreamChainhub) Unsub(ch chan ChainStatus) {
-	self.cmdUnsub <- ChCmdChainStatus{Ch: ch}
+func (h *RedisStreamChainhub) Unsub(ch chan ChainStatus) {
+	h.cmdUnsub <- ChCmdChainStatus{Ch: ch}
 }
 
-func (self *RedisStreamChainhub) unsubscribe(ch chan ChainStatus) {
+func (h *RedisStreamChainhub) unsubscribe(ch chan ChainStatus) {
 	found := -1
-	for i, sub := range self.subs {
+	for i, sub := range h.subs {
 		if sub == ch {
 			found = i
 			break
 		}
 	}
 	if found >= 0 {
-		self.subs = append(self.subs[:found], self.subs[found+1:]...)
+		h.subs = append(h.subs[:found], h.subs[found+1:]...)
 	}
 }
 
-func (self RedisStreamChainhub) Pub() chan ChainStatus {
-	return self.pub
+func (h RedisStreamChainhub) Pub() chan ChainStatus {
+	return h.pub
 }
 
-func (self *RedisStreamChainhub) listen(rootCtx context.Context) error {
+func (h *RedisStreamChainhub) listen(rootCtx context.Context) error {
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
@@ -112,10 +112,10 @@ func (self *RedisStreamChainhub) listen(rootCtx context.Context) error {
 		var err error
 		if lastID == "" {
 			// get the last item
-			xmsgs, err = self.rdb.XRevRangeN(ctx, streamsKey, "+", "-", 1).Result()
+			xmsgs, err = h.rdb.XRevRangeN(ctx, streamsKey, "+", "-", 1).Result()
 		} else {
 			// open start by prefixing "("
-			xmsgs, err = self.rdb.XRangeN(ctx, streamsKey, "("+lastID, "+", 10).Result()
+			xmsgs, err = h.rdb.XRangeN(ctx, streamsKey, "("+lastID, "+", 10).Result()
 		}
 		if err != nil {
 			return errors.Wrap(err, "read range n")
@@ -126,13 +126,13 @@ func (self *RedisStreamChainhub) listen(rootCtx context.Context) error {
 			time.Sleep(time.Millisecond * 3)
 		} else {
 			for _, xmsg := range xmsgs {
-				chainSt, err := self.decodeChainStatus(&xmsg)
+				chainSt, err := h.decodeChainStatus(&xmsg)
 				if err != nil {
 					return err
 				}
 				lastID = xmsg.ID
 				// broadcast to subscribe channels
-				for _, sub := range self.subs {
+				for _, sub := range h.subs {
 					sub <- chainSt
 				}
 
@@ -141,11 +141,11 @@ func (self *RedisStreamChainhub) listen(rootCtx context.Context) error {
 	}
 }
 
-func (self *RedisStreamChainhub) Run(rootCtx context.Context) error {
+func (h *RedisStreamChainhub) Run(rootCtx context.Context) error {
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
-	go self.listen(ctx)
+	go h.listen(ctx)
 
 	// run publish and other jobs
 	networkFailure := 0
@@ -153,30 +153,30 @@ func (self *RedisStreamChainhub) Run(rootCtx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
-		case cmd, ok := <-self.cmdSub:
+		case cmd, ok := <-h.cmdSub:
 			if !ok {
 				log.Warnf("cmd sub not ok")
 				return nil
 			}
-			err := self.subscribe(ctx, cmd.Ch)
-			networkFailure, err = self.handleRedisError(networkFailure, err, "subscribe")
+			err := h.subscribe(ctx, cmd.Ch)
+			networkFailure, err = h.handleRedisError(networkFailure, err, "subscribe")
 			if err != nil {
 				return err
 			}
-		case cmd, ok := <-self.cmdUnsub:
+		case cmd, ok := <-h.cmdUnsub:
 			if !ok {
 				log.Warnf("cmd unsub not ok")
 				return nil
 			}
-			self.unsubscribe(cmd.Ch)
-		case chainSt, ok := <-self.pub:
+			h.unsubscribe(cmd.Ch)
+		case chainSt, ok := <-h.pub:
 			if !ok {
 				log.Warnf("cmd pub not ok")
 				return nil
 			}
 
-			err := self.publishChainStatus(ctx, chainSt)
-			networkFailure, err = self.handleRedisError(networkFailure, err, "publish")
+			err := h.publishChainStatus(ctx, chainSt)
+			networkFailure, err = h.handleRedisError(networkFailure, err, "publish")
 			if err != nil {
 				return err
 			}
@@ -184,7 +184,7 @@ func (self *RedisStreamChainhub) Run(rootCtx context.Context) error {
 	}
 }
 
-func (self *RedisStreamChainhub) publishChainStatus(ctx context.Context, chainSt ChainStatus) error {
+func (h *RedisStreamChainhub) publishChainStatus(ctx context.Context, chainSt ChainStatus) error {
 
 	data, err := json.Marshal(chainSt)
 	if err != nil {
@@ -194,7 +194,7 @@ func (self *RedisStreamChainhub) publishChainStatus(ctx context.Context, chainSt
 	values := map[string]interface{}{"cst": string(data)}
 	//fmt.Printf("values ssss %s\n", values)
 
-	id, err := self.rdb.XAdd(ctx, &redis.XAddArgs{
+	id, err := h.rdb.XAdd(ctx, &redis.XAddArgs{
 		Stream: streamsKey,
 		Values: values,
 		MaxLen: 1000,
@@ -208,7 +208,7 @@ func (self *RedisStreamChainhub) publishChainStatus(ctx context.Context, chainSt
 	return nil
 }
 
-func (self RedisStreamChainhub) handleRedisError(networkFailure int, err error, fn string) (int, error) {
+func (h RedisStreamChainhub) handleRedisError(networkFailure int, err error, fn string) (int, error) {
 	if err != nil {
 		var opErr *net.OpError
 		if errors.As(err, &opErr) {

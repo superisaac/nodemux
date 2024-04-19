@@ -38,18 +38,18 @@ func NewRedisChainhub(rdb *redis.Client) (*RedisChainhub, error) {
 	}, nil
 }
 
-func (self *RedisChainhub) Sub(ch chan ChainStatus) {
-	self.cmdSub <- ChCmdChainStatus{Ch: ch}
+func (h *RedisChainhub) Sub(ch chan ChainStatus) {
+	h.cmdSub <- ChCmdChainStatus{Ch: ch}
 }
 
-func (self *RedisChainhub) subscribe(ctx context.Context, ch chan ChainStatus) error {
-	self.subs = append(self.subs, ch)
-	snKeys, err := self.rdb.Keys(ctx, fmt.Sprintf("%s:*", snapshotPrefix)).Result()
+func (h *RedisChainhub) subscribe(ctx context.Context, ch chan ChainStatus) error {
+	h.subs = append(h.subs, ch)
+	snKeys, err := h.rdb.Keys(ctx, fmt.Sprintf("%s:*", snapshotPrefix)).Result()
 	if err != nil {
 		return err
 	}
 	for _, snKey := range snKeys {
-		val, err := self.rdb.Get(ctx, snKey).Result()
+		val, err := h.rdb.Get(ctx, snKey).Result()
 		if err != nil {
 			return err
 		}
@@ -64,33 +64,33 @@ func (self *RedisChainhub) subscribe(ctx context.Context, ch chan ChainStatus) e
 	return err
 }
 
-func (self *RedisChainhub) Unsub(ch chan ChainStatus) {
-	self.cmdUnsub <- ChCmdChainStatus{Ch: ch}
+func (h *RedisChainhub) Unsub(ch chan ChainStatus) {
+	h.cmdUnsub <- ChCmdChainStatus{Ch: ch}
 }
 
-func (self *RedisChainhub) unsubscribe(ch chan ChainStatus) {
+func (h *RedisChainhub) unsubscribe(ch chan ChainStatus) {
 	found := -1
-	for i, sub := range self.subs {
+	for i, sub := range h.subs {
 		if sub == ch {
 			found = i
 			break
 		}
 	}
 	if found >= 0 {
-		self.subs = append(self.subs[:found], self.subs[found+1:]...)
+		h.subs = append(h.subs[:found], h.subs[found+1:]...)
 	}
 }
 
-func (self RedisChainhub) Pub() chan ChainStatus {
-	return self.pub
+func (h RedisChainhub) Pub() chan ChainStatus {
+	return h.pub
 }
 
-func (self *RedisChainhub) listen(rootCtx context.Context) error {
+func (h *RedisChainhub) listen(rootCtx context.Context) error {
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
-	//rdb := redis.NewClient(self.redisOptions)
-	pubsub := self.rdb.Subscribe(ctx, pubsubKey)
+	//rdb := redis.NewClient(h.redisOptions)
+	pubsub := h.rdb.Subscribe(ctx, pubsubKey)
 	defer pubsub.Close()
 
 	ch := pubsub.Channel(redis.WithChannelSize(1000))
@@ -112,7 +112,7 @@ func (self *RedisChainhub) listen(rootCtx context.Context) error {
 					return err
 				}
 				// broadcast to sub channels
-				for _, sub := range self.subs {
+				for _, sub := range h.subs {
 					sub <- chainSt
 				}
 			}
@@ -120,11 +120,11 @@ func (self *RedisChainhub) listen(rootCtx context.Context) error {
 	}
 }
 
-func (self *RedisChainhub) Run(rootCtx context.Context) error {
+func (h *RedisChainhub) Run(rootCtx context.Context) error {
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
-	go self.listen(ctx)
+	go h.listen(ctx)
 
 	// run publish and other jobs
 	networkFailure := 0
@@ -132,30 +132,30 @@ func (self *RedisChainhub) Run(rootCtx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
-		case cmd, ok := <-self.cmdSub:
+		case cmd, ok := <-h.cmdSub:
 			if !ok {
 				log.Warnf("cmd sub not ok")
 				return nil
 			}
-			err := self.subscribe(ctx, cmd.Ch)
-			networkFailure, err = self.handleRedisError(networkFailure, err, "subscribe")
+			err := h.subscribe(ctx, cmd.Ch)
+			networkFailure, err = h.handleRedisError(networkFailure, err, "subscribe")
 			if err != nil {
 				return err
 			}
-		case cmd, ok := <-self.cmdUnsub:
+		case cmd, ok := <-h.cmdUnsub:
 			if !ok {
 				log.Warnf("cmd unsub not ok")
 				return nil
 			}
-			self.unsubscribe(cmd.Ch)
-		case chainSt, ok := <-self.pub:
+			h.unsubscribe(cmd.Ch)
+		case chainSt, ok := <-h.pub:
 			if !ok {
 				log.Warnf("cmd pub not ok")
 				return nil
 			}
 
-			err := self.publishChainStatus(ctx, chainSt)
-			networkFailure, err = self.handleRedisError(networkFailure, err, "publish")
+			err := h.publishChainStatus(ctx, chainSt)
+			networkFailure, err = h.handleRedisError(networkFailure, err, "publish")
 			if err != nil {
 				return err
 			}
@@ -163,25 +163,25 @@ func (self *RedisChainhub) Run(rootCtx context.Context) error {
 	}
 }
 
-func (self *RedisChainhub) publishChainStatus(ctx context.Context, chainSt ChainStatus) error {
+func (h *RedisChainhub) publishChainStatus(ctx context.Context, chainSt ChainStatus) error {
 	data, err := json.Marshal(chainSt)
 	if err != nil {
 		return err
 	}
-	err = self.rdb.Publish(ctx, pubsubKey, data).Err()
+	err = h.rdb.Publish(ctx, pubsubKey, data).Err()
 	if err != nil {
 		return err
 	}
 
 	snapshotKey := fmt.Sprintf("%s:%s", snapshotPrefix, chainSt.Chain)
-	err = self.rdb.Set(ctx, snapshotKey, data, time.Hour*2).Err()
+	err = h.rdb.Set(ctx, snapshotKey, data, time.Hour*2).Err()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (self RedisChainhub) handleRedisError(networkFailure int, err error, fn string) (int, error) {
+func (h RedisChainhub) handleRedisError(networkFailure int, err error, fn string) (int, error) {
 	if err != nil {
 		var opErr *net.OpError
 		if errors.As(err, &opErr) {

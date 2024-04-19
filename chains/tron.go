@@ -24,15 +24,15 @@ func NewTronChain() *TronChain {
 	return &TronChain{}
 }
 
-func (self TronChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+func (c TronChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	return "", nil
 }
 
-func (self TronChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (c TronChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 
-func (self *TronChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (c *TronChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	var res tronBlock
 	err := ep.PostJson(context,
 		"/walletsolidity/getnowblock",
@@ -49,7 +49,7 @@ func (self *TronChain) GetBlockhead(context context.Context, b *nodemuxcore.Mult
 	return block, nil
 }
 
-func (self *TronChain) DelegateREST(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+func (c *TronChain) DelegateREST(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
 	return b.DefaultPipeREST(rootCtx, chain, path, w, r, -30)
 }

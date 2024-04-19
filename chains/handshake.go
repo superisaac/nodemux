@@ -15,11 +15,11 @@ type handshakeBlockhead struct {
 	Hash   string
 }
 
-type handshakeBlock struct {
-	Hash   string
-	Height int
-	Tx     []string
-}
+// type handshakeBlock struct {
+// 	Hash   string
+// 	Height int
+// 	Tx     []string
+// }
 
 // see hsd-cli getinfo
 type handshakeInfo struct {
@@ -33,7 +33,7 @@ func NewHandshakeChain() *HandshakeChain {
 	return &HandshakeChain{}
 }
 
-func (self HandshakeChain) GetClientVersion(ctx context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+func (c HandshakeChain) GetClientVersion(ctx context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	reqmsg := jsoff.NewRequestMessage(1, "getinfo", nil)
 	var info handshakeInfo
 	err := ep.UnwrapCallRPC(ctx, reqmsg, &info)
@@ -43,11 +43,11 @@ func (self HandshakeChain) GetClientVersion(ctx context.Context, ep *nodemuxcore
 	return info.Version, nil
 }
 
-func (self HandshakeChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (c HandshakeChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 
-func (self *HandshakeChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (c *HandshakeChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsoff.NewRequestMessage(
 		1, "getchaintips", nil)
 
@@ -69,6 +69,6 @@ func (self *HandshakeChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Mul
 	return nil, nil
 }
 
-func (self *HandshakeChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
+func (c *HandshakeChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	return m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
 }

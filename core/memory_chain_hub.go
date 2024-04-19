@@ -26,39 +26,39 @@ func NewMemoryChainhub() *MemoryChainhub {
 	}
 }
 
-func (self *MemoryChainhub) Sub(ch chan ChainStatus) {
-	self.cmdSub <- ChCmdChainStatus{Ch: ch}
+func (h *MemoryChainhub) Sub(ch chan ChainStatus) {
+	h.cmdSub <- ChCmdChainStatus{Ch: ch}
 }
 
-func (self *MemoryChainhub) subscribe(ch chan ChainStatus) {
-	self.subs = append(self.subs, ch)
-	for _, chainSt := range self.snapshots {
+func (h *MemoryChainhub) subscribe(ch chan ChainStatus) {
+	h.subs = append(h.subs, ch)
+	for _, chainSt := range h.snapshots {
 		ch <- chainSt
 	}
 }
 
-func (self *MemoryChainhub) Unsub(ch chan ChainStatus) {
-	self.cmdUnsub <- ChCmdChainStatus{Ch: ch}
+func (h *MemoryChainhub) Unsub(ch chan ChainStatus) {
+	h.cmdUnsub <- ChCmdChainStatus{Ch: ch}
 }
 
-func (self *MemoryChainhub) unsubscribe(ch chan ChainStatus) {
+func (h *MemoryChainhub) unsubscribe(ch chan ChainStatus) {
 	found := -1
-	for i, sub := range self.subs {
+	for i, sub := range h.subs {
 		if sub == ch {
 			found = i
 			break
 		}
 	}
 	if found >= 0 {
-		self.subs = append(self.subs[:found], self.subs[found+1:]...)
+		h.subs = append(h.subs[:found], h.subs[found+1:]...)
 	}
 }
 
-func (self MemoryChainhub) Pub() chan ChainStatus {
-	return self.pub
+func (h MemoryChainhub) Pub() chan ChainStatus {
+	return h.pub
 }
 
-func (self *MemoryChainhub) Run(rootCtx context.Context) error {
+func (h *MemoryChainhub) Run(rootCtx context.Context) error {
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
@@ -66,22 +66,22 @@ func (self *MemoryChainhub) Run(rootCtx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
-		case cmd, ok := <-self.cmdSub:
+		case cmd, ok := <-h.cmdSub:
 			if !ok {
 				return nil
 			}
-			self.subscribe(cmd.Ch)
-		case cmd, ok := <-self.cmdUnsub:
+			h.subscribe(cmd.Ch)
+		case cmd, ok := <-h.cmdUnsub:
 			if !ok {
 				return nil
 			}
-			self.unsubscribe(cmd.Ch)
-		case chainSt, ok := <-self.pub:
+			h.unsubscribe(cmd.Ch)
+		case chainSt, ok := <-h.pub:
 			if !ok {
 				return nil
 			}
-			self.snapshots[chainSt.Chain] = chainSt
-			for _, sub := range self.subs {
+			h.snapshots[chainSt.Chain] = chainSt
+			for _, sub := range h.subs {
 				sub <- chainSt
 			}
 		}

@@ -16,11 +16,11 @@ type bitcoinBlockchainInfo struct {
 	BestBlockhash string `json:"bestblockhash"`
 }
 
-type bitcoinBlock struct {
-	Hash   string
-	Height int
-	Tx     []string
-}
+// type bitcoinBlock struct {
+// 	Hash   string
+// 	Height int
+// 	Tx     []string
+// }
 
 // see bitcoin-cli getnetworkinfo
 type bitcoinNetworkInfo struct {
@@ -36,7 +36,7 @@ func NewBitcoinChain() *BitcoinChain {
 	return &BitcoinChain{}
 }
 
-func (self BitcoinChain) GetClientVersion(ctx context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+func (c BitcoinChain) GetClientVersion(ctx context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	reqmsg := jsoff.NewRequestMessage(1, "getnetworkinfo", nil)
 	var info bitcoinNetworkInfo
 	err := ep.UnwrapCallRPC(ctx, reqmsg, &info)
@@ -47,56 +47,56 @@ func (self BitcoinChain) GetClientVersion(ctx context.Context, ep *nodemuxcore.E
 	return v, nil
 }
 
-func (self BitcoinChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (c BitcoinChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 
 // update txid cache from mempool
-func (self BitcoinChain) updateMempoolPresenceCache(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
-	redisClient, ok := m.RedisClient(presenceCacheRedisSelector(ep.Chain))
-	if !ok {
-		return
-	}
-	reqmsg := jsoff.NewRequestMessage(
-		1, "getrawmempool", nil)
+// func (c BitcoinChain) updateMempoolPresenceCache(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) {
+// 	redisClient, ok := m.RedisClient(presenceCacheRedisSelector(ep.Chain))
+// 	if !ok {
+// 		return
+// 	}
+// 	reqmsg := jsoff.NewRequestMessage(
+// 		1, "getrawmempool", nil)
 
-	var txids []string
-	err := ep.UnwrapCallRPC(ctx, reqmsg, &txids)
-	if err != nil {
-		ep.Log().Warnf("getrawmempool error, %s", err)
-		return
-	}
-	presenceCacheUpdate(
-		ctx, redisClient,
-		ep.Chain,
-		txids,
-		ep.Name,
-		time.Second*600) // expire after 10 mins
-}
+// 	var txids []string
+// 	err := ep.UnwrapCallRPC(ctx, reqmsg, &txids)
+// 	if err != nil {
+// 		ep.Log().Warnf("getrawmempool error, %s", err)
+// 		return
+// 	}
+// 	presenceCacheUpdate(
+// 		ctx, redisClient,
+// 		ep.Chain,
+// 		txids,
+// 		ep.Name,
+// 		time.Second*600) // expire after 10 mins
+// }
 
-func (self BitcoinChain) updateBlockPresenceCache(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint, blockHash string) {
-	c, ok := m.RedisClient(presenceCacheRedisSelector(ep.Chain))
-	if !ok {
-		return
-	}
-	reqmsg := jsoff.NewRequestMessage(
-		1, "getblock", []interface{}{blockHash})
+// func (c BitcoinChain) updateBlockPresenceCache(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint, blockHash string) {
+// 	client, ok := m.RedisClient(presenceCacheRedisSelector(ep.Chain))
+// 	if !ok {
+// 		return
+// 	}
+// 	reqmsg := jsoff.NewRequestMessage(
+// 		1, "getblock", []interface{}{blockHash})
 
-	var blk bitcoinBlock
-	err := ep.UnwrapCallRPC(ctx, reqmsg, &blk)
-	if err != nil {
-		ep.Log().Warnf("get block error, blockhash %s, %s", blockHash, err)
-		return
-	}
-	presenceCacheUpdate(
-		ctx, c,
-		ep.Chain,
-		blk.Tx,
-		ep.Name,
-		time.Second*1800) // expire after 30 mins
-}
+// 	var blk bitcoinBlock
+// 	err := ep.UnwrapCallRPC(ctx, reqmsg, &blk)
+// 	if err != nil {
+// 		ep.Log().Warnf("get block error, blockhash %s, %s", blockHash, err)
+// 		return
+// 	}
+// 	presenceCacheUpdate(
+// 		ctx, client,
+// 		ep.Chain,
+// 		blk.Tx,
+// 		ep.Name,
+// 		time.Second*1800) // expire after 30 mins
+// }
 
-func (self *BitcoinChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (c *BitcoinChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsoff.NewRequestMessage(
 		1, "getblockchaininfo", nil)
 
@@ -113,7 +113,7 @@ func (self *BitcoinChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multi
 	return block, nil
 }
 
-func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
+func (c *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	//useCache := reqmsg.Method == "gettransaction" || reqmsg.Method == "getrawtransaction" || reqmsg.Method == "decoderawtransaction"
 	useCache, resmsgFromCache := jsonrpcCacheFetchForMethods(
 		ctx, m, chain, reqmsg,
@@ -137,7 +137,7 @@ func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multip
 	}
 
 	if reqmsg.Method == "getblockhash" {
-		if h, ok := self.findBlockHeight(reqmsg); ok {
+		if h, ok := c.findBlockHeight(reqmsg); ok {
 			return m.DefaultRelayRPC(ctx, chain, reqmsg, h)
 		}
 	} else if reqmsg.Method == "getchaintips" || reqmsg.Method == "getblockchaininfo" {
@@ -152,7 +152,7 @@ func (self *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multip
 	return retmsg, err
 }
 
-func (self *BitcoinChain) findBlockHeight(reqmsg *jsoff.RequestMessage) (int, bool) {
+func (c *BitcoinChain) findBlockHeight(reqmsg *jsoff.RequestMessage) (int, bool) {
 	// the first argument is a integer number
 	var bh struct {
 		Height int

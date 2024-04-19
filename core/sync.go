@@ -6,56 +6,56 @@ import (
 	//"time"
 )
 
-func (self Multiplexer) Syncing() bool {
-	return self.cancelSync != nil
+func (m Multiplexer) Syncing() bool {
+	return m.cancelSync != nil
 }
 
-func (self *Multiplexer) StartSync(rootCtx context.Context, fetch bool) {
-	//self.syncing = true
-	if self.Syncing() {
+func (m *Multiplexer) StartSync(rootCtx context.Context, fetch bool) {
+	//m.syncing = true
+	if m.Syncing() {
 		log.Warn("sync alredy started")
 		return
 	}
 
 	ctx, cancel := context.WithCancel(rootCtx)
-	self.cancelSync = cancel
+	m.cancelSync = cancel
 
 	// start chainhub
 	go func() {
-		err := self.chainHub.Run(ctx)
+		err := m.chainHub.Run(ctx)
 		if err != nil {
 			panic(err)
 		}
 	}()
 
 	// start updater
-	go self.RunUpdator(ctx)
+	go m.RunUpdator(ctx)
 
 	// get client version
-	for _, ep := range self.nameIndex {
+	for _, ep := range m.nameIndex {
 		go ep.GetClientVersion(ctx)
 	}
 
 	// start syncer
 	if fetch {
-		for _, ep := range self.nameIndex {
-			go self.syncEndpoint(ctx, ep)
+		for _, ep := range m.nameIndex {
+			go m.syncEndpoint(ctx, ep)
 		}
 	}
 }
 
-func (self *Multiplexer) StopSync() {
-	//self.syncing = false
-	if self.Syncing() {
-		cancel := self.cancelSync
-		self.cancelSync = nil
+func (m *Multiplexer) StopSync() {
+	//m.syncing = false
+	if m.Syncing() {
+		cancel := m.cancelSync
+		m.cancelSync = nil
 		cancel()
 	}
 }
 
 // updater
-func (self *Multiplexer) updateStatus(cs ChainStatus) error {
-	ep, ok := self.Get(cs.EndpointName)
+func (m *Multiplexer) updateStatus(cs ChainStatus) error {
+	ep, ok := m.Get(cs.EndpointName)
 	if !ok {
 		return nil
 	}
@@ -66,7 +66,7 @@ func (self *Multiplexer) updateStatus(cs ChainStatus) error {
 	if cs.Healthy != ep.Healthy {
 		ep.Healthy = cs.Healthy
 		logger.Infof("healthy set to %t", cs.Healthy)
-		eps := self.chainIndex[ep.Chain]
+		eps := m.chainIndex[ep.Chain]
 		eps.resetWeights()
 	}
 
@@ -102,7 +102,7 @@ func (self *Multiplexer) updateStatus(cs ChainStatus) error {
 		ep.prometheusLabels()).Set(
 		float64(block.Height))
 
-	if epset, ok := self.chainIndex[ep.Chain]; ok {
+	if epset, ok := m.chainIndex[ep.Chain]; ok {
 		if heightChanged {
 			epset.resetMaxTipHeight()
 			ep.Chain.Log().Infof(
@@ -127,13 +127,13 @@ func (self *Multiplexer) updateStatus(cs ChainStatus) error {
 	return nil
 }
 
-func (self *Multiplexer) RunUpdator(rootCtx context.Context) {
+func (m *Multiplexer) RunUpdator(rootCtx context.Context) {
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 
 	upd := make(chan ChainStatus, 1000)
-	self.chainHub.Sub(upd)
-	defer self.chainHub.Unsub(upd)
+	m.chainHub.Sub(upd)
+	defer m.chainHub.Unsub(upd)
 
 	for {
 		select {
@@ -143,7 +143,7 @@ func (self *Multiplexer) RunUpdator(rootCtx context.Context) {
 			if !ok {
 				return
 			}
-			self.updateStatus(cs)
+			m.updateStatus(cs)
 		}
 	}
 }

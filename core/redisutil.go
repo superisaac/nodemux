@@ -36,42 +36,42 @@ func GetRedisOptions(redisUrl string) (*redis.Options, error) {
 	return opt, nil
 }
 
-func (self *Multiplexer) RedisClient(selector string) (c *redis.Client, ok bool) {
-	if c, ok := self.redisClients[selector]; ok {
+func (m *Multiplexer) RedisClient(selector string) (c *redis.Client, ok bool) {
+	if c, ok := m.redisClients[selector]; ok {
 		return c, ok
 	}
 
-	if store, ok := self.cfg.Stores[selector]; ok && store.Scheme() == "redis" {
+	if store, ok := m.cfg.Stores[selector]; ok && store.Scheme() == "redis" {
 		opts, err := GetRedisOptions(store.Url)
 		if err != nil {
 			log.Panicf("parse redis option error, url=%s, %s", store.Url, err)
 			return nil, false
 		}
 		c := redis.NewClient(opts)
-		self.redisClients[selector] = c
+		m.redisClients[selector] = c
 		return c, true
 	}
 
 	if selector != "default" {
-		return self.RedisClient("default")
+		return m.RedisClient("default")
 	} else {
 		return nil, false
 	}
 }
 
-func (self *Multiplexer) RedisClientExact(selector string) (c *redis.Client, ok bool) {
-	if c, ok := self.redisClients[selector]; ok {
+func (m *Multiplexer) RedisClientExact(selector string) (c *redis.Client, ok bool) {
+	if c, ok := m.redisClients[selector]; ok {
 		return c, ok
 	}
 
-	if store, ok := self.cfg.Stores[selector]; ok && store.Scheme() == "redis" {
+	if store, ok := m.cfg.Stores[selector]; ok && store.Scheme() == "redis" {
 		opts, err := GetRedisOptions(store.Url)
 		if err != nil {
 			log.Panicf("parse redis option error, url=%s, %s", store.Url, err)
 			return nil, false
 		}
 		c := redis.NewClient(opts)
-		self.redisClients[selector] = c
+		m.redisClients[selector] = c
 		return c, true
 	}
 

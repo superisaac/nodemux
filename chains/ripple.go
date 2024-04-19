@@ -33,15 +33,15 @@ func NewRippleChain() *RippleChain {
 	return &RippleChain{}
 }
 
-func (self RippleChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+func (c RippleChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	return "", nil
 }
 
-func (self RippleChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (c RippleChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 
-func (self *RippleChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (c *RippleChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	filter := rippleLedgerFilter{
 		LedgerIndex:  "validated",
 		Accounts:     false,
@@ -67,7 +67,7 @@ func (self *RippleChain) GetBlockhead(context context.Context, b *nodemuxcore.Mu
 
 }
 
-func (self *RippleChain) DelegateREST(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+func (c *RippleChain) DelegateREST(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
 	return b.DefaultPipeREST(rootCtx, chain, path, w, r, -10)
 }

@@ -14,15 +14,15 @@ type fantomBlock struct {
 	height int `json:"-"`
 }
 
-func (self *fantomBlock) Height() int {
-	if self.height <= 0 {
-		height, err := hexutil.DecodeUint64(self.Number)
+func (blk *fantomBlock) Height() int {
+	if blk.height <= 0 {
+		height, err := hexutil.DecodeUint64(blk.Number)
 		if err != nil {
 			panic(err)
 		}
-		self.height = int(height)
+		blk.height = int(height)
 	}
-	return self.height
+	return blk.height
 }
 
 type fantomTipResult struct {
@@ -36,15 +36,15 @@ func NewFantomChain() *FantomChain {
 	return &FantomChain{}
 }
 
-func (self FantomChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+func (c FantomChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	return "", nil
 }
 
-func (self FantomChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (c FantomChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 
-func (self *FantomChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (c *FantomChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	q := "{block(){number hash}}"
 	var res fantomTipResult
 	err := ep.RequestGraphQL(context, q, nil, nil, &res)
@@ -59,7 +59,7 @@ func (self *FantomChain) GetBlockhead(context context.Context, b *nodemuxcore.Mu
 	return block, nil
 }
 
-func (self *FantomChain) DelegateGraphQL(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
+func (c *FantomChain) DelegateGraphQL(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, path string, w http.ResponseWriter, r *http.Request) error {
 	// Custom relay methods can be defined here
 	return b.DefaultPipeGraphQL(rootCtx, chain, path, w, r, -10)
 }

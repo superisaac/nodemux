@@ -12,10 +12,10 @@ func blockIsEqual(a, b *Block) bool {
 	return a.Height == b.Height && a.Hash == b.Hash
 }
 
-func (self *Multiplexer) getBlockhead(rootCtx context.Context, ep *Endpoint, lastBlock *Block) (*Block, error) {
+func (m *Multiplexer) getBlockhead(rootCtx context.Context, ep *Endpoint, lastBlock *Block) (*Block, error) {
 	logger := ep.Log()
 	delegator := GetDelegatorFactory().GetBlockheadDelegator(ep.Chain.Namespace)
-	block, err := delegator.GetBlockhead(rootCtx, self, ep)
+	block, err := delegator.GetBlockhead(rootCtx, m, ep)
 	ep.incrBlockheadCount()
 
 	if err != nil {
@@ -27,13 +27,13 @@ func (self *Multiplexer) getBlockhead(rootCtx context.Context, ep *Endpoint, las
 			Healthy:      false,
 			Blockhead:    nil,
 		}
-		self.chainHub.Pub() <- bs
+		m.chainHub.Pub() <- bs
 		return nil, err
 	}
 	if block != nil {
 		ep.connected = true
 		if !blockIsEqual(lastBlock, block) {
-			self.UpdateBlock(ep, block)
+			m.UpdateBlock(ep, block)
 		}
 	} else {
 		logger.Warnf("got nil head block when accessing %s %s", ep.Name, ep.Config.Url)
@@ -41,25 +41,25 @@ func (self *Multiplexer) getBlockhead(rootCtx context.Context, ep *Endpoint, las
 	return block, nil
 }
 
-func (self *Multiplexer) UpdateBlock(ep *Endpoint, block *Block) {
+func (m *Multiplexer) UpdateBlock(ep *Endpoint, block *Block) {
 	bs := ChainStatus{
 		EndpointName: ep.Name,
 		Chain:        ep.Chain,
 		Healthy:      true,
 		Blockhead:    block,
 	}
-	self.chainHub.Pub() <- bs
+	m.chainHub.Pub() <- bs
 }
 
-func (self *Multiplexer) UpdateBlockIfChanged(ep *Endpoint, block *Block) {
+func (m *Multiplexer) UpdateBlockIfChanged(ep *Endpoint, block *Block) {
 	if !blockIsEqual(ep.Blockhead, block) {
-		self.UpdateBlock(ep, block)
+		m.UpdateBlock(ep, block)
 	}
 }
 
-func (self *Multiplexer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
+func (m *Multiplexer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
 	delegator := GetDelegatorFactory().GetBlockheadDelegator(ep.Chain.Namespace)
-	started, err := delegator.StartSync(rootCtx, self, ep)
+	started, err := delegator.StartSync(rootCtx, m, ep)
 	if err != nil {
 		panic(err)
 	}
@@ -72,24 +72,27 @@ func (self *Multiplexer) syncEndpoint(rootCtx context.Context, ep *Endpoint) {
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
 	var lastBlock *Block
+loop:
 	for {
-		if !self.Syncing() {
+		if !m.Syncing() {
 			break
 		}
 
 		sleepTime := time.Duration(ep.Config.FetchInterval) * time.Second
-		blk, err := self.getBlockhead(ctx, ep, lastBlock)
+		blk, err := m.getBlockhead(ctx, ep, lastBlock)
 		if err != nil {
 			// unhealthy
 			ep.Log().Warnf("get block head error %s, sleep %d secs", err, 2*ep.Config.FetchInterval)
 			sleepTime = time.Duration(2*ep.Config.FetchInterval) * time.Second
 		}
 		lastBlock = blk
+
+	selection:
 		select {
 		case <-ctx.Done():
-			break
+			break loop
 		case <-time.After(sleepTime):
-			break
+			break selection
 		}
 	}
 	ep.Log().Info("fetch job stopped")

@@ -31,8 +31,8 @@ type rpcDiscover struct {
 	} `json:"info"`
 }
 
-func (self rpcDiscover) ToString() string {
-	return fmt.Sprintf("%s/%s", self.Info.Title, self.Info.Version)
+func (d rpcDiscover) ToString() string {
+	return fmt.Sprintf("%s/%s", d.Info.Title, d.Info.Version)
 }
 
 type SuiChain struct {
@@ -42,7 +42,7 @@ func NewSuiChain() *SuiChain {
 	return &SuiChain{}
 }
 
-func (self SuiChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+func (c SuiChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	reqmsg := jsoff.NewRequestMessage(
 		1, "rpc.discover", []interface{}{})
 	var rpc rpcDiscover
@@ -54,11 +54,11 @@ func (self SuiChain) GetClientVersion(context context.Context, ep *nodemuxcore.E
 	return rpc.ToString(), nil
 }
 
-func (self SuiChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (c SuiChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 
-func (self *SuiChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (c *SuiChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	query := &txQuery{}
 	query.Options.ShowRawInput = true
 
@@ -85,7 +85,7 @@ func (self *SuiChain) GetBlockhead(context context.Context, b *nodemuxcore.Multi
 	return block, nil
 }
 
-func (self *SuiChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
+func (c *SuiChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayRPC(rootCtx, chain, reqmsg, -3)
 }

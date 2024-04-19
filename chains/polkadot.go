@@ -15,15 +15,15 @@ type polkadotBlock struct {
 	height int `json:"-"`
 }
 
-func (self *polkadotBlock) Height() int {
-	if self.height <= 0 {
-		height, err := hexutil.DecodeUint64(self.Number)
+func (blk *polkadotBlock) Height() int {
+	if blk.height <= 0 {
+		height, err := hexutil.DecodeUint64(blk.Number)
 		if err != nil {
 			panic(err)
 		}
-		self.height = int(height)
+		blk.height = int(height)
 	}
-	return self.height
+	return blk.height
 }
 
 type PolkadotChain struct {
@@ -33,15 +33,15 @@ func NewPolkadotChain() *PolkadotChain {
 	return &PolkadotChain{}
 }
 
-func (self PolkadotChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
+func (c PolkadotChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	return "", nil
 }
 
-func (self PolkadotChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
+func (c PolkadotChain) StartSync(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (bool, error) {
 	return true, nil
 }
 
-func (self *PolkadotChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
+func (c *PolkadotChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsoff.NewRequestMessage(
 		1, "chain_getHeader", []interface{}{})
 
@@ -58,7 +58,7 @@ func (self *PolkadotChain) GetBlockhead(context context.Context, b *nodemuxcore.
 	return block, nil
 }
 
-func (self *PolkadotChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
+func (c *PolkadotChain) DelegateRPC(rootCtx context.Context, b *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	// Custom relay methods can be defined here
 	return b.DefaultRelayRPC(rootCtx, chain, reqmsg, -2)
 }

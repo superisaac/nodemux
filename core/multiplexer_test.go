@@ -3,14 +3,14 @@ package nodemuxcore
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
+	"io"
 	"net/url"
 	"os"
 	"testing"
 )
 
 func TestMain(m *testing.M) {
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 	os.Exit(m.Run())
 }
 
@@ -61,16 +61,16 @@ func TestWeight(t *testing.T) {
 	assert.True(ok)
 	assert.Equal("tron02", epName)
 
-	epName, ok = eps.WeightSearch(210)
+	_, ok = eps.WeightSearch(210)
 	assert.False(ok)
 
-	epName, ok = eps.WeightSearch(211)
+	_, ok = eps.WeightSearch(211)
 	assert.False(ok)
 
-	epName, ok = eps.WeightSearch(211)
+	_, ok = eps.WeightSearch(211)
 	assert.False(ok)
 
-	epName, ok = eps.WeightSearch(-3)
+	_, ok = eps.WeightSearch(-3)
 	assert.False(ok)
 }
 

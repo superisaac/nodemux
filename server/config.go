@@ -65,8 +65,12 @@ func NewServerConfig() *ServerConfig {
 	return cfg
 }
 
+type serverConfigKeyType int
+
+var serverConfigKey serverConfigKeyType
+
 func ServerConfigFromContext(ctx context.Context) *ServerConfig {
-	if v := ctx.Value("serverConfig"); v != nil {
+	if v := ctx.Value(serverConfigKey); v != nil {
 		if serverCfg, ok := v.(*ServerConfig); ok {
 			return serverCfg
 		}
@@ -84,11 +88,11 @@ func ServerConfigFromFile(yamlPath string) (*ServerConfig, error) {
 	return cfg, nil
 }
 
-func (self *ServerConfig) AddTo(ctx context.Context) context.Context {
-	return context.WithValue(ctx, "serverConfig", self)
+func (cfg *ServerConfig) AddTo(ctx context.Context) context.Context {
+	return context.WithValue(ctx, serverConfigKey, cfg)
 }
 
-func (self *ServerConfig) Load(configPath string) error {
+func (cfg *ServerConfig) Load(configPath string) error {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		if err != nil {
 			return err
@@ -101,53 +105,53 @@ func (self *ServerConfig) Load(configPath string) error {
 		return err
 	}
 	if strings.HasSuffix(configPath, ".json") {
-		return self.LoadJsondata(data)
+		return cfg.LoadJsondata(data)
 	} else {
-		return self.LoadYamldata(data)
+		return cfg.LoadYamldata(data)
 	}
 }
 
-func (self *ServerConfig) LoadYamldata(yamlData []byte) error {
-	err := yaml.Unmarshal(yamlData, self)
+func (cfg *ServerConfig) LoadYamldata(yamlData []byte) error {
+	err := yaml.Unmarshal(yamlData, cfg)
 	if err != nil {
 		return err
 	}
-	return self.validateValues()
+	return cfg.validateValues()
 }
 
-func (self *ServerConfig) LoadJsondata(yamlData []byte) error {
-	err := json.Unmarshal(yamlData, self)
+func (cfg *ServerConfig) LoadJsondata(yamlData []byte) error {
+	err := json.Unmarshal(yamlData, cfg)
 	if err != nil {
 		return err
 	}
-	return self.validateValues()
+	return cfg.validateValues()
 }
 
-func (self *ServerConfig) validateValues() error {
-	if self.Metrics == nil {
-		self.Metrics = &MetricsConfig{}
+func (cfg *ServerConfig) validateValues() error {
+	if cfg.Metrics == nil {
+		cfg.Metrics = &MetricsConfig{}
 	}
-	if self.TLS != nil {
-		err := self.TLS.ValidateValues()
+	if cfg.TLS != nil {
+		err := cfg.TLS.ValidateValues()
 		if err != nil {
 			return err
 		}
 	}
-	if self.Auth != nil {
-		err := self.Auth.ValidateValues()
-		if err != nil {
-			return err
-		}
-	}
-
-	if self.Metrics != nil {
-		err := self.Metrics.validateValues()
+	if cfg.Auth != nil {
+		err := cfg.Auth.ValidateValues()
 		if err != nil {
 			return err
 		}
 	}
 
-	for account, acccfg := range self.Accounts {
+	if cfg.Metrics != nil {
+		err := cfg.Metrics.validateValues()
+		if err != nil {
+			return err
+		}
+	}
+
+	for account, acccfg := range cfg.Accounts {
 		if strings.Contains(account, "/") || strings.Contains(account, " ") {
 			return fmt.Errorf("invalid account name '%s'", account)
 		}
@@ -161,7 +165,7 @@ func (self *ServerConfig) validateValues() error {
 
 	}
 
-	for _, entrycfg := range self.Entrypoints {
+	for _, entrycfg := range cfg.Entrypoints {
 		err := entrycfg.validateValues()
 		if err != nil {
 			return err
@@ -171,30 +175,30 @@ func (self *ServerConfig) validateValues() error {
 	return nil
 }
 
-func (self *EntrypointConfig) validateValues() error {
-	if self == nil {
+func (cfg *EntrypointConfig) validateValues() error {
+	if cfg == nil {
 		return nil
 	}
 
-	if self.Account == "" {
+	if cfg.Account == "" {
 		return errors.New("entrypoint, account cannot be empty")
 	}
 
-	if self.Chain == "" {
+	if cfg.Chain == "" {
 		return errors.New("entrypoint, chain cannot be empty")
 	}
 
-	if self.Bind == "" {
+	if cfg.Bind == "" {
 		return errors.New("entrypoint, bind address cannot be empty")
 	}
-	if self.TLS != nil {
-		err := self.TLS.ValidateValues()
+	if cfg.TLS != nil {
+		err := cfg.TLS.ValidateValues()
 		if err != nil {
 			return err
 		}
 	}
-	if self.Auth != nil {
-		err := self.Auth.ValidateValues()
+	if cfg.Auth != nil {
+		err := cfg.Auth.ValidateValues()
 		if err != nil {
 			return err
 		}
@@ -202,19 +206,19 @@ func (self *EntrypointConfig) validateValues() error {
 	return nil
 }
 
-func (self *MetricsConfig) validateValues() error {
-	if self == nil {
+func (cfg *MetricsConfig) validateValues() error {
+	if cfg == nil {
 		return nil
 	}
 
-	if self.TLS != nil {
-		err := self.TLS.ValidateValues()
+	if cfg.TLS != nil {
+		err := cfg.TLS.ValidateValues()
 		if err != nil {
 			return err
 		}
 	}
-	if self.Auth != nil {
-		err := self.Auth.ValidateValues()
+	if cfg.Auth != nil {
+		err := cfg.Auth.ValidateValues()
 		if err != nil {
 			return err
 		}
@@ -223,18 +227,18 @@ func (self *MetricsConfig) validateValues() error {
 }
 
 // Ratelimit Config
-func (self RatelimitConfig) UserLimit() int {
-	if self.User <= 0 {
+func (cfg RatelimitConfig) UserLimit() int {
+	if cfg.User <= 0 {
 		return 3600
 	} else {
-		return self.User
+		return cfg.User
 	}
 }
 
-func (self RatelimitConfig) IPLimit() int {
-	if self.IP <= 0 {
+func (cfg RatelimitConfig) IPLimit() int {
+	if cfg.IP <= 0 {
 		return 3600
 	} else {
-		return self.IP
+		return cfg.IP
 	}
 }
