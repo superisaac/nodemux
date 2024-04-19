@@ -15,6 +15,11 @@ const (
 	ApiGraphQL
 )
 
+type RpcResult struct {
+	Msg jsoff.Message
+	Err error
+}
+
 // data structures
 type Block struct {
 	Height int    `json:"height"`

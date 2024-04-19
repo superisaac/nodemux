@@ -170,6 +170,44 @@ func (self *Web3Chain) GetBlockhead(context context.Context, m *nodemuxcore.Mult
 	return block, nil
 }
 
+func (self *Web3Chain) sendRawTransaction(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
+	resMsgs := m.BroadcastRPC(ctx, chain, reqmsg, -10)
+	if len(resMsgs) == 0 {
+		return m.DefaultRelayRPC(ctx, chain, reqmsg, -5)
+	}
+
+	// try find the correct response
+	// return the first correct response
+	for _, res := range resMsgs {
+		if res.Err == nil && res.Msg.IsResult() {
+			return res.Msg, nil
+		}
+	}
+
+	// return the first -32000, already known result
+	for _, res := range resMsgs {
+		if res.Err == nil && res.Msg.IsError() && res.Msg.MustError().Code == -32000 {
+			return res.Msg, nil
+		}
+	}
+
+	// return the first error msg
+	for _, res := range resMsgs {
+		if res.Err == nil && res.Msg.IsError() {
+			return res.Msg, nil
+		}
+	}
+
+	// return the first item that has a message
+	for _, res := range resMsgs {
+		if res.Err == nil && res.Msg != nil {
+			return res.Msg, nil
+		}
+	}
+	// reutrn error
+	return nil, resMsgs[0].Err
+}
+
 func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	if allowed, ok := allowedMethods[reqmsg.Method]; !ok || !allowed {
 		reqmsg.Log().Warnf("relayer method not supported %s", reqmsg.Method)
@@ -203,7 +241,9 @@ func (self *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplex
 		return retmsg, nil
 	}
 
-	if reqmsg.Method == "eth_getBlockByNumber" {
+	if reqmsg.Method == "eth_sendRawTransaction" {
+		return self.sendRawTransaction(ctx, m, chain, reqmsg, r)
+	} else if reqmsg.Method == "eth_getBlockByNumber" {
 		if h, ok := self.findBlockHeight(reqmsg); ok {
 			return m.DefaultRelayRPC(ctx, chain, reqmsg, h)
 		}

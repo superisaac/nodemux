@@ -7,7 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/superisaac/jsoff"
 	"net/http"
-	//"sync"
+	"sync"
 )
 
 // singleton vars and methods
@@ -119,6 +119,18 @@ func (self *Multiplexer) Select(chain ChainRef, method string) (*Endpoint, bool)
 	return nil, false
 }
 
+func (self *Multiplexer) AllHealthyEndpoints(chain ChainRef, method string, height int) []*Endpoint {
+	if endpoints, ok := self.chainIndex[chain]; ok {
+		healthyEndpoints := make([]*Endpoint, 0)
+		for _, ep := range endpoints.items {
+			if ep.Available(method, height) {
+				healthyEndpoints = append(healthyEndpoints, ep)
+			}
+		}
+	}
+	return nil
+}
+
 func (self *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightSpec int) (*Endpoint, bool) {
 	if endpoints, ok := self.chainIndex[chain]; ok {
 		height := heightSpec
@@ -179,6 +191,37 @@ func (self *Multiplexer) LoadFromConfig(nbcfg *NodemuxConfig) {
 		ep := NewEndpoint(name, epcfg)
 		self.Add(ep)
 	}
+}
+
+func (self *Multiplexer) BroadcastRPC(
+	rootCtx context.Context,
+	chain ChainRef,
+	reqmsg *jsoff.RequestMessage,
+	overHeight int) []RpcResult {
+	eps := self.AllHealthyEndpoints(chain, reqmsg.Method, overHeight)
+	if len(eps) == 0 {
+		return nil
+	}
+
+	wg := new(sync.WaitGroup)
+	results := make([]RpcResult, 0)
+	lock := sync.RWMutex{}
+
+	for _, ep := range eps {
+		wg.Add(1)
+		go func(ep *Endpoint) {
+			resmsg, err := ep.CallRPC(rootCtx, reqmsg)
+			lock.Lock()
+			defer lock.Unlock()
+			results = append(results, RpcResult{
+				Msg: resmsg,
+				Err: err,
+			})
+			wg.Done()
+		}(ep)
+	}
+	wg.Wait()
+	return results
 }
 
 func (self *Multiplexer) DefaultRelayRPC(
