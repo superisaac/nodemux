@@ -15,9 +15,10 @@ const (
 	ApiGraphQL
 )
 
-type RpcResult struct {
-	Msg jsoff.Message
-	Err error
+type RPCResult struct {
+	Response jsoff.Message
+	Endpoint *Endpoint
+	Err      error
 }
 
 // data structures

@@ -198,14 +198,14 @@ func (m *Multiplexer) BroadcastRPC(
 	rootCtx context.Context,
 	chain ChainRef,
 	reqmsg *jsoff.RequestMessage,
-	overHeight int) []RpcResult {
+	overHeight int) []RPCResult {
 	eps := m.AllHealthyEndpoints(chain, reqmsg.Method, overHeight)
 	if len(eps) == 0 {
 		return nil
 	}
 
 	wg := new(sync.WaitGroup)
-	results := make([]RpcResult, 0)
+	results := make([]RPCResult, 0)
 	lock := sync.RWMutex{}
 
 	for _, ep := range eps {
@@ -214,9 +214,10 @@ func (m *Multiplexer) BroadcastRPC(
 			resmsg, err := ep.CallRPC(rootCtx, reqmsg)
 			lock.Lock()
 			defer lock.Unlock()
-			results = append(results, RpcResult{
-				Msg: resmsg,
-				Err: err,
+			results = append(results, RPCResult{
+				Response: resmsg,
+				Endpoint: ep,
+				Err:      err,
 			})
 			wg.Done()
 		}(ep)

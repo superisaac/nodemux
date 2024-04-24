@@ -179,29 +179,29 @@ func (c *Web3Chain) sendRawTransaction(ctx context.Context, m *nodemuxcore.Multi
 	// try find the correct response
 	// return the first correct response
 	for _, res := range resMsgs {
-		if res.Err == nil && res.Msg.IsResult() {
-			return res.Msg, nil
+		if res.Err == nil && res.Response.IsResult() {
+			return res.Response, nil
 		}
 	}
 
 	// return the first -32000, already known result
 	for _, res := range resMsgs {
-		if res.Err == nil && res.Msg.IsError() && res.Msg.MustError().Code == -32000 {
-			return res.Msg, nil
+		if res.Err == nil && res.Response.IsError() && res.Response.MustError().Code == -32000 {
+			return res.Response, nil
 		}
 	}
 
 	// return the first error msg
 	for _, res := range resMsgs {
-		if res.Err == nil && res.Msg.IsError() {
-			return res.Msg, nil
+		if res.Err == nil && res.Response.IsError() {
+			return res.Response, nil
 		}
 	}
 
 	// return the first item that has a message
 	for _, res := range resMsgs {
-		if res.Err == nil && res.Msg != nil {
-			return res.Msg, nil
+		if res.Err == nil && res.Response != nil {
+			return res.Response, nil
 		}
 	}
 	// reutrn error
