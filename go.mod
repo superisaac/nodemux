@@ -2,7 +2,7 @@ module github.com/superisaac/nodemux
 
 go 1.21
 
-toolchain go1.21.3
+//toolchain go1.21.3
 
 require (
 	github.com/ethereum/go-ethereum v1.11.1

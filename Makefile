@@ -1,6 +1,6 @@
 GOFILES := $(shell find . -name '*.go')
 GOFLAG :=
-GOBUILD := go build -v
+GOBUILD := CGO_ENABLED=0 go build -v
 
 GOARCHS := linux-amd64 linux-arm64 darwin-amd64 darwin-arm64
 buildarchdirs := $(foreach a,$(GOARCHS),build/arch/nodemux-$a)
