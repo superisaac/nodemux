@@ -41,15 +41,17 @@ func (m *Multiplexer) RedisClient(selector string) (c *redis.Client, ok bool) {
 		return c, ok
 	}
 
-	if store, ok := m.cfg.Stores[selector]; ok && store.Scheme() == "redis" {
-		opts, err := GetRedisOptions(store.Url)
-		if err != nil {
-			log.Panicf("parse redis option error, url=%s, %s", store.Url, err)
-			return nil, false
+	if m.cfg != nil && m.cfg.Stores != nil {
+		if store, ok := m.cfg.Stores[selector]; ok && store.Scheme() == "redis" {
+			opts, err := GetRedisOptions(store.Url)
+			if err != nil {
+				log.Panicf("parse redis option error, url=%s, %s", store.Url, err)
+				return nil, false
+			}
+			c := redis.NewClient(opts)
+			m.redisClients[selector] = c
+			return c, true
 		}
-		c := redis.NewClient(opts)
-		m.redisClients[selector] = c
-		return c, true
 	}
 
 	if selector != "default" {
@@ -63,16 +65,17 @@ func (m *Multiplexer) RedisClientExact(selector string) (c *redis.Client, ok boo
 	if c, ok := m.redisClients[selector]; ok {
 		return c, ok
 	}
-
-	if store, ok := m.cfg.Stores[selector]; ok && store.Scheme() == "redis" {
-		opts, err := GetRedisOptions(store.Url)
-		if err != nil {
-			log.Panicf("parse redis option error, url=%s, %s", store.Url, err)
-			return nil, false
+	if m.cfg != nil && m.cfg.Stores != nil {
+		if store, ok := m.cfg.Stores[selector]; ok && store.Scheme() == "redis" {
+			opts, err := GetRedisOptions(store.Url)
+			if err != nil {
+				log.Panicf("parse redis option error, url=%s, %s", store.Url, err)
+				return nil, false
+			}
+			c := redis.NewClient(opts)
+			m.redisClients[selector] = c
+			return c, true
 		}
-		c := redis.NewClient(opts)
-		m.redisClients[selector] = c
-		return c, true
 	}
 
 	return nil, false
