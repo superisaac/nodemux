@@ -13,7 +13,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.0
 	github.com/superisaac/jlib v0.4.2
-	github.com/superisaac/jsoff v0.6.0
+	github.com/superisaac/jsoff v0.6.3
 	gopkg.in/yaml.v2 v2.4.0
 )
 
