@@ -28,11 +28,11 @@ func NewRatelimitCollector() *RatelimitCollector {
 	return &RatelimitCollector{}
 }
 
-func (self RatelimitCollector) Describe(ch chan<- *prometheus.Desc) {
+func (collector RatelimitCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- ratelimitDesc
 }
 
-func (self RatelimitCollector) Collect(ch chan<- prometheus.Metric) {
+func (collector RatelimitCollector) Collect(ch chan<- prometheus.Metric) {
 	m := nodemuxcore.GetMultiplexer()
 	if c, ok := m.RedisClient("ratelimit"); ok {
 		if values, err := ratelimit.Values(context.Background(), c); err == nil {

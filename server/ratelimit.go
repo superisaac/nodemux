@@ -2,9 +2,10 @@ package server
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/superisaac/nodemux/core"
 	"github.com/superisaac/nodemux/ratelimit"
-	"net/http"
 )
 
 // handle ratelimit
@@ -20,7 +21,7 @@ func NewRatelimitHandler(rootCtx context.Context, next http.Handler) *RatelimitH
 	}
 }
 
-func (self *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (handler *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	acc := AccFromContext(r.Context())
 	var ratelimit RatelimitConfig
 	var accName string
@@ -31,7 +32,7 @@ func (self *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			accName = acc.Name
 		}
 	} else {
-		serverCfg := ServerConfigFromContext(self.rootCtx)
+		serverCfg := ServerConfigFromContext(handler.rootCtx)
 		ratelimit = serverCfg.Ratelimit
 		accName = ""
 	}
@@ -39,14 +40,31 @@ func (self *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	ok, err := checkRatelimit(r, accName, ratelimit, false)
 	if err != nil {
 		requestLog(r).Errorf("error while checking ratelimit %s", err)
-		w.WriteHeader(500)
-		w.Write([]byte("server error"))
-	} else if !ok {
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(429)
-		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte("rate limit exceeded!"))
+		w.Write([]byte(`{"error": {"code": 500, "messasge": "server error"}, "id": null}`))
+
+		// w.WriteHeader(500)
+		// w.Write([]byte("server error"))
+	} else if !ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(429)
+		w.Write([]byte(`{"error": {"code": 429, "messasge": "ratelimit exceeded!"}, "id": null}`))
+		// acceptableMediaTypes := []contenttype.MediaType{
+		// 	contenttype.NewMediaType("application/json"),
+		// }
+		
+		// if _, _, err := contenttype.GetAcceptableMediaType(r, acceptableMediaTypes); err == nil {
+		// 	w.Header().Set("Content-Type", "application/json")
+		// 	w.WriteHeader(429)
+		// 	w.Write([]byte(`{"error": {"code": 429, "messasge": "ratelimit exceeded!"}, "id": null}`))
+		// } else {
+		// 	w.Header().Set("Content-Type", "text/plain")
+		// 	w.WriteHeader(429)
+		// 	w.Write([]byte("rate limit exceeded!"))
+		// }
 	} else {
-		self.next.ServeHTTP(w, r)
+		handler.next.ServeHTTP(w, r)
 	}
 }
 

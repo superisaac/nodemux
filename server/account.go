@@ -46,7 +46,10 @@ func NewAccHandler(rootCtx context.Context, next http.Handler) *AccHandler {
 	}
 }
 
-func (self *AccHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+type accountKeyType int
+var accountKey accountKeyType
+
+func (h *AccHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	matches := accRegex.FindStringSubmatch(r.URL.Path)
 	if len(matches) < 5 {
 		w.WriteHeader(404)
@@ -56,18 +59,17 @@ func (self *AccHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	account := matches[2]
 	namespace := matches[3]
 	network := matches[4]
-	serverCfg := ServerConfigFromContext(self.rootCtx)
+	serverCfg := ServerConfigFromContext(h.rootCtx)
 	if acccfg, ok := serverCfg.Accounts[account]; ok {
 		acc := NewAccFromConfig(account, acccfg)
 		acc.Chain = nodemuxcore.ChainRef{
 			Namespace: namespace,
 			Network:   network,
 		}
-		ctx := context.WithValue(r.Context(), "account", acc)
-		self.next.ServeHTTP(w, r.WithContext(ctx))
+		ctx := context.WithValue(r.Context(), accountKey, acc)
+		h.next.ServeHTTP(w, r.WithContext(ctx))
 		return
 	}
 	w.WriteHeader(404)
 	w.Write([]byte("not found"))
-	return
 }

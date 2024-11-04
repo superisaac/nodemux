@@ -24,8 +24,8 @@ func NewRESTRelayer(rootCtx context.Context) *RESTRelayer {
 	}
 }
 
-func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	acc := self.acc
+func (h *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	acc := h.acc
 	method := r.URL.Path
 	if acc == nil {
 		acc = AccFromContext(r.Context())
@@ -35,7 +35,7 @@ func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		matches := self.regex.FindStringSubmatch(r.URL.Path)
+		matches := h.regex.FindStringSubmatch(r.URL.Path)
 		if len(matches) < 3 {
 			requestLog(r).Warnf("http url pattern failed")
 			w.WriteHeader(404)
@@ -65,7 +65,7 @@ func (self *RESTRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
 	}
 
-	err := delegator.DelegateREST(self.rootCtx, m, acc.Chain, method, w, r)
+	err := delegator.DelegateREST(h.rootCtx, m, acc.Chain, method, w, r)
 	if err != nil {
 		requestLog(r).Warnf("error delegate rest %s", err)
 		w.WriteHeader(500)

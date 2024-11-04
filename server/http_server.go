@@ -40,7 +40,7 @@ func startMetricsServer(rootCtx context.Context, serverCfg *ServerConfig) {
 	}
 }
 
-func adminHandler(rootCtx context.Context, authCfg *jsoffnet.AuthConfig, next http.Handler) http.Handler {
+func adminHandler(_ context.Context, authCfg *jsoffnet.AuthConfig, next http.Handler) http.Handler {
 	h1 := jsoffnet.NewAuthHandler(authCfg, next)
 	return h1
 }

@@ -60,12 +60,12 @@ func NewJSONRPCWSRelayer(rootCtx context.Context) *JSONRPCWSRelayer {
 	return relayer
 }
 
-func (self *JSONRPCWSRelayer) onClose(s jsoffnet.RPCSession) {
+func (h *JSONRPCWSRelayer) onClose(s jsoffnet.RPCSession) {
 	delete(wsPairs, s.SessionID())
 	metricsWSPairsCount.Set(float64(len(wsPairs)))
 }
 
-func (self *JSONRPCWSRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}, error) {
+func (h *JSONRPCWSRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}, error) {
 	r := req.HttpRequest()
 	msg := req.Msg()
 
@@ -74,7 +74,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}
 		return nil, errors.New("request data is not websocket conn")
 	}
 
-	acc := self.acc
+	acc := h.acc
 	if acc == nil {
 		acc = AccFromContext(r.Context())
 		if acc == nil {
@@ -89,7 +89,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}
 
 	if destWs, ok := wsPairs[session.SessionID()]; ok {
 		// a existing dest ws conn found, relay the message to it
-		err := destWs.Send(self.rootCtx, msg)
+		err := destWs.Send(h.rootCtx, msg)
 		return nil, err
 	} else if ep, found := m.SelectWebsocketEndpoint(acc.Chain, "", -2); found {
 		// the first time a websocket connection connects
@@ -104,11 +104,11 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}
 			session.Send(m)
 		})
 		destWs.OnClose(func() {
-			self.onClose(session)
+			h.onClose(session)
 		})
 		wsPairs[session.SessionID()] = destWs
 		metricsWSPairsCount.Set(float64(len(wsPairs)))
-		err = destWs.Send(self.rootCtx, msg)
+		err = destWs.Send(h.rootCtx, msg)
 		return nil, err
 	} else if msg.IsRequest() {
 		// if no dest websocket connection is available and msg is a request message
@@ -122,7 +122,7 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}
 			}
 		}
 
-		resmsg, err := delegator.DelegateRPC(self.rootCtx, m, acc.Chain, reqmsg, r)
+		resmsg, err := delegator.DelegateRPC(h.rootCtx, m, acc.Chain, reqmsg, r)
 		return resmsg, err
 	} else {
 		// the last way, return back
@@ -133,6 +133,6 @@ func (self *JSONRPCWSRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}
 	}
 }
 
-func (self *JSONRPCWSRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	self.rpcHandler.ServeHTTP(w, r)
+func (h *JSONRPCWSRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.rpcHandler.ServeHTTP(w, r)
 } // JSONRPCWSRelayer.ServeHTTP

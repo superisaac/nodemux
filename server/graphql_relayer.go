@@ -21,8 +21,8 @@ func NewGraphQLRelayer(rootCtx context.Context) *GraphQLRelayer {
 	}
 }
 
-func (self *GraphQLRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	acc := self.acc
+func (h *GraphQLRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	acc := h.acc
 	path := "/"
 	if acc == nil {
 		acc = AccFromContext(r.Context())
@@ -41,7 +41,7 @@ func (self *GraphQLRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := delegator.DelegateGraphQL(self.rootCtx, m, acc.Chain, path, w, r)
+	err := delegator.DelegateGraphQL(h.rootCtx, m, acc.Chain, path, w, r)
 	if err != nil {
 		requestLog(r).Warnf("error delegate graphql %s", err)
 		w.WriteHeader(500)

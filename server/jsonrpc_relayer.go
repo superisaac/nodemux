@@ -30,10 +30,10 @@ func NewJSONRPCRelayer(rootCtx context.Context) *JSONRPCRelayer {
 	return relayer
 }
 
-func (self *JSONRPCRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}, error) {
+func (h *JSONRPCRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}, error) {
 	r := req.HttpRequest()
 	msg := req.Msg()
-	acc := self.acc
+	acc := h.acc
 
 	if acc == nil {
 		acc = AccFromContext(r.Context())
@@ -64,9 +64,9 @@ func (self *JSONRPCRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}, 
 	}
 
 	start := time.Now()
-	resmsg, err := delegator.DelegateRPC(self.rootCtx, m, acc.Chain, reqmsg, r)
+	resmsg, err := delegator.DelegateRPC(h.rootCtx, m, acc.Chain, reqmsg, r)
 	// metrics the call time
-	delta := time.Now().Sub(start)
+	delta := time.Since(start)
 
 	acc.Chain.Log().WithFields(log.Fields{
 		"method":      reqmsg.Method,
@@ -76,6 +76,6 @@ func (self *JSONRPCRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}, 
 	return resmsg, err
 }
 
-func (self *JSONRPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	self.rpcHandler.ServeHTTP(w, r)
+func (h *JSONRPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.rpcHandler.ServeHTTP(w, r)
 } // JSONRPCRelayer.ServeHTTP
