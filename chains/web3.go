@@ -27,6 +27,7 @@ var (
 		"eth_protocolVersion": true,
 		"eth_syncing":         true,
 		"eth_coinbase":        true,
+		"eth_chainId":         true,
 
 		"eth_blockNumber":                         true,
 		"eth_getBlockByNumber":                    true,

@@ -47,6 +47,7 @@ func NewAccHandler(rootCtx context.Context, next http.Handler) *AccHandler {
 }
 
 type accountKeyType int
+
 var accountKey accountKeyType
 
 func (h *AccHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

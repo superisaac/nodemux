@@ -53,7 +53,7 @@ func (handler *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		// acceptableMediaTypes := []contenttype.MediaType{
 		// 	contenttype.NewMediaType("application/json"),
 		// }
-		
+
 		// if _, _, err := contenttype.GetAcceptableMediaType(r, acceptableMediaTypes); err == nil {
 		// 	w.Header().Set("Content-Type", "application/json")
 		// 	w.WriteHeader(429)

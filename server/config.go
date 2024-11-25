@@ -66,6 +66,7 @@ func NewServerConfig() *ServerConfig {
 }
 
 type serverConfigKeyType int
+
 var serverConfigKey serverConfigKeyType
 
 func ServerConfigFromContext(ctx context.Context) *ServerConfig {
