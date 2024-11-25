@@ -22,11 +22,7 @@ func NewRatelimitHandler(rootCtx context.Context, next http.Handler) *RatelimitH
 }
 
 func (handler *RatelimitHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	acc := AccFromContextOrNil(r.Context())
-	if acc == nil {
-		handler.next.ServeHTTP(w, r)
-		return
-	}
+	acc := AccFromContext(r.Context())
 	var ratelimit RatelimitConfig
 	var accName string
 	if acc != nil {

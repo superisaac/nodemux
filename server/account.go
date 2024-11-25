@@ -7,6 +7,10 @@ import (
 	"regexp"
 )
 
+type accountKeyType int
+
+var accountKey accountKeyType
+
 var (
 	accRegex = regexp.MustCompile(`^/(jsonrpc\-ws|jsonrpc|rest|graphql)/([^/]+)/([^/]+)/([^/]+)`)
 )
@@ -25,7 +29,7 @@ func NewAccFromConfig(name string, cfg AccountConfig) *Acc {
 }
 
 func AccFromContext(ctx context.Context) *Acc {
-	if v := ctx.Value("account"); v != nil {
+	if v := ctx.Value(accountKey); v != nil {
 		if acc, ok := v.(*Acc); ok {
 			return acc
 		}
@@ -34,14 +38,14 @@ func AccFromContext(ctx context.Context) *Acc {
 	panic("context does not have account")
 }
 
-func AccFromContextOrNil(ctx context.Context) *Acc {
-	if v := ctx.Value("account"); v != nil {
-		if acc, ok := v.(*Acc); ok {
-			return acc
-		}
-	}
-	return nil
-}
+// func AccFromContextOrNil(ctx context.Context) *Acc {
+// 	if v := ctx.Value("account"); v != nil {
+// 		if acc, ok := v.(*Acc); ok {
+// 			return acc
+// 		}
+// 	}
+// 	return nil
+// }
 
 type AccHandler struct {
 	rootCtx context.Context
@@ -54,10 +58,6 @@ func NewAccHandler(rootCtx context.Context, next http.Handler) *AccHandler {
 		next:    next,
 	}
 }
-
-type accountKeyType int
-
-var accountKey accountKeyType
 
 func (h *AccHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	matches := accRegex.FindStringSubmatch(r.URL.Path)
