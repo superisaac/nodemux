@@ -34,6 +34,15 @@ func AccFromContext(ctx context.Context) *Acc {
 	panic("context does not have account")
 }
 
+func AccFromContextOrNil(ctx context.Context) *Acc {
+	if v := ctx.Value("account"); v != nil {
+		if acc, ok := v.(*Acc); ok {
+			return acc
+		}
+	}
+	return nil
+}
+
 type AccHandler struct {
 	rootCtx context.Context
 	next    http.Handler
