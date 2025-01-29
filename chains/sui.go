@@ -78,8 +78,10 @@ func (c *SuiChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiple
 
 	latestTx := txl.Data[0]
 
+	seconds := 2 // one dummy block per 2 seconds
+
 	block := &nodemuxcore.Block{
-		Height: latestTx.TimestampMs / (1000 * 5), // one dummy block per 5 seconds
+		Height: latestTx.TimestampMs / (1000 * seconds),
 		//Hash:   bt.Hash,
 	}
 	return block, nil
