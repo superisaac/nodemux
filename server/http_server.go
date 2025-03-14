@@ -76,6 +76,11 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		adminAuth,
 		NewAdminHandler()))
 
+	serverMux.Handle("/jsonrpc/admin/", adminHandler(
+		rootCtx,
+		adminAuth,
+		NewAdminHandler()))
+
 	serverMux.Handle("/jsonrpc/", relayHandler(
 		rootCtx,
 		serverCfg.Auth,
