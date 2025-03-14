@@ -71,15 +71,13 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		serverCfg.Metrics.Auth,
 		promhttp.Handler()))
 
-	serverMux.Handle("/admin", adminHandler(
-		rootCtx,
-		adminAuth,
-		NewAdminHandler()))
-
-	serverMux.Handle("/jsonrpc/admin/", adminHandler(
-		rootCtx,
-		adminAuth,
-		NewAdminHandler()))
+	if adminAuth != nil {
+		// admin Auth must be set before the request of /nodemux
+		serverMux.Handle("/nodemux", adminHandler(
+			rootCtx,
+			adminAuth,
+			NewAdminHandler()))
+	}
 
 	serverMux.Handle("/jsonrpc/", relayHandler(
 		rootCtx,

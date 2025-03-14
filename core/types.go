@@ -57,6 +57,7 @@ type Endpoint struct {
 
 type EndpointInfo struct {
 	Name          string `json:"name"`
+	URLDigest     string `json:"urldigest"`
 	Chain         string `json:"chain"`
 	Healthy       bool   `json:"healthy"`
 	Blockhead     *Block `json:"head,omitempty"`

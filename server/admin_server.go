@@ -16,7 +16,7 @@ type rpcresultInfo struct {
 
 func NewAdminHandler() *jsoffnet.Http1Handler {
 	actor := jsoffnet.NewActor()
-	actor.OnTyped("nodemux_listEndpoints", func(request *jsoffnet.RPCRequest) ([]nodemuxcore.EndpointInfo, error) {
+	actor.OnTyped("nodemux_listEndpoints", func() ([]nodemuxcore.EndpointInfo, error) {
 		m := nodemuxcore.GetMultiplexer()
 		infos := m.ListEndpointInfos()
 
@@ -27,7 +27,7 @@ func NewAdminHandler() *jsoffnet.Http1Handler {
 		return infos, nil
 	})
 
-	actor.OnTyped("nodemux_callAll", func(request *jsoffnet.RPCRequest, chainRepr string, method string, params any) ([]rpcresultInfo, error) {
+	actor.OnTypedRequest("nodemux_callAll", func(request *jsoffnet.RPCRequest, chainRepr string, method string, params any) ([]rpcresultInfo, error) {
 		m := nodemuxcore.GetMultiplexer()
 
 		chain, err := nodemuxcore.ParseChain(chainRepr)

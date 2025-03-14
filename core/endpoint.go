@@ -333,6 +333,7 @@ func (ep *Endpoint) GetClientVersion(ctx context.Context) {
 func (ep Endpoint) Info() EndpointInfo {
 	return EndpointInfo{
 		Name:          ep.Name,
+		URLDigest:     ep.URLDigest,
 		Chain:         ep.Chain.String(),
 		Healthy:       ep.Healthy,
 		Blockhead:     ep.Blockhead,
