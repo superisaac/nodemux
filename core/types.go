@@ -36,6 +36,7 @@ type Endpoint struct {
 	// configured items
 	Config      EndpointConfig
 	Name        string
+	URLDigest   string
 	Chain       ChainRef
 	SkipMethods map[string]bool
 

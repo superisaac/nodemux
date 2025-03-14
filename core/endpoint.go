@@ -3,6 +3,8 @@ package nodemuxcore
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,9 +25,15 @@ func NewEndpoint(name string, epcfg EndpointConfig) *Endpoint {
 	if err != nil {
 		panic(err)
 	}
+	hash := sha256.New()
+	hash.Write([]byte(epcfg.Url))
+	checksum := hash.Sum(nil)
+	urlDigest := hex.EncodeToString(checksum)
+
 	ep := &Endpoint{
 		Config:    epcfg,
 		Name:      name,
+		URLDigest: urlDigest,
 		Chain:     chain,
 		Healthy:   true,
 		connected: true}

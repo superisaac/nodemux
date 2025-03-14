@@ -8,9 +8,10 @@ import (
 )
 
 type rpcresultInfo struct {
-	Endpoint string `json:"endpoint"`
-	Response any    `json:"response"`
-	Error    string `json:""`
+	Endpoint  string `json:"endpoint"`
+	URLDigest string `json:"urldigest"`
+	Response  any    `json:"response"`
+	Error     string `json:""`
 }
 
 func NewAdminHandler() *jsoffnet.Http1Handler {
@@ -39,7 +40,8 @@ func NewAdminHandler() *jsoffnet.Http1Handler {
 		resInfos := make([]rpcresultInfo, 0)
 		for _, res := range results {
 			info := rpcresultInfo{
-				Endpoint: res.Endpoint.Name,
+				Endpoint:  res.Endpoint.Name,
+				URLDigest: res.Endpoint.URLDigest,
 			}
 
 			if res.Response != nil {

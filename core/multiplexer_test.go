@@ -39,6 +39,9 @@ func TestWeight(t *testing.T) {
 		Weight: 60, // weight range [150, 210)
 	})
 
+	assert.Equal(ep2.URLDigest, "a7e878d53f921f31594cecb0b7b78a92d6f44fd981583a5ebb900d019589548e") // sha256 digest of URL
+	assert.Equal(ep1.URLDigest, ep2.URLDigest)
+
 	eps := NewEndpointSet()
 	eps.Add(ep1)
 	eps.Add(ep2)
