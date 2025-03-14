@@ -11,7 +11,7 @@ type rpcresultInfo struct {
 	Endpoint  string `json:"endpoint"`
 	URLDigest string `json:"urldigest"`
 	Response  any    `json:"response"`
-	Error     string `json:""`
+	Error     string `json:"error"`
 }
 
 func NewAdminHandler() *jsoffnet.Http1Handler {
