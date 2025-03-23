@@ -132,6 +132,25 @@ func (m *Multiplexer) AllHealthyEndpoints(chain ChainRef, method string, height 
 	return nil
 }
 
+func (m *Multiplexer) SelectEndpointByName(chain ChainRef, name string, method string) *Endpoint {
+	if endpoints, ok := m.chainIndex[chain]; ok {
+		for _, ep := range endpoints.items {
+			if ep.Available(method, 0) && ep.Name == name {
+				return ep
+			}
+		}
+	}
+	return nil
+}
+
+func (m *Multiplexer) SelectEndpointFromHttp(chain ChainRef, method string, r *http.Request) *Endpoint {
+	selectNode := r.Header.Get("X-Nodemux-Select")
+	if selectNode == "" {
+		return nil
+	}
+	return m.SelectEndpointByName(chain, selectNode, method)
+}
+
 func (m *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightSpec int) (*Endpoint, bool) {
 	if endpoints, ok := m.chainIndex[chain]; ok {
 		height := heightSpec
@@ -226,6 +245,17 @@ func (m *Multiplexer) BroadcastRPC(
 	return results
 }
 
+func (m *Multiplexer) CallEndpointRPC(rootCtx context.Context, ep *Endpoint, reqmsg *jsoff.RequestMessage) (jsoff.Message, error) {
+	resmsg, err := ep.CallRPC(rootCtx, reqmsg)
+	if err != nil {
+		return resmsg, err
+	}
+	if responseMsg, ok := resmsg.(jsoff.ResponseMessage); ok {
+		responseMsg.ResponseHeader().Set("X-Real-Endpoint", ep.Name)
+	}
+	return resmsg, err
+}
+
 func (m *Multiplexer) DefaultRelayRPC(
 	rootCtx context.Context,
 	chain ChainRef,
@@ -239,14 +269,15 @@ func (m *Multiplexer) DefaultRelayRPC(
 		}
 		return ErrNotAvailable.ToMessage(reqmsg), nil
 	}
-	resmsg, err := ep.CallRPC(rootCtx, reqmsg)
-	if err != nil {
-		return resmsg, err
-	}
-	if responseMsg, ok := resmsg.(jsoff.ResponseMessage); ok {
-		responseMsg.ResponseHeader().Set("X-Real-Endpoint", ep.Name)
-	}
-	return resmsg, err
+	return m.CallEndpointRPC(rootCtx, ep, reqmsg)
+	// resmsg, err := ep.CallRPC(rootCtx, reqmsg)
+	// if err != nil {
+	// 	return resmsg, err
+	// }
+	// if responseMsg, ok := resmsg.(jsoff.ResponseMessage); ok {
+	// 	responseMsg.ResponseHeader().Set("X-Real-Endpoint", ep.Name)
+	// }
+	// return resmsg, err
 }
 
 // Pipe the request to response

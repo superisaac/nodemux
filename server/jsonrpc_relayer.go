@@ -40,7 +40,7 @@ func (h *JSONRPCRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}, err
 		if acc == nil {
 			return nil, jsoffnet.SimpleResponse{
 				Code: 404,
-				Body: []byte("acc not found"),
+				Body: []byte("account not found"),
 			}
 		}
 	}
@@ -64,16 +64,25 @@ func (h *JSONRPCRelayer) delegateRPC(req *jsoffnet.RPCRequest) (interface{}, err
 	}
 
 	start := time.Now()
-	resmsg, err := delegator.DelegateRPC(h.rootCtx, m, acc.Chain, reqmsg, r)
-	// metrics the call time
-	delta := time.Since(start)
-
-	acc.Chain.Log().WithFields(log.Fields{
-		"method":      reqmsg.Method,
-		"timeSpentMS": delta.Milliseconds(),
-		"account":     acc.Name,
-	}).Info("delegate jsonrpc")
-	return resmsg, err
+	if ep := m.SelectEndpointFromHttp(acc.Chain, reqmsg.Method, r); ep != nil {
+		resmsg, err := m.CallEndpointRPC(h.rootCtx, ep, reqmsg)
+		acc.Chain.Log().WithFields(log.Fields{
+			"method":      reqmsg.Method,
+			"timeSpentMS": time.Since(start).Milliseconds(),
+			"account":     acc.Name,
+			"through":     ep.Name,
+		}).Info("direct delegate jsonrpc")
+		return resmsg, err
+	} else {
+		resmsg, err := delegator.DelegateRPC(h.rootCtx, m, acc.Chain, reqmsg, r)
+		// metrics the call time
+		acc.Chain.Log().WithFields(log.Fields{
+			"method":      reqmsg.Method,
+			"timeSpentMS": time.Since(start).Milliseconds(),
+			"account":     acc.Name,
+		}).Info("delegate jsonrpc")
+		return resmsg, err
+	}
 }
 
 func (h *JSONRPCRelayer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
