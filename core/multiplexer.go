@@ -175,6 +175,24 @@ func (m *Multiplexer) SelectOverHeight(chain ChainRef, method string, heightSpec
 	return nil, false
 }
 
+func (m *Multiplexer) RequestCacheKeys(chain ChainRef, reqmsg *jsoff.RequestMessage, prefix string, heightSpec int) []string {
+	if endpoints, ok := m.chainIndex[chain]; ok {
+		height := heightSpec
+		if heightSpec <= 0 {
+			height = endpoints.maxTipHeight + heightSpec
+		}
+
+		var cacheKeys []string
+		for _, ep := range endpoints.items {
+			if ep.Available(reqmsg.Method, height) {
+				cacheKeys = append(cacheKeys, reqmsg.CacheKey(fmt.Sprintf("%s%s/", prefix, ep.Name)))
+			}
+		}
+		return cacheKeys
+	}
+	return nil
+}
+
 func (m *Multiplexer) SelectWebsocketEndpoint(chain ChainRef, method string, heightSpec int) (ep1 *Endpoint, found bool) {
 	if endpoints, ok := m.chainIndex[chain]; ok {
 		height := heightSpec
@@ -270,14 +288,23 @@ func (m *Multiplexer) DefaultRelayRPC(
 		return ErrNotAvailable.ToMessage(reqmsg), nil
 	}
 	return m.CallEndpointRPC(rootCtx, ep, reqmsg)
-	// resmsg, err := ep.CallRPC(rootCtx, reqmsg)
-	// if err != nil {
-	// 	return resmsg, err
-	// }
-	// if responseMsg, ok := resmsg.(jsoff.ResponseMessage); ok {
-	// 	responseMsg.ResponseHeader().Set("X-Real-Endpoint", ep.Name)
-	// }
-	// return resmsg, err
+}
+
+func (m *Multiplexer) DefaultRelayRPCTakingEndpoint(
+	rootCtx context.Context,
+	chain ChainRef,
+	reqmsg *jsoff.RequestMessage,
+	overHeight int) (jsoff.Message, *Endpoint, error) {
+	ep, found := m.SelectOverHeight(chain, reqmsg.Method, overHeight)
+	if !found {
+		if overHeight > 0 {
+			// if not find then relay to any healthy endpoint
+			return m.DefaultRelayRPCTakingEndpoint(rootCtx, chain, reqmsg, -2)
+		}
+		return ErrNotAvailable.ToMessage(reqmsg), nil, nil
+	}
+	msg, err := m.CallEndpointRPC(rootCtx, ep, reqmsg)
+	return msg, ep, err
 }
 
 // Pipe the request to response

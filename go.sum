@@ -435,6 +435,8 @@ github.com/superisaac/jsoff v0.6.3 h1:ic3jwqpyPPnwfqJg4a/GX2lBVcaO+P73dNiDZYWlE4
 github.com/superisaac/jsoff v0.6.3/go.mod h1:YEc9hn9MgERgdDxnarkhqt1hrtfV0LJZgKWa+uG/HHs=
 github.com/superisaac/jsoff v0.6.4 h1:uFoR3lamHqWdOfwXR+hkT+SA7IUXdsGgn8X4V9ibN+s=
 github.com/superisaac/jsoff v0.6.4/go.mod h1:YEc9hn9MgERgdDxnarkhqt1hrtfV0LJZgKWa+uG/HHs=
+github.com/superisaac/jsoff v0.6.10 h1:+zuXpU4ui9UphlBw0El8JyCXDHdhiTSVa5JCwDPVuIY=
+github.com/superisaac/jsoff v0.6.10/go.mod h1:YEc9hn9MgERgdDxnarkhqt1hrtfV0LJZgKWa+uG/HHs=
 github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7/go.mod h1:q4W45IWZaF22tdD+VEXcAWRA037jwmWEB5VWYORlTpc=
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tklauser/go-sysconf v0.3.5/go.mod h1:MkWzOF4RMCshBAMXuhXJs64Rte09mITnppBXY/rYEFI=

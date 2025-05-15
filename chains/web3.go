@@ -4,80 +4,93 @@ package chains
 
 import (
 	"context"
+	"net/http"
+	"strings"
+	"time"
+	// "fmt"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/superisaac/jsoff"
 	"github.com/superisaac/jsoff/net"
 	"github.com/superisaac/nodemux/core"
-	"net/http"
-	"time"
 )
 
 var (
-	// refer to https://eth.wiki/json-rpc/API
-	allowedMethods map[string]bool = map[string]bool{
-		"web3_clientVersion": true,
-		"web3_sha3":          true,
+	// // refer to https://eth.wiki/json-rpc/API
+	// allowedMethods map[string]bool = map[string]bool{
+	// 	"web3_clientVersion": true,
+	// 	"web3_sha3":          true,
 
-		"net_version":   true,
-		"net_peerCount": true,
-		"net_listening": true,
+	// 	"net_version":   true,
+	// 	"net_peerCount": true,
+	// 	"net_listening": true,
 
-		"eth_gasPrice":        true,
-		"eth_estimateGas":     true,
-		"eth_protocolVersion": true,
-		"eth_syncing":         true,
-		"eth_coinbase":        true,
-		"eth_chainId":         true,
+	// 	"eth_gasPrice":        true,
+	// 	"eth_estimateGas":     true,
+	// 	"eth_protocolVersion": true,
+	// 	"eth_syncing":         true,
+	// 	"eth_coinbase":        true,
+	// 	"eth_chainId":         true,
 
-		"eth_blockNumber":                         true,
-		"eth_getBlockByNumber":                    true,
-		"eth_getBlockByHash":                      true,
-		"eth_subscribe":                           true,
-		"eth_unsubscribe":                         true,
-		"eth_getTransactionByHash":                true,
-		"eth_getTransactionCount":                 true,
-		"eth_getTransactionByBlockHashAndIndex":   true,
-		"eth_getTransactionByBlockNumberAndIndex": true,
-		"eth_getTransactionReceipt":               true,
-		"eth_getUncleByBlockHashAndIndex":         true,
-		"eth_getUncleByBlockNumberAndIndex":       true,
+	// 	"eth_blockNumber":                         true,
+	// 	"eth_getBlockByNumber":                    true,
+	// 	"eth_getBlockByHash":                      true,
+	// 	"eth_subscribe":                           true,
+	// 	"eth_unsubscribe":                         true,
+	// 	"eth_getTransactionByHash":                true,
+	// 	"eth_getTransactionCount":                 true,
+	// 	"eth_getTransactionByBlockHashAndIndex":   true,
+	// 	"eth_getTransactionByBlockNumberAndIndex": true,
+	// 	"eth_getTransactionReceipt":               true,
+	// 	"eth_getUncleByBlockHashAndIndex":         true,
+	// 	"eth_getUncleByBlockNumberAndIndex":       true,
 
-		"eth_getBalance":         true,
-		"eth_getStorageAt":       true,
-		"eth_call":               true,
-		"eth_getCode":            true,
-		"eth_sendRawTransaction": true,
-		"eth_getLogs":            true,
+	// 	"eth_getBalance":         true,
+	// 	"eth_getStorageAt":       true,
+	// 	"eth_call":               true,
+	// 	"eth_getCode":            true,
+	// 	"eth_sendRawTransaction": true,
+	// 	"eth_getLogs":            true,
 
-		// wallet/account related RPCs are not supported by default
+	// 	// wallet/account related RPCs are not supported by default
 
-		"eth_getCompilers":    true,
-		"eth_compileLLL":      true,
-		"eth_compileSolidity": true,
-		"eth_compileSerpent":  true,
+	// 	"eth_getCompilers":    true,
+	// 	"eth_compileLLL":      true,
+	// 	"eth_compileSolidity": true,
+	// 	"eth_compileSerpent":  true,
 
-		// mining
-		"eth_mining":         true,
-		"eth_hashrate":       true,
-		"eth_getWork":        true,
-		"eth_submitWork":     true,
-		"eth_submitHashrate": true,
+	// 	// mining
+	// 	"eth_mining":         true,
+	// 	"eth_hashrate":       true,
+	// 	"eth_getWork":        true,
+	// 	"eth_submitWork":     true,
+	// 	"eth_submitHashrate": true,
 
-		// filter related RPCs are not supported by default
+	// 	// filter related RPCs are not supported by default
 
-		"parity_getBlockReceipts": true,
+	// 	"parity_getBlockReceipts": true,
 
-		"debug_traceTransaction": true,
+	// 	"debug_traceTransaction": true,
 
-		// trace
-		"trace_call":                    true,
-		"trace_callMany":                true,
-		"trace_rawTransaction":          true,
-		"trace_replayBlockTransactions": true,
-		"trace_replayTransaction":       true,
-		"trace_block":                   true,
-		"trace_get":                     true,
-		"trace_transaction":             true,
+	// 	// trace
+	// 	"trace_call":                    true,
+	// 	"trace_callMany":                true,
+	// 	"trace_rawTransaction":          true,
+	// 	"trace_replayBlockTransactions": true,
+	// 	"trace_replayTransaction":       true,
+	// 	"trace_block":                   true,
+	// 	"trace_get":                     true,
+	// 	"trace_transaction":             true,
+	// }
+
+	web3CachableMethods map[string]time.Duration = map[string]time.Duration{
+		"eth_getBlockByNumber":                    time.Second * 60,
+		"eth_getBlockByHash":                      time.Second * 600,
+		"eth_getTransactionByHash":                time.Second * 600,
+		"eth_getTransactionCount":                 time.Second * 5,
+		"eth_getTransactionByBlockHashAndIndex":   time.Second * 30,
+		"eth_getTransactionByBlockNumberAndIndex": time.Second * 30,
+		"eth_getTransactionReceipt":               time.Second * 10,
 	}
 )
 
@@ -146,7 +159,7 @@ func (c Web3Chain) StartSync(context context.Context, m *nodemuxcore.Multiplexer
 func (c *Web3Chain) GetBlockhead(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsoff.NewRequestMessage(
 		jsoff.NewUuid(), "eth_getBlockByNumber",
-		[]interface{}{"latest", false})
+		[]any{"latest", false})
 
 	var bt web3Block
 	err := ep.UnwrapCallRPC(context, reqmsg, &bt)
@@ -209,59 +222,79 @@ func (c *Web3Chain) sendRawTransaction(ctx context.Context, m *nodemuxcore.Multi
 	return nil, resMsgs[0].Err
 }
 
-func (c *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
-	if allowed, ok := allowedMethods[reqmsg.Method]; !ok || !allowed {
-		reqmsg.Log().Warnf("relayer method not supported %s", reqmsg.Method)
-		return jsoff.ErrMethodNotFound.ToMessage(reqmsg), nil
+func (c *Web3Chain) getBlockByNumber(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
+	useCache := true
+	cacheExpire := time.Second * 30
+	heightSpec := -2
+	if h, ok := c.findBlockHeight(reqmsg); ok {
+		heightSpec = h
 	}
+
+	if heightSpec <= 0 {
+		cacheExpire = time.Second * 4
+	}
+
+	retmsg, ep, err := m.DefaultRelayRPCTakingEndpoint(ctx, chain, reqmsg, heightSpec)
+	//fmt.Printf("ret %#v, %#v, %#v\n", retmsg, ep, err)
+	if err == nil && ep != nil && useCache && retmsg.IsResult() {
+		jsonrpcCacheUpdate(ctx, m, ep, chain, reqmsg, retmsg.(*jsoff.ResultMessage), cacheExpire)
+	}
+	return retmsg, err
+}
+
+func (c *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
+	// if allowed, ok := allowedMethods[reqmsg.Method]; !ok || !allowed {
+	// 	reqmsg.Log().Warnf("relayer method not supported %s", reqmsg.Method)
+	// 	return jsoff.ErrMethodNotFound.ToMessage(reqmsg), nil
+	// }
 
 	if reqmsg.Method == "web3_clientVersion" {
 		return jsoff.NewResultMessage(reqmsg, "Web3/1.0.0"), nil
 	}
 
-	//useCache := reqmsg.Method == "eth_getTransactionByHash" || reqmsg.Method == "eth_getTransactionReceipt"
-	useCache, resmsgFromCache := jsonrpcCacheFetchForMethods(
-		ctx, m, chain, reqmsg,
-		"eth_getTransactionByHash",
-		//"eth_getTransactionReceipt",
-	)
+	useCache := false
+	cacheExpire := time.Second * 60
+	if exp, ok := web3CachableMethods[reqmsg.Method]; ok {
+		useCache = true
+		cacheExpire = exp
+		if resmsgFromCache, found := jsonrpcCacheFetch(ctx, m, chain, reqmsg); found {
+			reqmsg.Log().Infof("get result from cache")
+			return resmsgFromCache, nil
+		}
+	}
 
-	if resmsgFromCache != nil {
-		return resmsgFromCache, nil
+	if reqmsg.Method == "eth_getBlockByNumber" {
+		return c.getBlockByNumber(ctx, m, chain, reqmsg, r)
 	}
 
 	if endpoint, ok := presenceCacheMatchRequest(
 		ctx, m, chain, reqmsg,
 		"eth_getTransactionByHash",
-	//"eth_getTransactionReceipt",
+		"eth_getTransactionReceipt",
 	); ok {
 		retmsg, err := endpoint.CallRPC(ctx, reqmsg)
 		if err == nil && useCache && retmsg.IsResult() {
-			jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jsoff.ResultMessage), time.Second*600)
+			jsonrpcCacheUpdate(ctx, m, endpoint, chain, reqmsg, retmsg.(*jsoff.ResultMessage), cacheExpire)
 		}
 		return retmsg, nil
 	}
 
 	if reqmsg.Method == "eth_sendRawTransaction" {
+		// broadcast raw transactions to all endpoints
 		return c.sendRawTransaction(ctx, m, chain, reqmsg)
-	} else if reqmsg.Method == "eth_getBlockByNumber" {
-		if h, ok := c.findBlockHeight(reqmsg); ok {
-			return m.DefaultRelayRPC(ctx, chain, reqmsg, h)
-		}
-	} else if reqmsg.Method == "eth_getTransactionReceipt" {
-		retmsg, err := m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
-		if err != nil {
-			return retmsg, err
-		} else if respMsg, ok := retmsg.(*jsoff.ResultMessage); ok && respMsg.Result == nil {
-			viaEp := respMsg.ResponseHeader().Get("X-Real-Endpoint")
-			respMsg.Log().Infof("null transaction receipt %s", viaEp)
-		}
-		return retmsg, err
 	}
-	//return m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
-	retmsg, err := m.DefaultRelayRPC(ctx, chain, reqmsg, -2)
+
+	heightSpec := -2
+
+	retmsg, ep, err := m.DefaultRelayRPCTakingEndpoint(ctx, chain, reqmsg, heightSpec)
 	if err == nil && useCache && retmsg.IsResult() {
-		jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jsoff.ResultMessage), time.Second*600)
+		jsonrpcCacheUpdate(ctx, m, ep, chain, reqmsg, retmsg.(*jsoff.ResultMessage), cacheExpire)
+	}
+	if err == nil && reqmsg.Method == "eth_getTransactionReceipt" {
+		if respMsg, ok := retmsg.(*jsoff.ResultMessage); ok && respMsg.Result == nil {
+			// viaEp := respMsg.ResponseHeader().Get("X-Real-Endpoint")
+			respMsg.Log().Warnf("null transaction receipt %s", ep.Name)
+		}
 	}
 	return retmsg, err
 }
@@ -272,12 +305,16 @@ func (c *Web3Chain) findBlockHeight(reqmsg *jsoff.RequestMessage) (int, bool) {
 		Height string
 	}
 	if err := jsoff.DecodeParams(reqmsg.Params, &bh); err == nil && bh.Height != "" {
-		if bh.Height == "latest" || bh.Height == "pending" {
+		if strings.HasPrefix(bh.Height, "0x") {
+			if height, err := hexutil.DecodeUint64(bh.Height); err == nil {
+				return int(height), true
+			}
+		} else {
 			return 0, true
 		}
-		if height, err := hexutil.DecodeUint64(bh.Height); err == nil {
-			return int(height), true
-		}
+		// if bh.Height == "latest" || bh.Height == "pending" {
+		// 	return 0, true
+		// }
 	}
 	return 0, false
 }
@@ -370,7 +407,7 @@ func (c *Web3Chain) connectAndSub(rootCtx context.Context, wsClient *jsoffnet.WS
 	var subscribeToken string
 	submsg := jsoff.NewRequestMessage(
 		jsoff.NewUuid(), "eth_subscribe",
-		[]interface{}{"newHeads"})
+		[]any{"newHeads"})
 
 	err = ep.UnwrapCallRPC(connectCtx, submsg, &subscribeToken)
 	if err != nil {

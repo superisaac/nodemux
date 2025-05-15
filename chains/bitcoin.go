@@ -32,6 +32,21 @@ type bitcoinNetworkInfo struct {
 type BitcoinChain struct {
 }
 
+var (
+	bitcoinCachableMethods map[string]time.Duration = map[string]time.Duration{
+		"gettransaction":       time.Second * 300,
+		"getrawtransaction":    time.Second * 600,
+		"decoderawtransaction": time.Second * 600,
+		"getchaintips":         time.Second * 3,
+		"getblockchaininfo":    time.Second * 3,
+		"getnetworkinfo":       time.Second * 5,
+		"getblock":             time.Second * 10,
+		"getblockheader":       time.Second * 10,
+		"getblockhash":         time.Second * 10,
+		"getblockcount":        time.Second * 5,
+	}
+)
+
 func NewBitcoinChain() *BitcoinChain {
 	return &BitcoinChain{}
 }
@@ -115,15 +130,26 @@ func (c *BitcoinChain) GetBlockhead(ctx context.Context, m *nodemuxcore.Multiple
 
 func (c *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	//useCache := reqmsg.Method == "gettransaction" || reqmsg.Method == "getrawtransaction" || reqmsg.Method == "decoderawtransaction"
-	useCache, resmsgFromCache := jsonrpcCacheFetchForMethods(
-		ctx, m, chain, reqmsg,
-		"gettransaction",
-		"getrawtransaction",
-		"decoderawtransaction")
-
-	if resmsgFromCache != nil {
-		return resmsgFromCache, nil
+	useCache := false
+	cacheExpire := time.Second * 60
+	if exp, ok := bitcoinCachableMethods[reqmsg.Method]; ok {
+		useCache = true
+		cacheExpire = exp
+		if resmsgFromCache, found := jsonrpcCacheFetch(ctx, m, chain, reqmsg); found {
+			reqmsg.Log().Infof("get result from cache")
+			return resmsgFromCache, nil
+		}
 	}
+
+	// useCache, resmsgFromCache := jsonrpcCacheFetchForMethods(
+	// 	ctx, m, chain, reqmsg,
+	// 	"gettransaction",
+	// 	"getrawtransaction",
+	// 	"decoderawtransaction")
+
+	// if resmsgFromCache != nil {
+	// 	return resmsgFromCache, nil
+	// }
 
 	if ep, ok := presenceCacheMatchRequest(
 		ctx, m, chain, reqmsg,
@@ -131,23 +157,24 @@ func (c *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplex
 		"getrawtransaction"); ok {
 		retmsg, err := ep.CallRPC(ctx, reqmsg)
 		if err == nil && useCache && retmsg.IsResult() {
-			jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jsoff.ResultMessage), time.Minute*10)
+			jsonrpcCacheUpdate(ctx, m, ep, chain, reqmsg, retmsg.(*jsoff.ResultMessage), cacheExpire)
 		}
 		return retmsg, err
 	}
 
+	heightSpec := -1
 	if reqmsg.Method == "getblockhash" {
 		if h, ok := c.findBlockHeight(reqmsg); ok {
-			return m.DefaultRelayRPC(ctx, chain, reqmsg, h)
+			heightSpec = h
 		}
 	} else if reqmsg.Method == "getchaintips" || reqmsg.Method == "getblockchaininfo" {
 		// select latest chaintips
-		return m.DefaultRelayRPC(ctx, chain, reqmsg, 0)
+		heightSpec = 0
 	}
 
-	retmsg, err := m.DefaultRelayRPC(ctx, chain, reqmsg, -1)
-	if err == nil && useCache && retmsg.IsResult() {
-		jsonrpcCacheUpdate(ctx, m, chain, reqmsg, retmsg.(*jsoff.ResultMessage), time.Minute*10)
+	retmsg, ep, err := m.DefaultRelayRPCTakingEndpoint(ctx, chain, reqmsg, heightSpec)
+	if err == nil && ep != nil && useCache && retmsg.IsResult() {
+		jsonrpcCacheUpdate(ctx, m, ep, chain, reqmsg, retmsg.(*jsoff.ResultMessage), cacheExpire)
 	}
 	return retmsg, err
 }
