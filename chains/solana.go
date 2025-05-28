@@ -1,5 +1,7 @@
 package chains
 
+// docsite: https://solana.com/docs/rpc/http
+
 import (
 	"context"
 	"github.com/superisaac/jsoff"
@@ -34,7 +36,7 @@ func (c SolanaChain) StartSync(context context.Context, m *nodemuxcore.Multiplex
 func (c *SolanaChain) GetBlockhead(context context.Context, m *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	config := map[string]string{"commitement": "confirmed"}
 	reqmsg := jsoff.NewRequestMessage(
-		1, "getSlot", []interface{}{config})
+		1, "getSlot", []any{config})
 
 	var slot int
 	err := ep.UnwrapCallRPC(context, reqmsg, &slot)

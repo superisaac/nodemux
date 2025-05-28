@@ -25,9 +25,9 @@ func TestEthereum(t *testing.T) {
 
 func TestResolveMap(t *testing.T) {
 	assert := assert.New(t)
-	v := map[string]interface{}{
-		"a": map[string]interface{}{
-			"b": map[string]interface{}{
+	v := map[string]any{
+		"a": map[string]any{
+			"b": map[string]any{
 				"d": 5,
 			},
 		},

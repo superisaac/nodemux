@@ -25,7 +25,7 @@ func (c ConfluxChain) StartSync(context context.Context, m *nodemuxcore.Multiple
 func (c *ConfluxChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiplexer, ep *nodemuxcore.Endpoint) (*nodemuxcore.Block, error) {
 	reqmsg := jsoff.NewRequestMessage(
 		1, "cfx_epochNumber",
-		[]interface{}{"latest_mined"})
+		[]any{"latest_mined"})
 	var height int
 	err := ep.UnwrapCallRPC(context, reqmsg, &height)
 	if err != nil {

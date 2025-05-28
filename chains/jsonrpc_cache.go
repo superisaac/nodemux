@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func jsonrpcCacheGet(ctx context.Context, m *nodemuxcore.Multiplexer, c *redis.Client, chain nodemuxcore.ChainRef, req *jsoff.RequestMessage) (interface{}, bool) {
+func jsonrpcCacheGet(ctx context.Context, m *nodemuxcore.Multiplexer, c *redis.Client, chain nodemuxcore.ChainRef, req *jsoff.RequestMessage) (any, bool) {
 	// cacheKey := req.CacheKey(fmt.Sprintf("CC:%s", chain))
 	cacheKeys := m.RequestCacheKeys(chain, req, "CC/", -20)
 	values, err := c.MGet(ctx, cacheKeys...).Result()
@@ -31,7 +31,7 @@ func jsonrpcCacheGet(ctx context.Context, m *nodemuxcore.Multiplexer, c *redis.C
 
 		if data, ok := value.(string); ok {
 			// return the first cache hits
-			var res interface{}
+			var res any
 			resdec := json.NewDecoder(strings.NewReader(data))
 			resdec.UseNumber()
 			if err := resdec.Decode(&res); err != nil {
