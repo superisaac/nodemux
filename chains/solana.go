@@ -5,6 +5,15 @@ import (
 	"github.com/superisaac/jsoff"
 	"github.com/superisaac/nodemux/core"
 	"net/http"
+	"time"
+)
+
+var (
+	solanaCachableMethods map[string]time.Duration = map[string]time.Duration{
+		"getBlock":       time.Second * 5,
+		"getSlot":        time.Second * 4,
+		"getTransaction": time.Second * 600,
+	}
 )
 
 type SolanaChain struct {
@@ -38,7 +47,23 @@ func (c *SolanaChain) GetBlockhead(context context.Context, m *nodemuxcore.Multi
 	return block, nil
 }
 
-func (c *SolanaChain) DelegateRPC(rootCtx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
-	// Custom relay methods can be defined here
-	return m.DefaultRelayRPC(rootCtx, chain, reqmsg, -10)
+func (c *SolanaChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
+	useCache := false
+	cacheExpire := time.Second * 60
+	if exp, ok := solanaCachableMethods[reqmsg.Method]; ok {
+		useCache = true
+		cacheExpire = exp
+		if resmsgFromCache, found := jsonrpcCacheFetch(ctx, m, chain, reqmsg); found {
+			reqmsg.Log().Infof("get result from cache")
+			return resmsgFromCache, nil
+		}
+	}
+
+	retmsg, ep, err := m.DefaultRelayRPCTakingEndpoint(ctx, chain, reqmsg, -10)
+	if err == nil && ep != nil && useCache && retmsg.IsResult() {
+		jsonrpcCacheUpdate(ctx, m, ep, chain, reqmsg, retmsg.(*jsoff.ResultMessage), cacheExpire)
+	}
+	return retmsg, err
+
+	// return m.DefaultRelayRPC(ctx, chain, reqmsg, -10)
 }

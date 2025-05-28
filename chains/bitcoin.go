@@ -141,16 +141,6 @@ func (c *BitcoinChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplex
 		}
 	}
 
-	// useCache, resmsgFromCache := jsonrpcCacheFetchForMethods(
-	// 	ctx, m, chain, reqmsg,
-	// 	"gettransaction",
-	// 	"getrawtransaction",
-	// 	"decoderawtransaction")
-
-	// if resmsgFromCache != nil {
-	// 	return resmsgFromCache, nil
-	// }
-
 	if ep, ok := presenceCacheMatchRequest(
 		ctx, m, chain, reqmsg,
 		"gettransaction",
