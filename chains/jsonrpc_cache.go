@@ -13,9 +13,9 @@ import (
 	"time"
 )
 
-func jsonrpcCacheGet(ctx context.Context, m *nodemuxcore.Multiplexer, c *redis.Client, chain nodemuxcore.ChainRef, req *jsoff.RequestMessage) (any, bool) {
+func jsonrpcCacheGet(ctx context.Context, m *nodemuxcore.Multiplexer, c *redis.Client, chain nodemuxcore.ChainRef, req *jsoff.RequestMessage, heightSpec int) (any, bool) {
 	// cacheKey := req.CacheKey(fmt.Sprintf("CC:%s", chain))
-	cacheKeys := m.RequestCacheKeys(chain, req, "CC/", -20)
+	cacheKeys := m.RequestCacheKeys(chain, req, "CC/", heightSpec)
 	values, err := c.MGet(ctx, cacheKeys...).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
@@ -68,9 +68,9 @@ func jsonrpcCacheRedisSelector(chain nodemuxcore.ChainRef) string {
 	return fmt.Sprintf("jsonrpc-cache-%s-%s", chain.Namespace, chain.Network)
 }
 
-func jsonrpcCacheFetch(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage) (*jsoff.ResultMessage, bool) {
+func jsonrpcCacheFetch(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, heightSpec int) (*jsoff.ResultMessage, bool) {
 	if c, ok := m.RedisClientExact(jsonrpcCacheRedisSelector(chain)); ok {
-		if resFromCache, ok := jsonrpcCacheGet(ctx, m, c, chain, reqmsg); ok {
+		if resFromCache, ok := jsonrpcCacheGet(ctx, m, c, chain, reqmsg, heightSpec); ok {
 			return jsoff.NewResultMessage(reqmsg, resFromCache), true
 		} else {
 			return nil, false

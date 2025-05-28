@@ -257,7 +257,7 @@ func (c *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer,
 	if exp, ok := web3CachableMethods[reqmsg.Method]; ok {
 		useCache = true
 		cacheExpire = exp
-		if resmsgFromCache, found := jsonrpcCacheFetch(ctx, m, chain, reqmsg); found {
+		if resmsgFromCache, found := jsonrpcCacheFetch(ctx, m, chain, reqmsg, -10); found {
 			reqmsg.Log().Infof("get result from cache")
 			return resmsgFromCache, nil
 		}

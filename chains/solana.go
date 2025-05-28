@@ -12,7 +12,7 @@ import (
 
 var (
 	solanaCachableMethods map[string]time.Duration = map[string]time.Duration{
-		"getBlock":       time.Second * 5,
+		"getBlock":       time.Second * 60,
 		"getSlot":        time.Second * 4,
 		"getTransaction": time.Second * 600,
 	}
@@ -55,13 +55,13 @@ func (c *SolanaChain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexe
 	if exp, ok := solanaCachableMethods[reqmsg.Method]; ok {
 		useCache = true
 		cacheExpire = exp
-		if resmsgFromCache, found := jsonrpcCacheFetch(ctx, m, chain, reqmsg); found {
+		if resmsgFromCache, found := jsonrpcCacheFetch(ctx, m, chain, reqmsg, -60); found {
 			reqmsg.Log().Infof("get result from cache")
 			return resmsgFromCache, nil
 		}
 	}
 
-	retmsg, ep, err := m.DefaultRelayRPCTakingEndpoint(ctx, chain, reqmsg, -10)
+	retmsg, ep, err := m.DefaultRelayRPCTakingEndpoint(ctx, chain, reqmsg, -60)
 	if err == nil && ep != nil && useCache && retmsg.IsResult() {
 		jsonrpcCacheUpdate(ctx, m, ep, chain, reqmsg, retmsg.(*jsoff.ResultMessage), cacheExpire)
 	}
