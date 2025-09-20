@@ -71,7 +71,7 @@ func StartHTTPServer(rootCtx context.Context, serverCfg *ServerConfig) {
 		serverCfg.Metrics.Auth,
 		promhttp.Handler()))
 
-	if adminAuth != nil {
+	if adminAuth != nil && (len(adminAuth.Basic) > 0 || len(adminAuth.Bearer) > 0 || (adminAuth.Jwt != nil && adminAuth.Jwt.Secret != "")) {
 		// admin Auth must be set before the request of /nodemux
 		serverMux.Handle("/nodemux", adminHandler(
 			rootCtx,
