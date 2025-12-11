@@ -3,20 +3,12 @@ package chains
 import (
 	"context"
 	"fmt"
-	"net/http"
-
+	"github.com/pkg/errors"
 	"github.com/superisaac/jsoff"
 	nodemuxcore "github.com/superisaac/nodemux/core"
+	"net/http"
+	"strconv"
 )
-
-type txInfo struct {
-	Digest      string `json:"digest"`
-	TimestampMs int    `json:"timestampMs"`
-}
-
-type txList struct {
-	Data []txInfo `json:"data"`
-}
 
 type txQuery struct {
 	Options struct {
@@ -44,7 +36,7 @@ func NewSuiChain() *SuiChain {
 
 func (c SuiChain) GetClientVersion(context context.Context, ep *nodemuxcore.Endpoint) (string, error) {
 	reqmsg := jsoff.NewRequestMessage(
-		1, "rpc.discover", []interface{}{})
+		1, "rpc.discover", []any{})
 	var rpc rpcDiscover
 	err := ep.UnwrapCallRPC(context, reqmsg, &rpc)
 	if err != nil {
@@ -63,25 +55,22 @@ func (c *SuiChain) GetBlockhead(context context.Context, b *nodemuxcore.Multiple
 	query.Options.ShowRawInput = true
 
 	reqmsg := jsoff.NewRequestMessage(
-		1, "suix_queryTransactionBlocks",
-		[]interface{}{query, nil, 2, true})
+		1, "sui_getLatestCheckpointSequenceNumber",
+		[]any{query, nil, 2, true})
 
-	var txl txList
-	err := ep.UnwrapCallRPC(context, reqmsg, &txl)
+	var seqString string
+	err := ep.UnwrapCallRPC(context, reqmsg, &seqString)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "call.latestCheckpoint")
 	}
 
-	if len(txl.Data) <= 0 {
-		return nil, nil
+	seq, err := strconv.Atoi(seqString)
+	if err != nil {
+		return nil, errors.Wrap(err, "strconv.Atoi")
 	}
-
-	latestTx := txl.Data[0]
-
-	seconds := 2 // one dummy block per 2 seconds
 
 	block := &nodemuxcore.Block{
-		Height: latestTx.TimestampMs / (1000 * seconds),
+		Height: seq,
 		//Hash:   bt.Hash,
 	}
 	return block, nil
