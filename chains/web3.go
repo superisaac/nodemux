@@ -87,7 +87,6 @@ var (
 		"eth_getBlockByNumber":                    time.Second * 60,
 		"eth_getBlockByHash":                      time.Second * 600,
 		"eth_getTransactionByHash":                time.Second * 600,
-		"eth_getTransactionCount":                 time.Second * 5,
 		"eth_getTransactionByBlockHashAndIndex":   time.Second * 30,
 		"eth_getTransactionByBlockNumberAndIndex": time.Second * 30,
 		"eth_getTransactionReceipt":               time.Second * 10,
@@ -222,6 +221,59 @@ func (c *Web3Chain) sendRawTransaction(ctx context.Context, m *nodemuxcore.Multi
 	return nil, resMsgs[0].Err
 }
 
+func (c *Web3Chain) getTransactionCount(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage) (jsoff.Message, error) {
+	resMsgs := m.BroadcastRPC(ctx, chain, reqmsg, -10)
+	if len(resMsgs) == 0 {
+		return m.DefaultRelayRPC(ctx, chain, reqmsg, -5)
+	}
+
+	var maxNonce uint64
+	var maxResMsg jsoff.Message
+	for _, res := range resMsgs {
+		if res.Err != nil || res.Response == nil || !res.Response.IsResult() {
+			continue
+		}
+
+		resMsg, ok := res.Response.(*jsoff.ResultMessage)
+		if !ok {
+			continue
+		}
+
+		nonceHex, ok := resMsg.Result.(string)
+		if !ok {
+			continue
+		}
+
+		nonce, err := hexutil.DecodeUint64(nonceHex)
+		if err != nil {
+			continue
+		}
+
+		if maxResMsg == nil || nonce > maxNonce {
+			maxNonce = nonce
+			maxResMsg = res.Response
+		}
+	}
+
+	if maxResMsg != nil {
+		return maxResMsg, nil
+	}
+
+	for _, res := range resMsgs {
+		if res.Err == nil && res.Response != nil && res.Response.IsError() {
+			return res.Response, nil
+		}
+	}
+
+	for _, res := range resMsgs {
+		if res.Err == nil && res.Response != nil {
+			return res.Response, nil
+		}
+	}
+
+	return nil, resMsgs[0].Err
+}
+
 func (c *Web3Chain) getBlockByNumber(ctx context.Context, m *nodemuxcore.Multiplexer, chain nodemuxcore.ChainRef, reqmsg *jsoff.RequestMessage, r *http.Request) (jsoff.Message, error) {
 	useCache := true
 	cacheExpire := time.Second * 30
@@ -282,6 +334,10 @@ func (c *Web3Chain) DelegateRPC(ctx context.Context, m *nodemuxcore.Multiplexer,
 	if reqmsg.Method == "eth_sendRawTransaction" {
 		// broadcast raw transactions to all endpoints
 		return c.sendRawTransaction(ctx, m, chain, reqmsg)
+	}
+
+	if reqmsg.Method == "eth_getTransactionCount" {
+		return c.getTransactionCount(ctx, m, chain, reqmsg)
 	}
 
 	heightSpec := -2
