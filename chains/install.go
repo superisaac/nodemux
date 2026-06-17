@@ -13,6 +13,7 @@ func InstallAdaptors(factory *nodemuxcore.DelegatorFactory) {
 		"okex-token", "huobi-token", "ethereum-classic",
 		"cardano-kevm",
 		"fantom-web3",
+		"base", "avax", "arb", "optimism", "x-layer",
 	)
 
 	factory.RegisterRPC(NewBitcoinChain(),
