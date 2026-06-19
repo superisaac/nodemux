@@ -79,6 +79,10 @@ func watchConfig(rootCtx context.Context, configPath string, fetch bool) {
 				if err != nil {
 					log.Warnf("error config %s", err)
 				} else {
+					factory := nodemuxcore.GetDelegatorFactory()
+					factory.SetConfig(nbcfg)
+					chains.InstallAdaptors(factory)
+
 					b := nodemuxcore.MultiplexerFromConfig(nbcfg)
 					b.StartSync(rootCtx, fetch)
 					time.Sleep(1 * time.Second)
@@ -151,6 +155,7 @@ func CommandStartServer() {
 
 	// initial delegator factory and add chains support to it
 	factory := nodemuxcore.GetDelegatorFactory()
+	factory.SetConfig(nbcfg)
 	chains.InstallAdaptors(factory)
 
 	// initialize nodemuxcore

@@ -7,6 +7,11 @@ stores:
     url: redis://localhost:6379/1
   default:
     url: redis://localhost:6379/2
+
+extra_chains:
+  web3:
+    - "fantom"
+    - "bsc"
   
 endpoints:
   bsc01:
@@ -88,4 +93,3 @@ endpoints:
   # aptos01:
   #   chain: aptos/mainnet
   #   url: https://fullnode.mainnet.aptoslabs.com/v1/
-

@@ -96,6 +96,8 @@ type Multiplexer struct {
 
 // Delegators
 type BlockheadDelegator interface {
+	Namespace() string
+
 	// if an endpoint want to custom the sync procedure then the
 	// func should return false else the func returns true
 	StartSync(ctx context.Context, m *Multiplexer, ep *Endpoint) (started bool, err error)
@@ -123,6 +125,7 @@ type GraphQLDelegator interface {
 }
 
 type DelegatorFactory struct {
+	config          *NodemuxConfig
 	rpcDelegators   map[string]RPCDelegator
 	restDelegators  map[string]RESTDelegator
 	graphDelegators map[string]GraphQLDelegator

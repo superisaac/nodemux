@@ -25,6 +25,21 @@ func newDelegatorFactory() *DelegatorFactory {
 	}
 }
 
+func (self *DelegatorFactory) SetConfig(config *NodemuxConfig) {
+	self.config = config
+}
+
+func (self DelegatorFactory) registeredChains(delegator BlockheadDelegator, chains []string) []string {
+	registered := append([]string{}, chains...)
+	if self.config == nil || self.config.ExtraChains == nil {
+		return registered
+	}
+	if extraChains, ok := self.config.ExtraChains[delegator.Namespace()]; ok {
+		registered = append(registered, extraChains...)
+	}
+	return registered
+}
+
 func (self DelegatorFactory) SupportChain(namespace string) (bool, int) {
 	if _, ok := self.rpcDelegators[namespace]; ok {
 		return true, ApiJSONRPC
@@ -53,7 +68,7 @@ func (self DelegatorFactory) GetBlockheadDelegator(chain string) BlockheadDelega
 
 // RPC delegators
 func (self *DelegatorFactory) RegisterRPC(delegator RPCDelegator, chains ...string) {
-	for _, chain := range chains {
+	for _, chain := range self.registeredChains(delegator, chains) {
 		self.rpcDelegators[chain] = delegator
 	}
 }
@@ -68,7 +83,7 @@ func (self DelegatorFactory) GetRPCDelegator(chain string) RPCDelegator {
 
 // REST delegators
 func (self *DelegatorFactory) RegisterREST(delegator RESTDelegator, chains ...string) {
-	for _, chain := range chains {
+	for _, chain := range self.registeredChains(delegator, chains) {
 		self.restDelegators[chain] = delegator
 	}
 }
@@ -83,7 +98,7 @@ func (self DelegatorFactory) GetRESTDelegator(chain string) RESTDelegator {
 
 // GraphQL delegators
 func (self *DelegatorFactory) RegisterGraphQL(delegator GraphQLDelegator, chains ...string) {
-	for _, chain := range chains {
+	for _, chain := range self.registeredChains(delegator, chains) {
 		self.graphDelegators[chain] = delegator
 	}
 }

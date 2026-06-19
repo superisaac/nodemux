@@ -39,9 +39,10 @@ func (cfg StoreConfig) Scheme() string {
 }
 
 type NodemuxConfig struct {
-	Version   string                    `yaml:"version,omitempty" json:"version,omitempty"`
-	Endpoints map[string]EndpointConfig `yaml:"endpoints" json:"endpoints"`
-	Stores    map[string]StoreConfig    `yaml:"stores,omitempty" json:"stores,omitempty"`
+	Version     string                    `yaml:"version,omitempty" json:"version,omitempty"`
+	ExtraChains map[string][]string       `yaml:"extra_chains,omitempty" json:"extra_chains,omitempty"`
+	Endpoints   map[string]EndpointConfig `yaml:"endpoints" json:"endpoints"`
+	Stores      map[string]StoreConfig    `yaml:"stores,omitempty" json:"stores,omitempty"`
 }
 
 // methods
